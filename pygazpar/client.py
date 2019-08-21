@@ -34,7 +34,7 @@ class Client(object):
         # Initialize the Firefox WebDriver
         profile = webdriver.FirefoxProfile()
         options = webdriver.FirefoxOptions()
-        options.headless = False
+        options.headless = True
         profile.set_preference('browser.download.folderList', 2)  # custom location
         profile.set_preference('browser.download.manager.showWhenStarting', False)
         profile.set_preference('browser.helperApps.alwaysAsk.force', False)

@@ -16,11 +16,11 @@ PyGazpar has been developped and tested with Firefox browser (version 68.8) and 
 
 #### Firefox browser installation
 
-Follow instructions [here] (https://www.mozilla.org/fr/firefox/new)
+Follow instructions [here](https://www.mozilla.org/fr/firefox/new)
 
 #### Firefox Web Driver (geckodriver) installation
 
-Follow instructions [here] (https://github.com/mozilla/geckodriver/releases)
+Follow instructions [here](https://github.com/mozilla/geckodriver/releases)
 
 ### PyGazpar installation
 

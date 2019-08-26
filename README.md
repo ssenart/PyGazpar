@@ -42,7 +42,10 @@ python setup.py install
 ```python
 import pygazpar
 
-client = pygazpar.Client('your login', 'your password', 'path to the Selenium Web Driver', 'temporary directory where to store XSLX file (ex: /tmp)')
+client = pygazpar.Client('your login',
+                         'your password',
+                         'path to the Selenium Web Driver',
+                         'temporary directory where to store XSLX file (ex: /tmp)')
 
 client.update()
 

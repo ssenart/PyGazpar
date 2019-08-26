@@ -72,10 +72,14 @@ class Client(object):
             # Wait a few for the data page load to complete
             time.sleep(10)
             
-            # Close Popup Windows
-            close_popup_element = driver.find_elements_by_css_selector('.abtasty-modal__close > svg')
-            close_popup_element[0].click()
-            time.sleep(5)
+            # Eventually, close Advertisement Popup Windows
+            try:
+                close_popup_element = driver.find_elements_by_css_selector('.abtasty-modal__close > svg')
+                close_popup_element[0].click()
+                time.sleep(5)
+            except BaseException:
+                # Do nothing, because the Pop up may not be here.
+                pass
 
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label")

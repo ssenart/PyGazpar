@@ -1,28 +1,26 @@
 import argparse
 import sys
 import json
+import traceback
 
 from pygazpar.client import Client
 
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--username",
-                      action="store",
-                      dest="username",
+    parser.add_argument("-u", "--username",
+                      required=True,
                       help="GRDF username (email)")    
-    parser.add_argument("--password",
-                      action="store",
-                      dest="password",
+    parser.add_argument("-p", "--password",
+                      required=True,
                       help="GRDF password")    
-    parser.add_argument("--webdriver",
-                      action="store",
-                      dest="webdriver",
-                      help="Firefox webdriver executable")    
-    parser.add_argument("--tmpdir",
-                      action="store",
-                      dest="tmpdir",
-                      help="tmp directory")    
+    parser.add_argument("-w", "--webdriver",
+                      required=True,
+                      help="Firefox webdriver executable (geckodriver)")    
+    parser.add_argument("-t", "--tmpdir",
+                      required=False,
+                      default="/tmp",
+                      help="tmp directory (default is /tmp)")    
 
     args = parser.parse_args()
 
@@ -30,12 +28,11 @@ def main():
 
     try:
         client.update()
-    except BaseException as exp:
-        print(exp)
+    except BaseException:
+        print('An error occured while querying PyGazpar library : %s', traceback.format_exc())
         return 1
 
-    print(json.dumps(client.data, indent=2))
-
+    print(json.dumps(client.data(), indent=2))
 
 if __name__ == '__main__':
     sys.exit(main())

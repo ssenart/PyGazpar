@@ -18,7 +18,10 @@ class Client(object):
         self.__password = password
         self.__firefox_webdriver_executable = firefox_webdriver_executable
         self.__tmp_directory = tmp_directory
-        self.data = []
+        self.__data = []
+
+    def data(self):
+        return self.__data
 
     def update(self):
 
@@ -100,7 +103,7 @@ class Client(object):
                         row['total_kWh'] = float(ws.cell(column=4, row=rownum).value) * 11.244
                         row['daily_m3'] = ws.cell(column=5, row=rownum).value
                         row['daily_kWh'] = ws.cell(column=6, row=rownum).value
-                        self.data.append(row)
+                        self.__data.append(row)
                 wb.close()
             
                 os.remove(filename)

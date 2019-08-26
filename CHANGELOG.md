@@ -14,5 +14,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.1.6...HEAD
-[0.1.6]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.1.5...v0.1.6
+[Unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/0.1.6...HEAD
+[0.1.6]: https://github.com/olivierlacan/keep-a-changelog/compare/0.1.5...0.1.6

@@ -1,5 +1,5 @@
 # PyGazpar
-PyGazpar is a Python library for getting natual gas consumption from GrDF French natual gas provider.
+PyGazpar is a Python library for getting natural gas consumption from GrDF French provider.
 
 It uses your account at GrDF Web Site (https://monespace.grdf.fr).
 
@@ -34,18 +34,29 @@ python setup.py install
 
 ## Usage
 
+### Command line
+
+```bash
+
+$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -t 'temporary directory where to store XSLX file (ex: /tmp)'
+
+```
+
+### Library
+
 ```python
 import pygazpar
 
 client = pygazpar.Client('your login',
                          'your password',
-                         'path to the Selenium Web Driver',
+                         'path/to/Selenium Web Driver',
                          'temporary directory where to store XSLX file (ex: /tmp)')
 
 client.update()
 
 data = client.data()
 ```
+
 ```json
 data =>
 [

@@ -1,9 +1,11 @@
 # PyGazpar
 PyGazpar is a Python library for getting natural gas consumption from GrDF French provider.
 
-It uses your account at GrDF Web Site (https://monespace.grdf.fr).
+Their natural gas meter is called Gazpar. It is wireless and transmit the gas consumption once per day.
 
-It automatically go through the Web Site and download the consumption data Excel file, and make it available in a Python structure (list of dictionaries).
+All consumption data is available on the client account at GrDF Web Site (https://monespace.grdf.fr).
+
+PyGazpar automatically go through the Web Site and download the consumption data Excel file, and make it available in a Python structure (list of dictionaries).
 
 ## Installation
 

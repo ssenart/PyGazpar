@@ -17,6 +17,11 @@ def main():
     parser.add_argument("-w", "--webdriver",
                       required=True,
                       help="Firefox webdriver executable (geckodriver)")    
+    parser.add_argument("-s", "--wait_time",
+                      required=False,
+                      type=int,
+                      default=30,
+                      help="Wait time in seconds (see https://selenium-python.readthedocs.io/waits.html for details)")    
     parser.add_argument("-t", "--tmpdir",
                       required=False,
                       default="/tmp",
@@ -24,7 +29,7 @@ def main():
 
     args = parser.parse_args()
 
-    client = Client(args.username, args.password, args.webdriver, args.tmpdir)
+    client = Client(args.username, args.password, args.webdriver, args.wait_time, args.tmpdir)
 
     try:
         client.update()

@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2019-08-29
+### Added
+- Add wait_time option to control how much time the library has to wait for Web page element to load (see https://selenium-python.readthedocs.io/waits.html for details).
+- Add LoginError exception raised when PyGazpar is unable to sign in the GrDF Web site with the given username/password.
+- Refactor all data property names.
+
 ## [0.1.6] - 2019-08-26
 ### Added
 - Add README.md and CHANGELOG.md.
@@ -14,5 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/0.1.6...HEAD
-[0.1.6]: https://github.com/olivierlacan/keep-a-changelog/compare/0.1.5...0.1.6
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.6...HEAD
+[0.1.7]: https://github.com/ssenart/PyGazpar/compare/0.1.6...0.1.7
+[0.1.6]: https://github.com/ssenart/PyGazpar/compare/0.1.5...0.1.6

@@ -20,6 +20,15 @@ Follow instructions [here](https://www.mozilla.org/fr/firefox/new)
 #### Firefox Web Driver (geckodriver) installation
 Follow instructions [here](https://github.com/mozilla/geckodriver/releases)
 
+### Create your virtual environment
+```bash
+$ pip install virtualenv
+
+$ cd /path/to/my_project_folder/
+
+$ virtualenv venv
+```
+
 ### PyGazpar installation
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install PyGazpar.
 
@@ -39,9 +48,7 @@ python setup.py install
 ### Command line
 
 ```bash
-
-$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -t 'temporary directory where to store XSLX file (ex: /tmp)'
-
+$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -s 30 -t 'temporary directory where to store XSLX file (ex: /tmp)'
 ```
 
 ### Library
@@ -52,6 +59,7 @@ import pygazpar
 client = pygazpar.Client('your login',
                          'your password',
                          'path/to/Selenium Web Driver',
+                         30,
                          'temporary directory where to store XSLX file (ex: /tmp)')
 
 client.update()
@@ -63,25 +71,37 @@ data = client.data()
 data =>
 [
   {
-    "time": "22/08/2019",
-    "total_m3": 9904.0,
-    "total_kWh": 111360.576,
-    "daily_m3": 1.2,
-    "daily_kWh": 13.0
+    "date": "01/07/2019",
+    "start_index_m3": 9802.0,
+    "end_index_m3": 9805.0,
+    "volume_m3": 3.6,
+    "energy_kwh": 40.0,
+    "converter_factor": "11,244",
+    "local_temperature": "",
+    "type": "MES",
+    "timestamp": "2019-08-29T16:56:07.380422"
   },
   {
-    "time": "23/08/2019",
-    "total_m3": 9905.0,
-    "total_kWh": 111371.81999999999,
-    "daily_m3": 1.1,
-    "daily_kWh": 12.0
+    "date": "02/07/2019",
+    "start_index_m3": 9805.0,
+    "end_index_m3": 9808.0,
+    "volume_m3": 2.8,
+    "energy_kwh": 31.0,
+    "converter_factor": "11,244",
+    "local_temperature": "21",
+    "type": "MES",
+    "timestamp": "2019-08-29T16:56:07.380422"
   },
   {
-    "time": "24/08/2019",
-    "total_m3": 9906.0,
-    "total_kWh": 111383.064,
-    "daily_m3": 1.1,
-    "daily_kWh": 12.0
+    "date": "03/07/2019",
+    "start_index_m3": 9808.0,
+    "end_index_m3": 9811.0,
+    "volume_m3": 2.9,
+    "energy_kwh": 33.0,
+    "converter_factor": "11,244",
+    "local_temperature": "",
+    "type": "MES",
+    "timestamp": "2019-08-29T16:56:07.380422"
   }
 ]
 ```

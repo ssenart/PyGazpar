@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2019-08-31
+### Fixed
+- WebDriver window size must be large enough to display all clickable components.
+
 ## [0.1.8] - 2019-08-31
 ### Changed
 - Use PropertyNameEnum type to store all property names.
@@ -24,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.8...HEAD
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.9...HEAD
+[0.1.9]: https://github.com/ssenart/PyGazpar/compare/0.1.7...0.1.9
 [0.1.8]: https://github.com/ssenart/PyGazpar/compare/0.1.7...0.1.8
 [0.1.7]: https://github.com/ssenart/PyGazpar/compare/0.1.6...0.1.7
 [0.1.6]: https://github.com/ssenart/PyGazpar/compare/0.1.5...0.1.6

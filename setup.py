@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name = 'pygazpar',
-  version = '0.1.8',
+  version = '0.1.9',
   author = 'Stephane Senart',
   author_email = 'stephane.senart@gmail.com',
   description = 'Retrieve gas consumption from GrDF web site (French Gas Company)',
@@ -23,7 +23,7 @@ setuptools.setup(
     'Programming Language :: Python :: 3.7',    
   ],
   python_requires='>=3.7',
-  download_url = 'https://github.com/ssenart/pygazpar/releases/tag/0.1.8',
+  download_url = 'https://github.com/ssenart/pygazpar/releases/tag/0.1.9',
   keywords = ['ENERGY', 'NATURAL GAS', 'CONSUMPTION'],   # Keywords that define your package best
   entry_points={
     'console_scripts': [

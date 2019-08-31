@@ -55,6 +55,9 @@ class Client(object):
         
         driver = webdriver.Firefox(executable_path=self.__firefox_webdriver_executable, firefox_profile=profile, options=options, service_log_path=self.__tmp_directory + '/geckodriver.log')
         try:
+            driver.set_window_position(0, 0)
+            driver.set_window_size(1200, 1200)
+
             driver.implicitly_wait(self.__wait_time)
             
             ## Login URL
@@ -112,7 +115,7 @@ class Client(object):
             data_timestamp = datetime.now().isoformat()
 
             # Wait a few for the download to complete
-            time.sleep(5)
+            time.sleep(10)
             
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)

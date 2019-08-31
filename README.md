@@ -67,6 +67,8 @@ client.update()
 data = client.data()
 ```
 
+### Output
+
 ```json
 data =>
 [

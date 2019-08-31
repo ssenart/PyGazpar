@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2019-08-31
+### Changed
+- Use PropertyNameEnum type to store all property names.
+
 ## [0.1.7] - 2019-08-29
 ### Added
 - Add wait_time option to control how much time the library has to wait for Web page element to load (see https://selenium-python.readthedocs.io/waits.html for details).
@@ -20,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.6...HEAD
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.8...HEAD
+[0.1.8]: https://github.com/ssenart/PyGazpar/compare/0.1.7...0.1.8
 [0.1.7]: https://github.com/ssenart/PyGazpar/compare/0.1.6...0.1.7
 [0.1.6]: https://github.com/ssenart/PyGazpar/compare/0.1.5...0.1.6

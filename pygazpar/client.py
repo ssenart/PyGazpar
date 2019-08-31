@@ -1,12 +1,10 @@
 import os
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
-from datetime import datetime
 import glob
+from selenium import webdriver
+from datetime import datetime
 from openpyxl import load_workbook
+from pygazpar.enum import PropertyNameEnum
 
 HOME_URL = 'https://monespace.grdf.fr'
 LOGIN_URL = HOME_URL + '/monespace/connexion'
@@ -19,6 +17,7 @@ DEFAULT_FIREFOX_WEBDRIVER = os.getcwd() + '/geckodriver'
 DEFAULT_WAIT_TIME = 30
 
 class LoginError(Exception):
+    """ Client has failed to login in GrDF Web site (check username/password)"""
     pass
 
 class Client(object):
@@ -31,7 +30,6 @@ class Client(object):
         self.__data = []
 
     def data(self):
-        """ Client has failed to login in GrDF Web site (check username/password)"""
         return self.__data
 
     def update(self):
@@ -57,9 +55,6 @@ class Client(object):
         
         driver = webdriver.Firefox(executable_path=self.__firefox_webdriver_executable, firefox_profile=profile, options=options, service_log_path=self.__tmp_directory + '/geckodriver.log')
         try:
-            driver.set_window_position(0, 0)
-            driver.set_window_size(1200, 1200)
-            
             driver.implicitly_wait(self.__wait_time)
             
             ## Login URL
@@ -128,15 +123,15 @@ class Client(object):
                 for rownum in range(8, 365):
                     row = {}
                     if ws.cell(column=2, row=rownum).value != None:
-                        row['date'] = ws.cell(column=2, row=rownum).value                        
-                        row['start_index_m3'] = ws.cell(column=3, row=rownum).value
-                        row['end_index_m3'] = ws.cell(column=4, row=rownum).value
-                        row['volume_m3'] = ws.cell(column=5, row=rownum).value
-                        row['energy_kwh'] = ws.cell(column=6, row=rownum).value
-                        row['converter_factor'] = ws.cell(column=7, row=rownum).value
-                        row['local_temperature'] = ws.cell(column=8, row=rownum).value
-                        row['type'] = ws.cell(column=9, row=rownum).value
-                        row['timestamp'] = data_timestamp
+                        row[PropertyNameEnum.DATE.value] = ws.cell(column=2, row=rownum).value                        
+                        row[PropertyNameEnum.START_INDEX_M3.value] = ws.cell(column=3, row=rownum).value
+                        row[PropertyNameEnum.END_INDEX_M3.value] = ws.cell(column=4, row=rownum).value
+                        row[PropertyNameEnum.VOLUME_M3.value] = ws.cell(column=5, row=rownum).value
+                        row[PropertyNameEnum.ENERGY_KWH.value] = ws.cell(column=6, row=rownum).value
+                        row[PropertyNameEnum.CONVERTER_FACTOR.value] = ws.cell(column=7, row=rownum).value
+                        row[PropertyNameEnum.LOCAL_TEMPERATURE.value] = ws.cell(column=8, row=rownum).value
+                        row[PropertyNameEnum.TYPE.value] = ws.cell(column=9, row=rownum).value
+                        row[PropertyNameEnum.TIMESTAMP.value] = data_timestamp
                         self.__data.append(row)
                 wb.close()
             

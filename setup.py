@@ -1,5 +1,3 @@
-from distutils.core import setup
-
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -24,7 +22,7 @@ setuptools.setup(
   ],
   python_requires='>=3.7',
   download_url = 'https://github.com/ssenart/pygazpar/releases/tag/0.1.9',
-  keywords = ['ENERGY', 'NATURAL GAS', 'CONSUMPTION'],   # Keywords that define your package best
+  keywords = ['Energy', 'Natural Gas', 'Consumption', 'GrDF', 'Gazpar' ],
   entry_points={
     'console_scripts': [
         'pygazpar = pygazpar.__main__:main'

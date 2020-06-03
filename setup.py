@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name = 'pygazpar',
-  version = '0.1.9',
+  version = '0.1.10',
   author = 'Stephane Senart',
   author_email = 'stephane.senart@gmail.com',
   description = 'Retrieve gas consumption from GrDF web site (French Gas Company)',

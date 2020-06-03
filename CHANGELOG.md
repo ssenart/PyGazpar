@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2020-06-03
+### Fixed
+- Extract rows from Excel until line 1000 (instead of 365 as before).
+
 ## [0.1.9] - 2019-08-31
 ### Fixed
 - WebDriver window size must be large enough to display all clickable components.

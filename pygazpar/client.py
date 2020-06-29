@@ -98,7 +98,7 @@ class Client(object):
             driver.get(DATA_URL)          
 
             # Wait for the data page to load completely.
-            time.sleep(5)
+            time.sleep(30)
 
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label")

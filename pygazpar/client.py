@@ -98,24 +98,21 @@ class Client(object):
             driver.get(DATA_URL)          
 
             # Wait for the data page to load completely.
-            time.sleep(30)
+            time.sleep(self.__wait_time)
 
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label")
             daily_consumption_element.click()
 
-            # Wait a few for refresh time
-            time.sleep(10)
-
             # Download file
-            download_button_element = driver.find_element_by_xpath("//button[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:telechargerDonnees']/span")
+            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span")
             download_button_element.click()
             
             # Timestamp of the data.
             data_timestamp = datetime.now().isoformat()
 
             # Wait a few for the download to complete
-            time.sleep(10)
+            time.sleep(self.__wait_time)
             
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)

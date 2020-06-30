@@ -120,7 +120,7 @@ class Client(object):
             for filename in file_list:
                 wb = load_workbook(filename = filename)
                 ws = wb['Historique par jour']
-                for rownum in range(8, len(ws['B'])):
+                for rownum in range(8, len(ws['B'])+1):
                     row = {}
                     if ws.cell(column=2, row=rownum).value != None:
                         row[PropertyNameEnum.DATE.value] = ws.cell(column=2, row=rownum).value                        

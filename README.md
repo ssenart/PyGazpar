@@ -124,4 +124,4 @@ Please make sure to update tests as appropriate.
 [MIT](https://choosealicense.com/licenses/mit/)
 
 ## Project status
-PyGazpar has been initiated for integration with [Home Assistant](https://www.home-assistant.io/). This integration work is still on-going.
+PyGazpar has been initiated for integration with [Home Assistant](https://www.home-assistant.io/).

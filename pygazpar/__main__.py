@@ -25,11 +25,16 @@ def main():
     parser.add_argument("-t", "--tmpdir",
                       required=False,
                       default="/tmp",
-                      help="tmp directory (default is /tmp)")    
+                      help="tmp directory (default is /tmp)")
+    parser.add_argument("-l", "--lastNRows",
+                      required=False,
+                      type=int,
+                      default=0,
+                      help="Get only the last N rows (default is 0: it means all rows are retrieved)")                           
 
     args = parser.parse_args()
 
-    client = Client(args.username, args.password, args.webdriver, args.wait_time, args.tmpdir)
+    client = Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
 
     try:
         client.update()

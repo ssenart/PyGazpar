@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.18] - 2021-04-05
+### Fixed
+- Typo in logger usage.
+
 ## [0.1.17] - 2021-04-05
 ### Fixed
 - Logger name must be different in each instance. Using __name__ is a good practice, we can get the module hierarchy.
@@ -66,6 +70,7 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
+[0.1.18]: https://github.com/ssenart/PyGazpar/compare/0.1.17...0.1.18
 [0.1.17]: https://github.com/ssenart/PyGazpar/compare/0.1.16...0.1.17
 [0.1.16]: https://github.com/ssenart/PyGazpar/compare/0.1.15...0.1.16
 [0.1.15]: https://github.com/ssenart/PyGazpar/compare/0.1.14...0.1.15

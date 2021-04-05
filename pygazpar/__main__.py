@@ -42,7 +42,7 @@ def main():
         os.remove(geckodriverLogFile)
 
     # Setup logging.
-    logging.basicConfig(filename=f"{args.tmpdir}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(levelname)-8s %(name)-12s %(message)s")
+    logging.basicConfig(filename=f"{args.tmpdir}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 
     client = Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
 

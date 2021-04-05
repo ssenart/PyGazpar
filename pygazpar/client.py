@@ -76,7 +76,7 @@ class Client(object):
     # ------------------------------------------------------
     def update(self):
 
-        logging.debug("Start updating the data...")
+        Client.logger.debug("Start updating the data...")
 
         # XLSX is in the TMP directory
         data_file_path_pattern = self.__tmp_directory + '/' + DATA_FILENAME
@@ -156,7 +156,7 @@ class Client(object):
 
             for filename in file_list:
 
-                logging.debug(f"Loading Excel data file '{filename}'...")
+                Client.logger.debug(f"Loading Excel data file '{filename}'...")
                 wb = load_workbook(filename = filename)
                 ws = wb['Historique par jour']
                 minRowNum = max(8, len(ws['B'])+1-self.__lastNRows) if self.__lastNRows > 0 else 8
@@ -175,11 +175,11 @@ class Client(object):
                         row[PropertyNameEnum.TIMESTAMP.value] = data_timestamp
                         self.__data.append(row)
                 wb.close()
-                logging.debug(f"Data read successfully between row #{minRowNum} and row #{maxRowNum}")
+                Client.logger.debug(f"Data read successfully between row #{minRowNum} and row #{maxRowNum}")
             
                 os.remove(filename)
 
-                logging.debug("The data update terminates normally")
+                Client.logger.debug("The data update terminates normally")
 
         except Exception:
             WebDriverWrapper.logger.error(f"An unexpected error occured while updating the data",  exc_info=True)

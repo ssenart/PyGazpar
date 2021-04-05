@@ -27,7 +27,7 @@ class LoginError(Exception):
 # ------------------------------------------------------------------------------------------------------------
 class Client(object):
 
-    logger = logging.getLogger("pygazpar")
+    logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = 0):

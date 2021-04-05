@@ -27,7 +27,7 @@ class LoginError(Exception):
 # ------------------------------------------------------------------------------------------------------------
 class Client(object):
 
-    logger = logging.getLogger("Client")
+    logger = logging.getLogger("pygazpar")
 
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = 0):
@@ -39,13 +39,6 @@ class Client(object):
         self.__data = []
         self.__lastNRows = lastNRows
 
-        # We remove the pygazpar log file.
-        geckodriverLogFile = self.__tmp_directory + '/pygazpar.log'
-        if os.path.isfile(geckodriverLogFile):
-            os.remove(geckodriverLogFile)
-
-        # Setup logging.
-        logging.basicConfig(filename=f"{self.__tmp_directory}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(message)s")
 
     # ------------------------------------------------------
     def data(self):

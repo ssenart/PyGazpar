@@ -7,7 +7,7 @@ from selenium.webdriver.remote.webelement import WebElement
 # ------------------------------------------------------------------------------------------------------------
 class WebDriverWrapper:
 
-    logger = logging.getLogger("WebDriverWrapper")
+    logger = logging.getLogger("pygazpar")
 
     # ------------------------------------------------------
     def __init__(self, firefox_webdriver_executable: str, wait_time: int, tmp_directory: str):

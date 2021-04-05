@@ -2,6 +2,8 @@ import argparse
 import sys
 import json
 import traceback
+import os
+import logging
 
 from pygazpar.client import Client
 
@@ -33,6 +35,14 @@ def main():
                       help="Get only the last N rows (default is 0: it means all rows are retrieved)")                           
 
     args = parser.parse_args()
+
+    # We remove the pygazpar log file.
+    geckodriverLogFile = f"{args.tmpdir}/pygazpar.log"
+    if os.path.isfile(geckodriverLogFile):
+        os.remove(geckodriverLogFile)
+
+    # Setup logging.
+    logging.basicConfig(filename=f"{args.tmpdir}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(message)s")
 
     client = Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
 

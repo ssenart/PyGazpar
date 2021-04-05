@@ -58,7 +58,8 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/0.1.9...HEAD
+[0.1.15]: https://github.com/ssenart/PyGazpar/compare/0.1.14...0.1.15
+[0.1.14]: https://github.com/ssenart/PyGazpar/compare/0.1.13...0.1.14
 [0.1.13]: https://github.com/ssenart/PyGazpar/compare/0.1.12...0.1.13
 [0.1.12]: https://github.com/ssenart/PyGazpar/compare/0.1.11...0.1.12
 [0.1.11]: https://github.com/ssenart/PyGazpar/compare/0.1.10...0.1.11

@@ -151,8 +151,6 @@ class Client(object):
             # xpath=//button[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:telechargerDonnees']/span
             download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span", "Download button")                                                                   
             download_button_element.click()
-            
-            driver.save_screenshot(f"{self.__tmp_directory}/test.png")
 
             # Timestamp of the data.
             data_timestamp = datetime.now().isoformat()

@@ -1,10 +1,12 @@
 import os
 import time
 import glob
+import logging
 from selenium import webdriver
 from datetime import datetime
 from openpyxl import load_workbook
 from pygazpar.enum import PropertyNameEnum
+from .webdriverwrapper import WebDriverWrapper
 
 HOME_URL = 'https://monespace.grdf.fr'
 LOGIN_URL = HOME_URL + '/monespace/connexion'
@@ -16,11 +18,18 @@ DEFAULT_TMP_DIRECTORY = '/tmp'
 DEFAULT_FIREFOX_WEBDRIVER = os.getcwd() + '/geckodriver'
 DEFAULT_WAIT_TIME = 30
 
+# ------------------------------------------------------------------------------------------------------------
 class LoginError(Exception):
     """ Client has failed to login in GrDF Web site (check username/password)"""
     pass
 
+
+# ------------------------------------------------------------------------------------------------------------
 class Client(object):
+
+    logger = logging.getLogger("Client")
+
+    # ------------------------------------------------------
     def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = 0):
         self.__username = username
         self.__password = password        
@@ -30,10 +39,21 @@ class Client(object):
         self.__data = []
         self.__lastNRows = lastNRows
 
+        # We remove the pygazpar log file.
+        geckodriverLogFile = self.__tmp_directory + '/pygazpar.log'
+        if os.path.isfile(geckodriverLogFile):
+            os.remove(geckodriverLogFile)
+
+        # Setup logging.
+        logging.basicConfig(filename=f"{self.__tmp_directory}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(message)s")
+
+    # ------------------------------------------------------
     def data(self):
         return self.__data
 
-    def closeEventualPopup(self, driver: webdriver.Firefox):
+
+    # ------------------------------------------------------
+    def closeEventualPopup(self, driver: WebDriverWrapper):
 
         # Eventually, click Accept in the lower banner to accept cookies from the site.
         try:
@@ -60,53 +80,37 @@ class Client(object):
             pass
 
 
+    # ------------------------------------------------------
     def update(self):
+
+        logging.debug("Start updating the data...")
 
         # XLSX is in the TMP directory
         data_file_path_pattern = self.__tmp_directory + '/' + DATA_FILENAME
 
-        # We remove an eventual existing file (from a previous run that has not deleted it)
+        # We remove an eventual existing data file (from a previous run that has not deleted it)
         file_list = glob.glob(data_file_path_pattern)
         for filename in file_list:
             if os.path.isfile(filename):
                 os.remove(filename)
 
-        # We remove the geckodriver log file
-        geckodriverLogFile = self.__tmp_directory + '/pygazpar_geckodriver.log'
-        if os.path.isfile(geckodriverLogFile):
-            os.remove(geckodriverLogFile)
+        # Create the WebDriver with the ability to log and take screenshot for debugging.
+        driver = WebDriverWrapper(self.__firefox_webdriver_executable, self.__wait_time, self.__tmp_directory)
 
-        # Initialize the Firefox WebDriver
-        options = webdriver.FirefoxOptions()
-        #options.log.level = 'trace'
-        options.headless = True
-        profile = webdriver.FirefoxProfile()
-        profile.set_preference('browser.download.folderList', 2)  # custom location
-        profile.set_preference('browser.download.manager.showWhenStarting', False)
-        profile.set_preference('browser.helperApps.alwaysAsk.force', False)
-        profile.set_preference('browser.download.dir', self.__tmp_directory)
-        profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        
-        driver = webdriver.Firefox(executable_path=self.__firefox_webdriver_executable, firefox_profile=profile, options=options, service_log_path=geckodriverLogFile)
         try:
-            driver.set_window_position(0, 0)
-            driver.set_window_size(1920, 1200)
-            #driver.fullscreen_window()
-
-            driver.implicitly_wait(self.__wait_time)
-            
+          
             ## Login URL
-            driver.get(LOGIN_URL)
+            driver.get(LOGIN_URL, "Go to login page")
 
             # Fill login form
-            email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email")
-            password_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:passwordSecretSeConnecter")
+            email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email", "Login page: Email text field")
+            password_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:passwordSecretSeConnecter", "Login page: Password text field")
             
             email_element.send_keys(self.__username)
             password_element.send_keys(self.__password)
             
             # Submit the login form.
-            submit_button_element = driver.find_element_by_id('_EspacePerso_WAR_EPportlet_:seConnecterForm:meConnecter')
+            submit_button_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:meConnecter", "Login page: 'Me connecter' button")
             submit_button_element.click()
             
             # Close eventual popup Windows or Assistant appearing.
@@ -114,40 +118,42 @@ class Client(object):
 
             # Once we find the 'Acceder' button from the main page, we are logged on successfully.
             try:
-                driver.find_element_by_xpath("//div[2]/div[2]/div/a/div")
+                driver.find_element_by_xpath("//div[2]/div[2]/div/a/div", "Welcome page: 'Acceder' button of 'Suivi de consommation'")
             except:
                 # Perhaps, login has failed.
-                if driver.current_url == WELCOME_URL:
+                if driver.current_url() == WELCOME_URL:
                     # We're good.
                     pass
-                elif driver.current_url == LOGIN_URL:
+                elif driver.current_url() == LOGIN_URL:
                     raise LoginError("GrDF sign in has failed, please check your username/password")
                 else:
                     raise
 
             # Page 'votre consommation'
-            driver.get(DATA_URL)          
+            driver.get(DATA_URL, "Go to 'Consommations' page")          
 
             # Wait for the data page to load completely.
             time.sleep(self.__wait_time)
 
             # Eventually, close TokyWoky assistant which may hide the Download button.
             try:
-                tokyWoky_close_button = driver.find_element_by_xpath("//div[@id='toky_container']/div/div")
+                tokyWoky_close_button = driver.find_element_by_xpath("//div[@id='toky_container']/div/div", "TokyWoky assistant close button")
                 tokyWoky_close_button.click()
             except:
                 # Do nothing, because the Pop up may not appear.
                 pass    
 
             # Select daily consumption
-            daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label")
+            daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label", "Daily consumption button")
             daily_consumption_element.click()
 
             # Download file
             # xpath=//button[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:telechargerDonnees']/span
-            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span")                                                                   
+            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span", "Download button")                                                                   
             download_button_element.click()
             
+            driver.save_screenshot(f"{self.__tmp_directory}/test.png")
+
             # Timestamp of the data.
             data_timestamp = datetime.now().isoformat()
 
@@ -158,6 +164,8 @@ class Client(object):
             file_list = glob.glob(data_file_path_pattern)            
 
             for filename in file_list:
+
+                logging.debug(f"Loading Excel data file '{filename}'...")
                 wb = load_workbook(filename = filename)
                 ws = wb['Historique par jour']
                 minRowNum = max(8, len(ws['B'])+1-self.__lastNRows) if self.__lastNRows > 0 else 8
@@ -176,10 +184,15 @@ class Client(object):
                         row[PropertyNameEnum.TIMESTAMP.value] = data_timestamp
                         self.__data.append(row)
                 wb.close()
+                logging.debug(f"Data read successfully between row #{minRowNum} and row #{maxRowNum}")
             
                 os.remove(filename)
-        except Exception as exception:
-            print(f"Unexpected error occured : {exception}")
+
+                logging.debug("The data update terminates normally")
+
+        except Exception:
+            WebDriverWrapper.logger.error(f"An unexpected error occured while updating the data",  exc_info=True)
         finally:
             # Quit the driver
             driver.quit()
+            

@@ -2,7 +2,6 @@ import os
 import time
 import glob
 import logging
-from selenium import webdriver
 from datetime import datetime
 from openpyxl import load_workbook
 from pygazpar.enum import PropertyNameEnum
@@ -46,19 +45,25 @@ class Client(object):
 
 
     # ------------------------------------------------------
-    def closeEventualPopup(self, driver: WebDriverWrapper):
+    def acceptCookies(self, driver: WebDriverWrapper):
 
-        # Eventually, click Accept in the lower banner to accept cookies from the site.
         try:
-            cookies_accept_button = driver.find_element_by_xpath("//a[@id='_EPcommonPage_WAR_EPportlet_:formBandeauCnil:j_idt12']")
+            cookies_accept_button = driver.find_element_by_xpath("//a[@id='_EPcommonPage_WAR_EPportlet_:formBandeauCnil:j_idt12']", "Cookies accept button", False)
             cookies_accept_button.click()
         except:
             # Do nothing, because the Pop up may not appear.
             pass
 
+
+    # ------------------------------------------------------
+    def closeEventualPopup(self, driver: WebDriverWrapper):
+
+        # Eventually, click Accept in the lower banner to accept cookies from the site.
+        self.acceptCookies(driver)
+
         # Eventually, close Advertisement Popup Windows.
         try:
-            advertisement_popup_element = driver.find_element_by_xpath("/html/body/abtasty-modal/div/div[1]")
+            advertisement_popup_element = driver.find_element_by_xpath("/html/body/abtasty-modal/div/div[1]", "Advertisement close button", False)
             advertisement_popup_element.click()
         except:
             # Do nothing, because the Pop up may not appear.
@@ -66,7 +71,7 @@ class Client(object):
 
         # Eventually, close Survey Popup Windows : /html/body/div[12]/div[2] or //*[@id="mfbIframeClose"]
         try:
-            survey_popup_element = driver.find_element_by_xpath('//*[@id="mfbIframeClose"]')
+            survey_popup_element = driver.find_element_by_xpath("//*[@id='mfbIframeClose']", "Survey close button", False)
             survey_popup_element.click()
         except:
             # Do nothing, because the Pop up may not appear.
@@ -136,6 +141,9 @@ class Client(object):
                 # Do nothing, because the Pop up may not appear.
                 pass    
 
+            # Accept eventual Cookies popup.
+            self.acceptCookies(driver)
+
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label", "Daily consumption button")
             daily_consumption_element.click()
@@ -180,6 +188,7 @@ class Client(object):
                 os.remove(filename)
 
                 Client.logger.debug("The data update terminates normally")
+
 
         except Exception:
             WebDriverWrapper.logger.error(f"An unexpected error occured while updating the data",  exc_info=True)

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.19] - 2021-04-06
+### Added
+- Close an eventual Cookie popup just before clicking the daily button.
+- Add log messages and screenshot capture around click() and send_keys() methods.
+
 ## [0.1.18] - 2021-04-05
 ### Fixed
 - Typo in logger usage.
@@ -70,6 +75,7 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
+[0.1.19]: https://github.com/ssenart/PyGazpar/compare/0.1.17...0.1.19
 [0.1.18]: https://github.com/ssenart/PyGazpar/compare/0.1.17...0.1.18
 [0.1.17]: https://github.com/ssenart/PyGazpar/compare/0.1.16...0.1.17
 [0.1.16]: https://github.com/ssenart/PyGazpar/compare/0.1.15...0.1.16

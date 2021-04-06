@@ -1,8 +1,7 @@
 import os
 import logging
-import traceback
 from selenium import webdriver
-from selenium.webdriver.remote.webelement import WebElement
+from .webelementwrapper import WebElementWrapper
 
 # ------------------------------------------------------------------------------------------------------------
 class WebDriverWrapper:
@@ -51,19 +50,21 @@ class WebDriverWrapper:
         except Exception:
             WebDriverWrapper.logger.warning(f"quit() -> Error",  exc_info=True)
             self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise
 
 
     # ------------------------------------------------------
     def get(self, url: str, description: str): 
 
-        WebDriverWrapper.logger.debug(f"get('{url}') : {description}...")
+        WebDriverWrapper.logger.debug(f"get('{url}'): {description}...")
         try:
             res = self.__driver.get(url)
-            WebDriverWrapper.logger.debug(f"get('{url}') -> Ok")
+            WebDriverWrapper.logger.debug(f"get('{url}'): {description} -> Ok")
             return res
         except Exception:
-            WebDriverWrapper.logger.warning(f"get('{url}') -> Error",  exc_info=True)
+            WebDriverWrapper.logger.warning(f"get('{url}'): {description} -> Error",  exc_info=True)
             self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise
 
 
     # ------------------------------------------------------
@@ -76,32 +77,40 @@ class WebDriverWrapper:
         except Exception:
             WebDriverWrapper.logger.warning(f"current_url() -> Error",  exc_info=True)
             self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise
 
 
     # ------------------------------------------------------
-    def find_element_by_id(self, id: str, description: str) -> WebElement:
+    def find_element_by_id(self, id: str, description: str, screenshotOnNotFound: bool = True) -> WebElementWrapper:
 
-        WebDriverWrapper.logger.debug(f"find_element_by_id('{id}') : {description}...")
+        WebDriverWrapper.logger.debug(f"find_element_by_id('{id}'): {description}...")
         try:
-            res = self.__driver.find_element_by_id(id)
-            WebDriverWrapper.logger.debug(f"find_element_by_id('{id}') -> Ok")
+            element = self.__driver.find_element_by_id(id)
+            res = WebElementWrapper(element, description, self.__tmp_directory)
+            WebDriverWrapper.logger.debug(f"find_element_by_id('{id}'): {description} -> Ok")
             return res
         except Exception:
-            WebDriverWrapper.logger.warning(f"find_element_by_id('{id}') -> Error",  exc_info=True)
-            self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            WebDriverWrapper.logger.warning(f"find_element_by_id('{id}'): {description} -> Not found",  exc_info=False)
+            if screenshotOnNotFound:
+                self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise
 
 
     # ------------------------------------------------------
-    def find_element_by_xpath(self, xpath: str, description: str) -> WebElement:
+    def find_element_by_xpath(self, xpath: str, description: str, screenshotOnNotFound: bool = True) -> WebElementWrapper:
 
-        WebDriverWrapper.logger.debug(f"find_element_by_xpath('{xpath}') : {description}...")
+        WebDriverWrapper.logger.debug(f"find_element_by_xpath('{xpath}'): {description}...")
         try:
-            res = self.__driver.find_element_by_xpath(xpath)
-            WebDriverWrapper.logger.debug(f"find_element_by_xpath('{xpath}') -> Ok")
+            element = self.__driver.find_element_by_xpath(xpath)
+            res = WebElementWrapper(element, description, self.__tmp_directory)
+            WebDriverWrapper.logger.debug(f"find_element_by_xpath('{xpath}'): {description} -> Ok")
             return res
         except Exception:
-            WebDriverWrapper.logger.warning(f"find_element_by_xpath('{xpath}') -> Error",  exc_info=True)
-            self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            WebDriverWrapper.logger.warning(f"find_element_by_xpath('{xpath}'): {description} -> Not found",  exc_info=False)
+            if screenshotOnNotFound:
+                self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise
+
 
     # ------------------------------------------------------
     def save_screenshot(self, filename: str):
@@ -113,4 +122,4 @@ class WebDriverWrapper:
             return res
         except Exception:
             WebDriverWrapper.logger.warning(f"save_screenshot('{filename}') -> Error",  exc_info=True)
-           
+

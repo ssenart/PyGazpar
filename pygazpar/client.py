@@ -56,6 +56,17 @@ class Client(object):
 
 
     # ------------------------------------------------------
+    def acceptPrivacyConditions(self, driver: WebDriverWrapper):
+
+        try:
+            accept_button = driver.find_element_by_xpath("//a[contains(text(),'Tout accepter')]", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass
+
+
+    # ------------------------------------------------------
     def closeEventualPopup(self, driver: WebDriverWrapper):
 
         # Eventually, click Accept in the lower banner to accept cookies from the site.
@@ -141,8 +152,8 @@ class Client(object):
                 # Do nothing, because the Pop up may not appear.
                 pass    
 
-            # Accept eventual Cookies popup.
-            self.acceptCookies(driver)
+            # Accept an eventual Privacy Conditions popup.
+            self.acceptPrivacyConditions(driver)
 
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label", "Daily consumption button")

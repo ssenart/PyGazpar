@@ -58,8 +58,52 @@ class Client(object):
     # ------------------------------------------------------
     def acceptPrivacyConditions(self, driver: WebDriverWrapper):
 
+        # linkText=Tout accepter
+        # css=#btn_accept_banner 
+
         try:
+            # id=btn_accept_banner
+            accept_button = driver.find_element_by_id("btn_accept_banner", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass
+
+        try:
+            # xpath=//a[contains(text(),'Tout accepter')]
             accept_button = driver.find_element_by_xpath("//a[contains(text(),'Tout accepter')]", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass            
+
+        try:
+            # xpath=//a[@id='btn_accept_banner']
+            accept_button = driver.find_element_by_xpath("//a[@id='btn_accept_banner']", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass
+
+        try:
+            # xpath=//div[@id='ckieBnr_banner']/div[2]/a[2]
+            accept_button = driver.find_element_by_xpath("//div[@id='ckieBnr_banner']/div[2]/a[2]", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass
+
+        try:
+            # xpath=//div[9]/div[2]/a[2]
+            accept_button = driver.find_element_by_xpath("//div[9]/div[2]/a[2]", "Privacy Conditions accept button", False)
+            accept_button.click()
+        except:
+            # Do nothing, because the Pop up may not appear.
+            pass
+        
+        try:
+            # xpath=//a[contains(.,'Tout accepter')]
+            accept_button = driver.find_element_by_xpath("//a[contains(.,'Tout accepter')]", "Privacy Conditions accept button", False)
             accept_button.click()
         except:
             # Do nothing, because the Pop up may not appear.

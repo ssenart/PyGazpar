@@ -16,7 +16,7 @@ class WebDriverWrapper:
         self.__tmp_directory = tmp_directory
 
         # We remove the geckodriver log file
-        geckodriverLogFile = self.__tmp_directory + '/pygazpar_geckodriver.log'
+        geckodriverLogFile = f"{self.__tmp_directory}/pygazpar_geckodriver.log"
         if os.path.isfile(geckodriverLogFile):
             os.remove(geckodriverLogFile)
 

@@ -70,4 +70,4 @@ jobs:
       run: |
         python updateVersion.py --nextVersion ${{ github.event.release.tag_name }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
-        twine upload dist/*
+        twine upload --skip-existing dist/*

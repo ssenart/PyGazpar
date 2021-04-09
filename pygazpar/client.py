@@ -17,6 +17,7 @@ DEFAULT_TMP_DIRECTORY = '/tmp'
 DEFAULT_FIREFOX_WEBDRIVER = os.getcwd() + '/geckodriver'
 DEFAULT_WAIT_TIME = 30
 
+
 # ------------------------------------------------------------------------------------------------------------
 class LoginError(Exception):
     """ Client has failed to login in GrDF Web site (check username/password)"""
@@ -31,18 +32,16 @@ class Client(object):
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = 0):
         self.__username = username
-        self.__password = password        
+        self.__password = password
         self.__firefox_webdriver_executable = firefox_webdriver_executable
         self.__wait_time = wait_time
         self.__tmp_directory = tmp_directory
         self.__data = []
         self.__lastNRows = lastNRows
 
-
     # ------------------------------------------------------
     def data(self):
         return self.__data
-
 
     # ------------------------------------------------------
     def acceptCookies(self, driver: WebDriverWrapper):
@@ -50,10 +49,9 @@ class Client(object):
         try:
             cookies_accept_button = driver.find_element_by_xpath("//a[@id='_EPcommonPage_WAR_EPportlet_:formBandeauCnil:j_idt12']", "Cookies accept button", False)
             cookies_accept_button.click()
-        except:
+        except Exception:
             # Do nothing, because the Pop up may not appear.
             pass
-
 
     # ------------------------------------------------------
     def acceptPrivacyConditions(self, driver: WebDriverWrapper):
@@ -62,10 +60,9 @@ class Client(object):
             # id=btn_accept_banner
             accept_button = driver.find_element_by_id("btn_accept_banner", "Privacy Conditions accept button", False)
             accept_button.click()
-        except:
+        except Exception:
             # Do nothing, because the Pop up may not appear.
             pass
-
 
     # ------------------------------------------------------
     def closeEventualPopup(self, driver: WebDriverWrapper):
@@ -80,7 +77,7 @@ class Client(object):
         try:
             advertisement_popup_element = driver.find_element_by_xpath("/html/body/abtasty-modal/div/div[1]", "Advertisement close button", False)
             advertisement_popup_element.click()
-        except:
+        except Exception:
             # Do nothing, because the Pop up may not appear.
             pass
 
@@ -88,10 +85,9 @@ class Client(object):
         try:
             survey_popup_element = driver.find_element_by_xpath("//*[@id='mfbIframeClose']", "Survey close button", False)
             survey_popup_element.click()
-        except:
+        except Exception:
             # Do nothing, because the Pop up may not appear.
             pass
-
 
     # ------------------------------------------------------
     def update(self):
@@ -111,28 +107,28 @@ class Client(object):
         driver = WebDriverWrapper(self.__firefox_webdriver_executable, self.__wait_time, self.__tmp_directory)
 
         try:
-          
-            ## Login URL
+
+            # Login URL
             driver.get(LOGIN_URL, "Go to login page")
 
             # Fill login form
             email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email", "Login page: Email text field")
             password_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:passwordSecretSeConnecter", "Login page: Password text field")
-            
+
             email_element.send_keys(self.__username)
             password_element.send_keys(self.__password)
-            
+
             # Submit the login form.
             submit_button_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:meConnecter", "Login page: 'Me connecter' button")
             submit_button_element.click()
-            
+
             # Close eventual popup Windows or Assistant appearing.
             self.closeEventualPopup(driver)
 
             # Once we find the 'Acceder' button from the main page, we are logged on successfully.
             try:
                 driver.find_element_by_xpath("//div[2]/div[2]/div/a/div", "Welcome page: 'Acceder' button of 'Suivi de consommation'")
-            except:
+            except Exception:
                 # Perhaps, login has failed.
                 if driver.current_url() == WELCOME_URL:
                     # We're good.
@@ -143,7 +139,7 @@ class Client(object):
                     raise
 
             # Page 'votre consommation'
-            driver.get(DATA_URL, "Go to 'Consommations' page")          
+            driver.get(DATA_URL, "Go to 'Consommations' page")
 
             # Wait for the data page to load completely.
             time.sleep(self.__wait_time)
@@ -152,9 +148,9 @@ class Client(object):
             try:
                 tokyWoky_close_button = driver.find_element_by_xpath("//div[@id='toky_container']/div/div", "TokyWoky assistant close button")
                 tokyWoky_close_button.click()
-            except:
+            except Exception:
                 # Do nothing, because the Pop up may not appear.
-                pass    
+                pass
 
             # Select daily consumption
             daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label", "Daily consumption button")
@@ -162,7 +158,7 @@ class Client(object):
 
             # Download file
             # xpath=//button[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:telechargerDonnees']/span
-            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span", "Download button")                                                                   
+            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span", "Download button")
             download_button_element.click()
 
             # Timestamp of the data.
@@ -170,21 +166,21 @@ class Client(object):
 
             # Wait a few for the download to complete
             time.sleep(self.__wait_time)
-            
+
             # Load the XLSX file into the data structure
-            file_list = glob.glob(data_file_path_pattern)            
+            file_list = glob.glob(data_file_path_pattern)
 
             for filename in file_list:
 
                 Client.logger.debug(f"Loading Excel data file '{filename}'...")
-                wb = load_workbook(filename = filename)
+                wb = load_workbook(filename=filename)
                 ws = wb['Historique par jour']
-                minRowNum = max(8, len(ws['B'])+1-self.__lastNRows) if self.__lastNRows > 0 else 8
+                minRowNum = max(8, len(ws['B']) + 1 - self.__lastNRows) if self.__lastNRows > 0 else 8
                 maxRowNum = len(ws['B'])
                 for rownum in range(minRowNum, maxRowNum + 1):
                     row = {}
-                    if ws.cell(column=2, row=rownum).value != None:
-                        row[PropertyNameEnum.DATE.value] = ws.cell(column=2, row=rownum).value                        
+                    if ws.cell(column=2, row=rownum).value is not None:
+                        row[PropertyNameEnum.DATE.value] = ws.cell(column=2, row=rownum).value
                         row[PropertyNameEnum.START_INDEX_M3.value] = ws.cell(column=3, row=rownum).value
                         row[PropertyNameEnum.END_INDEX_M3.value] = ws.cell(column=4, row=rownum).value
                         row[PropertyNameEnum.VOLUME_M3.value] = ws.cell(column=5, row=rownum).value
@@ -196,15 +192,12 @@ class Client(object):
                         self.__data.append(row)
                 wb.close()
                 Client.logger.debug(f"Data read successfully between row #{minRowNum} and row #{maxRowNum}")
-            
+
                 os.remove(filename)
 
                 Client.logger.debug("The data update terminates normally")
-
-
         except Exception:
-            WebDriverWrapper.logger.error(f"An unexpected error occured while updating the data",  exc_info=True)
+            WebDriverWrapper.logger.error("An unexpected error occured while updating the data", exc_info=True)
         finally:
             # Quit the driver
             driver.quit()
-            

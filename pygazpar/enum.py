@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class PropertyNameEnum(Enum):
     DATE = "date"
     START_INDEX_M3 = "start_index_m3"

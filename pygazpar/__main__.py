@@ -7,32 +7,33 @@ import logging
 
 from pygazpar.client import Client
 
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--username",
-                      required=True,
-                      help="GRDF username (email)")    
+                        required=True,
+                        help="GRDF username (email)")
     parser.add_argument("-p", "--password",
-                      required=True,
-                      help="GRDF password")    
+                        required=True,
+                        help="GRDF password")
     parser.add_argument("-w", "--webdriver",
-                      required=True,
-                      help="Firefox webdriver executable (geckodriver)")    
+                        required=True,
+                        help="Firefox webdriver executable (geckodriver)")
     parser.add_argument("-s", "--wait_time",
-                      required=False,
-                      type=int,
-                      default=30,
-                      help="Wait time in seconds (see https://selenium-python.readthedocs.io/waits.html for details)")    
+                        required=False,
+                        type=int,
+                        default=30,
+                        help="Wait time in seconds (see https://selenium-python.readthedocs.io/waits.html for details)")
     parser.add_argument("-t", "--tmpdir",
-                      required=False,
-                      default="/tmp",
-                      help="tmp directory (default is /tmp)")
+                        required=False,
+                        default="/tmp",
+                        help="tmp directory (default is /tmp)")
     parser.add_argument("-l", "--lastNRows",
-                      required=False,
-                      type=int,
-                      default=0,
-                      help="Get only the last N rows (default is 0: it means all rows are retrieved)")                           
+                        required=False,
+                        type=int,
+                        default=0,
+                        help="Get only the last N rows (default is 0: it means all rows are retrieved)")
 
     args = parser.parse_args()
 
@@ -53,6 +54,7 @@ def main():
         return 1
 
     print(json.dumps(client.data(), indent=2))
+
 
 if __name__ == '__main__':
     sys.exit(main())

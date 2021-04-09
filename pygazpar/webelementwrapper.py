@@ -1,6 +1,7 @@
 import logging
 from selenium.webdriver.remote.webelement import WebElement
 
+
 # ------------------------------------------------------------------------------------------------------------
 class WebElementWrapper:
 
@@ -13,19 +14,17 @@ class WebElementWrapper:
         self.__description = description
         self.__tmp_directory = tmp_directory
 
-
     # ------------------------------------------------------
     def click(self):
 
         WebElementWrapper.logger.debug(f"click(): {self.__description}...")
         try:
             self.__element.click()
-            WebElementWrapper.logger.debug(f"click() -> Ok")
+            WebElementWrapper.logger.debug("click() -> Ok")
         except Exception:
-            WebElementWrapper.logger.warning(f"click(): {self.__description} -> Error",  exc_info=True)
+            WebElementWrapper.logger.warning("click(): {self.__description} -> Error", exc_info=True)
             self.__element.parent.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
             raise
-
 
     # ------------------------------------------------------
     def send_keys(self, value: str):
@@ -35,6 +34,6 @@ class WebElementWrapper:
             self.__element.send_keys(value)
             WebElementWrapper.logger.debug(f"send_keys({value}) -> Ok")
         except Exception:
-            WebElementWrapper.logger.warning(f"send_keys({value}): {self.__description} -> Error",  exc_info=True)
+            WebElementWrapper.logger.warning(f"send_keys({value}): {self.__description} -> Error", exc_info=True)
             self.__element.parent.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
             raise

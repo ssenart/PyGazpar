@@ -24,7 +24,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python }}
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
@@ -54,11 +54,20 @@ jobs:
         path: junit/test-results-${{ matrix.python-version }}.xml
       if: ${{ always() }}
 
+    - name: Wheel Python Tag creation
+      uses: frabert/replace-string-action@master
+      id: python-tag
+      with:
+        pattern: '(\w+)\.(\w+)'
+        string: '${{ matrix.python-version }}'
+        replace-with: 'py$1$2'
+        flags: 'g'
+
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python updateVersion.py --nextVersion ${{ github.event.release.tag_name }}
-        python setup.py sdist bdist_wheel
+        python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
         twine upload dist/*

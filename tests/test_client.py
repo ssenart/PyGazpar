@@ -1,6 +1,7 @@
 from pygazpar.client import Client
 import pytest
 
+
 class TestClient:
 
     username = ""

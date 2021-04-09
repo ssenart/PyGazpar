@@ -51,12 +51,3 @@ jobs:
         name: pytest-results-${{ matrix.python-version }}
         path: junit/test-results-${{ matrix.python-version }}.xml
       if: ${{ always() }}
-
-    - name: Wheel Python Tag creation
-      uses: frabert/replace-string-action@master
-      id: python-tag
-      with:
-        pattern: '(\w+)\.(\w+)'
-        string: '${{ matrix.python-version }}'
-        replace-with: 'py$1$2'
-        flags: 'g'

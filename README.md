@@ -30,6 +30,11 @@ $ virtualenv venv
 ```
 
 ### PyGazpar installation
+Activate your virtual environment.
+```bash
+source venv/bin/activate
+```
+
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install PyGazpar.
 
 ```bash

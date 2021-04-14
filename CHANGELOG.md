@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.24] - 2021-04-14
+### Added
+- README.md amendment (thanks to pbranly).
+
 ## [0.1.23] - 2021-04-09
 ### Changed
 - Final release with CI/CD workflow improvement.
@@ -91,6 +95,7 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
+[0.1.24]: https://github.com/ssenart/PyGazpar/compare/0.1.23...0.1.24
 [0.1.23]: https://github.com/ssenart/PyGazpar/compare/0.1.22...0.1.23
 [0.1.22]: https://github.com/ssenart/PyGazpar/compare/0.1.21...0.1.22
 [0.1.21]: https://github.com/ssenart/PyGazpar/compare/0.1.20...0.1.21

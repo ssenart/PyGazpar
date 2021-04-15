@@ -87,9 +87,12 @@ class WebDriverWrapper:
             WebDriverWrapper.logger.debug(f"find_element_by_id('{id}'): {description} -> Ok")
             return res
         except Exception:
-            WebDriverWrapper.logger.warning(f"find_element_by_id('{id}'): {description} -> Not found", exc_info=False)
+            message = f"find_element_by_id('{id}'): {description} -> Not found"
             if screenshotOnNotFound:
+                WebDriverWrapper.logger.warning(message, exc_info=True)
                 self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            else:
+                WebDriverWrapper.logger.debug(message, exc_info=False)
             raise
 
     # ------------------------------------------------------
@@ -102,9 +105,12 @@ class WebDriverWrapper:
             WebDriverWrapper.logger.debug(f"find_element_by_xpath('{xpath}'): {description} -> Ok")
             return res
         except Exception:
-            WebDriverWrapper.logger.warning(f"find_element_by_xpath('{xpath}'): {description} -> Not found", exc_info=False)
+            message = f"find_element_by_xpath('{xpath}'): {description} -> Not found"
             if screenshotOnNotFound:
+                WebDriverWrapper.logger.warning(message, exc_info=True)
                 self.__driver.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            else:
+                WebDriverWrapper.logger.debug(message, exc_info=False)
             raise
 
     # ------------------------------------------------------

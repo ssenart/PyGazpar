@@ -20,6 +20,13 @@ class WebDriverWrapper:
         if not os.path.exists(self.__tmp_directory):
             os.mkdir(self.__tmp_directory)
 
+        # Transform tmp directory into absolute path for Webdriver.
+        if not os.path.isabs(self.__tmp_directory):
+            self.__tmp_directory = f"{os.getcwd()}/{self.__tmp_directory}"
+
+        # Normalize path separator.
+        self.__tmp_directory = os.path.normpath(self.__tmp_directory)
+
         # Geckodriver log file.
         geckodriverLogFile = f"{self.__tmp_directory}/pygazpar_geckodriver.log"
 

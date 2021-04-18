@@ -10,6 +10,9 @@ import pygazpar
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--version",
+                        action="version",
+                        version=f"PyGazpar {pygazpar.__version__}")
     parser.add_argument("-u", "--username",
                         required=True,
                         help="GRDF username (email)")
@@ -45,6 +48,10 @@ def main():
                         help="Meter reading frequency (DAILY, WEEKLY, MONTHLY)")
 
     args = parser.parse_args()
+
+    # We create the tmp directory if not already exists.
+    if not os.path.exists(args.tmpdir):
+        os.mkdir(args.tmpdir)
 
     # We remove the pygazpar log file.
     pygazparLogFile = f"{args.tmpdir}/pygazpar.log"

@@ -185,6 +185,9 @@ class Client(object):
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)
 
+            if len(file_list) == 0:
+                WebDriverWrapper.logger.warning(f"Not any data file has been found in '{self.__tmp_directory}' directory")
+
             for filename in file_list:
 
                 self.__data = DataFileParser.parse(filename, self.__meterReadingFrequency, self.__lastNRows)

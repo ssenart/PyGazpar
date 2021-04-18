@@ -1,8 +1,6 @@
 from pygazpar.enum import Frequency
 from pygazpar.client import Client
 import os
-import logging
-import pytest
 
 
 class TestClient:

@@ -37,7 +37,7 @@ def main():
                         required=False,
                         action='store_true',
                         default=False,
-                        help="Run Selenium in headfull mode (default is headless)")                        
+                        help="Run Selenium in headfull mode (default is headless)")
 
     args = parser.parse_args()
 

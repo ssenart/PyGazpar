@@ -130,3 +130,5 @@ Please make sure to update tests as appropriate.
 
 ## Project status
 PyGazpar has been initiated for integration with [Home Assistant](https://www.home-assistant.io/).
+
+Corresponding Home Assistant integration custom component is available [here](https://github.com/ssenart/ha-custom_components).

@@ -4,9 +4,7 @@ import json
 import traceback
 import os
 import logging
-
-from pygazpar.client import Client
-
+import pygazpar
 
 def main():
     """Main function"""
@@ -45,7 +43,13 @@ def main():
     # Setup logging.
     logging.basicConfig(filename=f"{args.tmpdir}/pygazpar.log", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 
-    client = Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
+    logging.info(f"PyGazpar {pygazpar.__version__}")
+    logging.info(f"--webdriver {args.webdriver}")
+    logging.info(f"--wait_time {int(args.wait_time)}")
+    logging.info(f"--tmpdir {args.tmpdir}")
+    logging.info(f"--lastNRows {int(args.lastNRows)}")
+
+    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
 
     try:
         client.update()

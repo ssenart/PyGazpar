@@ -195,7 +195,7 @@ class Client(object):
 
                 os.remove(filename)
 
-                Client.logger.debug("The data update terminates normally")
+            Client.logger.debug("The data update terminates normally")
         except Exception:
             WebDriverWrapper.logger.error("An unexpected error occured while updating the data", exc_info=True)
         finally:

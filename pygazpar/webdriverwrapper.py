@@ -26,11 +26,12 @@ class WebDriverWrapper:
         # options.log.level = 'trace'
         options.headless = True
         profile = webdriver.FirefoxProfile()
-        profile.set_preference('browser.download.folderList', 2)  # custom location
-        profile.set_preference('browser.download.manager.showWhenStarting', False)
-        profile.set_preference('browser.helperApps.alwaysAsk.force', False)
+        profile.set_preference('browser.download.folderList', 2)  # 2 indicates a custom (see: browser.download.dir) folder.
         profile.set_preference('browser.download.dir', self.__tmp_directory)
-        profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        profile.set_preference('browser.download.manager.showWhenStarting', False)  # Whether or not to show the Downloads window when a download begins.
+        profile.set_preference('browser.download.loglevel', 'Debug')
+        profile.set_preference('browser.helperApps.alwaysAsk.force', False)
+        profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/excel, application/vnd.ms-excel, application/x-excel, application/x-msexcel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
         self.__driver = webdriver.Firefox(executable_path=self.__firefox_webdriver_executable, firefox_profile=profile, options=options, service_log_path=geckodriverLogFile)
 

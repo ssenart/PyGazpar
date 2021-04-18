@@ -16,6 +16,8 @@ DATA_FILENAME = 'Consommations gaz_*.xlsx'
 DEFAULT_TMP_DIRECTORY = '/tmp'
 DEFAULT_FIREFOX_WEBDRIVER = os.getcwd() + '/geckodriver'
 DEFAULT_WAIT_TIME = 30
+DEFAULT_LAST_N_ROWS = 0
+DEFAULT_HEADLESS_MODE = True
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -30,7 +32,7 @@ class Client(object):
     logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = 0):
+    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = DEFAULT_LAST_N_ROWS, headLessMode: bool = DEFAULT_HEADLESS_MODE):
         self.__username = username
         self.__password = password
         self.__firefox_webdriver_executable = firefox_webdriver_executable
@@ -38,6 +40,7 @@ class Client(object):
         self.__tmp_directory = tmp_directory
         self.__data = []
         self.__lastNRows = lastNRows
+        self.__headlessMode = headLessMode
 
     # ------------------------------------------------------
     def data(self):
@@ -104,7 +107,7 @@ class Client(object):
                 os.remove(filename)
 
         # Create the WebDriver with the ability to log and take screenshot for debugging.
-        driver = WebDriverWrapper(self.__firefox_webdriver_executable, self.__wait_time, self.__tmp_directory)
+        driver = WebDriverWrapper(self.__firefox_webdriver_executable, self.__wait_time, self.__tmp_directory, self.__headlessMode)
 
         try:
 

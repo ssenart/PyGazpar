@@ -10,7 +10,7 @@ class WebDriverWrapper:
     logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------
-    def __init__(self, firefox_webdriver_executable: str, wait_time: int, tmp_directory: str):
+    def __init__(self, firefox_webdriver_executable: str, wait_time: int, tmp_directory: str, headLessMode: bool):
 
         self.__firefox_webdriver_executable = firefox_webdriver_executable
         self.__wait_time = wait_time
@@ -24,12 +24,11 @@ class WebDriverWrapper:
         # Initialize the Firefox WebDriver
         options = webdriver.FirefoxOptions()
         # options.log.level = 'trace'
-        options.headless = True
+        options.headless = headLessMode
         profile = webdriver.FirefoxProfile()
         profile.set_preference('browser.download.folderList', 2)  # 2 indicates a custom (see: browser.download.dir) folder.
         profile.set_preference('browser.download.dir', self.__tmp_directory)
         profile.set_preference('browser.download.manager.showWhenStarting', False)  # Whether or not to show the Downloads window when a download begins.
-        profile.set_preference('browser.download.loglevel', 'Debug')
         profile.set_preference('browser.helperApps.alwaysAsk.force', False)
         profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/excel, application/vnd.ms-excel, application/x-excel, application/x-msexcel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 

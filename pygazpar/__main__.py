@@ -6,6 +6,7 @@ import os
 import logging
 import pygazpar
 
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
@@ -32,6 +33,11 @@ def main():
                         type=int,
                         default=0,
                         help="Get only the last N rows (default is 0: it means all rows are retrieved)")
+    parser.add_argument("--headfull",
+                        required=False,
+                        action='store_true',
+                        default=False,
+                        help="Run Selenium in headfull mode (default is headless)")                        
 
     args = parser.parse_args()
 
@@ -48,8 +54,9 @@ def main():
     logging.info(f"--wait_time {int(args.wait_time)}")
     logging.info(f"--tmpdir {args.tmpdir}")
     logging.info(f"--lastNRows {int(args.lastNRows)}")
+    logging.info(f"--headfull {bool(args.headfull)}")
 
-    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows))
+    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows), not bool(args.headfull))
 
     try:
         client.update()

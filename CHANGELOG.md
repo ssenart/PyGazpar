@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.26](https://github.com/ssenart/PyGazpar/compare/0.1.25...0.1.26) - 2021-04-18
+### Fixed
+- [#10](https://github.com/ssenart/PyGazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory).
+
+### Added
+- A new parameter to drive whether we want Selenium in headless mode or not (mainly for troubleshooting purpose).
+
 ## [0.1.25] - 2021-04-15
 ### Fixed
 - Remove useless warning log messages (log message level has been decreased to debug).

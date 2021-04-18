@@ -31,7 +31,7 @@ jobs:
         sudo apt -y update
         sudo apt -y install firefox
         sudo apt -y --only-upgrade install firefox
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -60,7 +60,9 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: pytest-results-${{ matrix.python-version }}
-        path: junit/test-results-${{ matrix.python-version }}.xml
+        path: |
+          junit/test-results-${{ matrix.python-version }}.xml
+          tmp/
       if: ${{ always() }}
 
     - name: Wheel Python Tag creation

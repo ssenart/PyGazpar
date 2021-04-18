@@ -2,10 +2,10 @@ import os
 import time
 import glob
 import logging
-from datetime import datetime
-from openpyxl import load_workbook
-from pygazpar.enum import PropertyNameEnum
-from .webdriverwrapper import WebDriverWrapper
+from pygazpar.enum import Frequency
+from pygazpar.datafileparser import DataFileParser
+from pygazpar.webdriverwrapper import WebDriverWrapper
+
 
 HOME_URL = 'https://monespace.grdf.fr'
 LOGIN_URL = HOME_URL + '/monespace/connexion'
@@ -18,6 +18,7 @@ DEFAULT_FIREFOX_WEBDRIVER = os.getcwd() + '/geckodriver'
 DEFAULT_WAIT_TIME = 30
 DEFAULT_LAST_N_ROWS = 0
 DEFAULT_HEADLESS_MODE = True
+DEFAULT_METER_READING_FREQUENCY = Frequency.DAILY
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ class Client(object):
     logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = DEFAULT_LAST_N_ROWS, headLessMode: bool = DEFAULT_HEADLESS_MODE):
+    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = DEFAULT_LAST_N_ROWS, headLessMode: bool = DEFAULT_HEADLESS_MODE, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY):
         self.__username = username
         self.__password = password
         self.__firefox_webdriver_executable = firefox_webdriver_executable
@@ -41,6 +42,7 @@ class Client(object):
         self.__data = []
         self.__lastNRows = lastNRows
         self.__headlessMode = headLessMode
+        self.__meterReadingFrequency = meterReadingFrequency
 
     # ------------------------------------------------------
     def data(self):
@@ -155,17 +157,27 @@ class Client(object):
                 # Do nothing, because the Pop up may not appear.
                 pass
 
+            buttonDescriptionByFrequency = {
+                Frequency.HOURLY: "Hourly consumption button",
+                Frequency.DAILY: "Daily consumption button",
+                Frequency.WEEKLY: "Weekly consumption button",
+                Frequency.MONTHLY: "Monthly consumption button"
+            }
+
+            xpathByFrequency = {
+                Frequency.HOURLY: "//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[4]/label",
+                Frequency.DAILY: "//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label",
+                Frequency.WEEKLY: "//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[2]/label",
+                Frequency.MONTHLY: "//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[1]/label"
+            }
+
             # Select daily consumption
-            daily_consumption_element = driver.find_element_by_xpath("//table[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:panelTypeGranularite1']/tbody/tr/td[3]/label", "Daily consumption button")
+            daily_consumption_element = driver.find_element_by_xpath(xpathByFrequency[self.__meterReadingFrequency], buttonDescriptionByFrequency[self.__meterReadingFrequency])
             daily_consumption_element.click()
 
             # Download file
-            # xpath=//button[@id='_eConsoconsoDetaille_WAR_eConsoportlet_:idFormConsoDetaille:telechargerDonnees']/span
-            download_button_element = driver.find_element_by_xpath("//button[@onclick=\"envoieGATelechargerConsoDetaille('particulier', 'jour_kwh');\"]/span", "Download button")
+            download_button_element = driver.find_element_by_xpath("//button[@title=\"Télécharger\"]/span", "Download button")
             download_button_element.click()
-
-            # Timestamp of the data.
-            data_timestamp = datetime.now().isoformat()
 
             # Wait a few for the download to complete
             time.sleep(self.__wait_time)
@@ -175,32 +187,14 @@ class Client(object):
 
             for filename in file_list:
 
-                Client.logger.debug(f"Loading Excel data file '{filename}'...")
-                wb = load_workbook(filename=filename)
-                ws = wb['Historique par jour']
-                minRowNum = max(8, len(ws['B']) + 1 - self.__lastNRows) if self.__lastNRows > 0 else 8
-                maxRowNum = len(ws['B'])
-                for rownum in range(minRowNum, maxRowNum + 1):
-                    row = {}
-                    if ws.cell(column=2, row=rownum).value is not None:
-                        row[PropertyNameEnum.DATE.value] = ws.cell(column=2, row=rownum).value
-                        row[PropertyNameEnum.START_INDEX_M3.value] = ws.cell(column=3, row=rownum).value
-                        row[PropertyNameEnum.END_INDEX_M3.value] = ws.cell(column=4, row=rownum).value
-                        row[PropertyNameEnum.VOLUME_M3.value] = ws.cell(column=5, row=rownum).value
-                        row[PropertyNameEnum.ENERGY_KWH.value] = ws.cell(column=6, row=rownum).value
-                        row[PropertyNameEnum.CONVERTER_FACTOR.value] = ws.cell(column=7, row=rownum).value
-                        row[PropertyNameEnum.LOCAL_TEMPERATURE.value] = ws.cell(column=8, row=rownum).value
-                        row[PropertyNameEnum.TYPE.value] = ws.cell(column=9, row=rownum).value
-                        row[PropertyNameEnum.TIMESTAMP.value] = data_timestamp
-                        self.__data.append(row)
-                wb.close()
-                Client.logger.debug(f"Data read successfully between row #{minRowNum} and row #{maxRowNum}")
+                self.__data = DataFileParser.parse(filename, self.__meterReadingFrequency, self.__lastNRows)
 
                 os.remove(filename)
 
             Client.logger.debug("The data update terminates normally")
         except Exception:
             WebDriverWrapper.logger.error("An unexpected error occured while updating the data", exc_info=True)
+            raise
         finally:
             # Quit the driver
             driver.quit()

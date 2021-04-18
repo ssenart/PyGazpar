@@ -1,7 +1,8 @@
 from enum import Enum
 
 
-class PropertyNameEnum(Enum):
+# ------------------------------------------------------------------------------------------------------------
+class PropertyName(Enum):
     DATE = "date"
     START_INDEX_M3 = "start_index_m3"
     END_INDEX_M3 = "end_index_m3"
@@ -11,3 +12,14 @@ class PropertyNameEnum(Enum):
     LOCAL_TEMPERATURE = "local_temperature"
     TYPE = "type"
     TIMESTAMP = "timestamp"
+
+
+# ------------------------------------------------------------------------------------------------------------
+class Frequency(Enum):
+    HOURLY = 0
+    DAILY = 1
+    WEEKLY = 2
+    MONTHLY = 3
+
+    def __str__(self):
+        return self.name

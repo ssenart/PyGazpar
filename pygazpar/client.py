@@ -116,6 +116,9 @@ class Client(object):
             # Login URL
             driver.get(LOGIN_URL, "Go to login page")
 
+            # Accept an eventual Privacy Conditions popup.
+            self.acceptPrivacyConditions(driver)
+
             # Fill login form
             email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email", "Login page: Email text field")
             password_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:passwordSecretSeConnecter", "Login page: Password text field")

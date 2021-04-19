@@ -3,12 +3,12 @@
 
 # Python workflow : https://docs.github.com/en/actions/guides/building-and-testing-python
 
-name: Python Package
+name: Upload Python Package to TestPyPi index
 
 on: [push]
 
 jobs:
-  build:
+  deploy:
 
     runs-on: ubuntu-latest
     strategy:

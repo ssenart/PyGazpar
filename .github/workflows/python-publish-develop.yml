@@ -3,12 +3,12 @@
 
 # Python workflow : https://docs.github.com/en/actions/guides/building-and-testing-python
 
-name: Python Package
+name: Upload Python Package to TestPyPi index
 
 on: [push]
 
 jobs:
-  build:
+  deploy:
 
     runs-on: ubuntu-latest
     strategy:
@@ -83,7 +83,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install wheel flake8 pytest pytest-cov
+        pip install wheel flake8 pytest pytest-cov setuptools wheel twine
 
     - name: Install requirements
       run: |
@@ -125,9 +125,11 @@ jobs:
 
     - name: Build and publish
       env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
       run: |
-        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.semVer }}
+        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.majorMinorPatch }}.dev${{ steps.gitversion.outputs.buildMetaData }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
         twine upload --skip-existing --repository testpypi dist/*
+      if: ${{ matrix.python-version == 3.8}}
+

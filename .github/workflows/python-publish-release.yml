@@ -3,7 +3,7 @@
 
 # Python workflow : https://docs.github.com/en/actions/guides/building-and-testing-python
 
-name: Upload Python Package
+name: Upload Python Package to PyPi index
 
 on:
   release:

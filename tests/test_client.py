@@ -76,25 +76,25 @@ class TestClient:
 
         assert len(client.data()) == 1
 
-    def test_hourly(self):
+    def test_hourly_dummy(self):
         client = DummyClient(0, Frequency.HOURLY)
         client.update()
 
         assert len(client.data()) == 0
 
-    def test_daily(self):
+    def test_daily_dummy(self):
         client = DummyClient(0, Frequency.DAILY)
         client.update()
 
         assert len(client.data()) == 3
 
-    def test_weekly(self):
+    def test_weekly_dummy(self):
         client = DummyClient(0, Frequency.WEEKLY)
         client.update()
 
         assert len(client.data()) == 3
 
-    def test_monthly(self):
+    def test_monthly_dummy(self):
         client = DummyClient(0, Frequency.MONTHLY)
         client.update()
 

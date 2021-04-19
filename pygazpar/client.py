@@ -292,7 +292,7 @@ class DummyClient(IClient):
                     "volume_m3": 124.5,
                     "energy_kwh": 1402,
                     "timestamp": "2019-08-29T16:56:07.380422"
-                }                
+                }
             ],
             Frequency.MONTHLY: [
                 {

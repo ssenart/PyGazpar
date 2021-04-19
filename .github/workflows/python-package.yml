@@ -128,6 +128,6 @@ jobs:
         TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
       run: |
-        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.semVer }}
+        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.majorMinorPatch }}.dev${{ steps.gitversion.outputs.buildMetaData }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
         twine upload --skip-existing --repository testpypi dist/*

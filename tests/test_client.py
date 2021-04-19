@@ -1,6 +1,8 @@
 from pygazpar.enum import Frequency
 from pygazpar.client import Client
+from pygazpar.client import DummyClient
 import os
+import pytest
 
 
 class TestClient:
@@ -46,23 +48,54 @@ class TestClient:
         call.
         """
 
-    def test_daily(self):
+    @pytest.mark.skip(reason="Live data are not available")
+    def test_hourly_live(self):
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.HOURLY)
+        client.update()
+
+        assert len(client.data()) == 0
+
+    @pytest.mark.skip(reason="Live data are not available")
+    def test_daily_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.DAILY)
         client.update()
 
         assert len(client.data()) == 1
 
-    def test_weekly(self):
+    @pytest.mark.skip(reason="Live data are not available")
+    def test_weekly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.WEEKLY)
         client.update()
 
         assert len(client.data()) == 1
 
-    def test_monthly(self):
+    @pytest.mark.skip(reason="Live data are not available")
+    def test_monthly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.MONTHLY)
         client.update()
 
         assert len(client.data()) == 1
 
-    def test_empty(self):
-        assert 1 == 1
+    def test_hourly(self):
+        client = DummyClient(0, Frequency.HOURLY)
+        client.update()
+
+        assert len(client.data()) == 0
+
+    def test_daily(self):
+        client = DummyClient(0, Frequency.DAILY)
+        client.update()
+
+        assert len(client.data()) == 3
+
+    def test_weekly(self):
+        client = DummyClient(0, Frequency.WEEKLY)
+        client.update()
+
+        assert len(client.data()) == 3
+
+    def test_monthly(self):
+        client = DummyClient(0, Frequency.MONTHLY)
+        client.update()
+
+        assert len(client.data()) == 3

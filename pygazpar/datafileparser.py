@@ -11,8 +11,9 @@ class DataFileParser:
 
     logger = logging.getLogger(__name__)
 
+    # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency, lastNRows: int) -> dict:
+    def parse(dataFilename: str, dataReadingFrequency: Frequency, lastNRows: int) -> list:
 
         parseByFrequency = {
             Frequency.HOURLY: DataFileParser.__parseHourly,
@@ -40,12 +41,14 @@ class DataFileParser:
 
         return res
 
+    # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet, lastNRows: int) -> dict:
-        raise NotImplementedError("__parseHourly not yet implemented")
+    def __parseHourly(worksheet: Worksheet, lastNRows: int) -> list:
+        return []
 
+    # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet, lastNRows: int) -> dict:
+    def __parseDaily(worksheet: Worksheet, lastNRows: int) -> list:
 
         res = []
 
@@ -72,8 +75,9 @@ class DataFileParser:
 
         return res
 
+    # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet, lastNRows: int) -> dict:
+    def __parseWeekly(worksheet: Worksheet, lastNRows: int) -> list:
 
         res = []
 
@@ -95,8 +99,9 @@ class DataFileParser:
 
         return res
 
+    # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet, lastNRows: int) -> dict:
+    def __parseMonthly(worksheet: Worksheet, lastNRows: int) -> list:
 
         res = []
 

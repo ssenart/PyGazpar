@@ -2,6 +2,7 @@ import os
 import time
 import glob
 import logging
+from abc import ABC, abstractmethod
 from pygazpar.enum import Frequency
 from pygazpar.datafileparser import DataFileParser
 from pygazpar.webdriverwrapper import WebDriverWrapper
@@ -28,7 +29,19 @@ class LoginError(Exception):
 
 
 # ------------------------------------------------------------------------------------------------------------
-class Client(object):
+class IClient(ABC):
+
+    @abstractmethod
+    def data(self) -> dict:
+        pass
+
+    @abstractmethod
+    def update(self):
+        pass
+
+
+# ------------------------------------------------------------------------------------------------------------
+class Client(IClient):
 
     logger = logging.getLogger(__name__)
 
@@ -45,11 +58,11 @@ class Client(object):
         self.__meterReadingFrequency = meterReadingFrequency
 
     # ------------------------------------------------------
-    def data(self):
+    def data(self) -> dict:
         return self.__data
 
     # ------------------------------------------------------
-    def acceptCookies(self, driver: WebDriverWrapper):
+    def __acceptCookies(self, driver: WebDriverWrapper):
 
         try:
             cookies_accept_button = driver.find_element_by_xpath("//a[@id='_EPcommonPage_WAR_EPportlet_:formBandeauCnil:j_idt12']", "Cookies accept button", False)
@@ -59,7 +72,7 @@ class Client(object):
             pass
 
     # ------------------------------------------------------
-    def acceptPrivacyConditions(self, driver: WebDriverWrapper):
+    def __acceptPrivacyConditions(self, driver: WebDriverWrapper):
 
         try:
             # id=btn_accept_banner
@@ -70,13 +83,13 @@ class Client(object):
             pass
 
     # ------------------------------------------------------
-    def closeEventualPopup(self, driver: WebDriverWrapper):
+    def __closeEventualPopup(self, driver: WebDriverWrapper):
 
         # Accept an eventual Privacy Conditions popup.
-        self.acceptPrivacyConditions(driver)
+        self.__acceptPrivacyConditions(driver)
 
         # Eventually, click Accept in the lower banner to accept cookies from the site.
-        self.acceptCookies(driver)
+        self.__acceptCookies(driver)
 
         # Eventually, close Advertisement Popup Windows.
         try:
@@ -117,7 +130,7 @@ class Client(object):
             driver.get(LOGIN_URL, "Go to login page")
 
             # Accept an eventual Privacy Conditions popup.
-            self.acceptPrivacyConditions(driver)
+            self.__acceptPrivacyConditions(driver)
 
             # Fill login form
             email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email", "Login page: Email text field")
@@ -131,7 +144,7 @@ class Client(object):
             submit_button_element.click()
 
             # Close eventual popup Windows or Assistant appearing.
-            self.closeEventualPopup(driver)
+            self.__closeEventualPopup(driver)
 
             # Once we find the 'Acceder' button from the main page, we are logged on successfully.
             try:
@@ -204,3 +217,103 @@ class Client(object):
         finally:
             # Quit the driver
             driver.quit()
+
+
+# ------------------------------------------------------------------------------------------------------------
+class DummyClient(IClient):
+
+    logger = logging.getLogger(__name__)
+
+    # ------------------------------------------------------
+    def __init__(self, lastNRows: int = DEFAULT_LAST_N_ROWS, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY):
+        self.__lastNRows = lastNRows
+        self.__meterReadingFrequency = meterReadingFrequency
+        self.__data = []
+
+    # ------------------------------------------------------
+    def data(self) -> dict:
+        return self.__data
+
+    # ------------------------------------------------------
+    def update(self):
+
+        dataByFrequency = {
+            Frequency.HOURLY: [],
+            Frequency.DAILY: [
+                {
+                    "date": "01/07/2019",
+                    "start_index_m3": 9802.0,
+                    "end_index_m3": 9805.0,
+                    "volume_m3": 3.6,
+                    "energy_kwh": 40.0,
+                    "converter_factor": "11,244",
+                    "local_temperature": "",
+                    "type": "MES",
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "02/07/2019",
+                    "start_index_m3": 9805.0,
+                    "end_index_m3": 9808.0,
+                    "volume_m3": 2.8,
+                    "energy_kwh": 31.0,
+                    "converter_factor": "11,244",
+                    "local_temperature": "21",
+                    "type": "MES",
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "03/07/2019",
+                    "start_index_m3": 9808.0,
+                    "end_index_m3": 9811.0,
+                    "volume_m3": 2.9,
+                    "energy_kwh": 33.0,
+                    "converter_factor": "11,244",
+                    "local_temperature": "",
+                    "type": "MES",
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                }
+            ],
+            Frequency.WEEKLY: [
+                {
+                    "date": "Semaine 13 - 2021",
+                    "volume_m3": 317.6,
+                    "energy_kwh": 3547,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "Semaine 14 - 2021",
+                    "volume_m3": 261.1,
+                    "energy_kwh": 2937,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "Semaine 15 - 2021",
+                    "volume_m3": 124.5,
+                    "energy_kwh": 1402,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                }                
+            ],
+            Frequency.MONTHLY: [
+                {
+                    "date": "Février 2021",
+                    "volume_m3": 317.6,
+                    "energy_kwh": 3547,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "Mars 2021",
+                    "volume_m3": 261.1,
+                    "energy_kwh": 2937,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                },
+                {
+                    "date": "Avril 2021",
+                    "volume_m3": 124.5,
+                    "energy_kwh": 1402,
+                    "timestamp": "2019-08-29T16:56:07.380422"
+                }
+            ]
+        }
+
+        self.__data = dataByFrequency[self.__meterReadingFrequency]

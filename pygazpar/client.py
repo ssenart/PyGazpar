@@ -145,7 +145,7 @@ class Client(IClient):
         # XLSX is in the TMP directory
         data_file_path_pattern = self.__tmp_directory + '/' + DATA_FILENAME
 
-        # We remove an eventual existing data file (from a previous run that has not deleted it)
+        # We remove an eventual existing data file (from a previous run that has not deleted it).
         file_list = glob.glob(data_file_path_pattern)
         for filename in file_list:
             if os.path.isfile(filename):

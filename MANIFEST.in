@@ -1,4 +1,4 @@
-include pygazpar/hourly_data_sample.json
-include pygazpar/daily_data_sample.json
-include pygazpar/weekly_data_sample.json
-include pygazpar/monthly_data_sample.json
+include pygazpar/resources/hourly_data_sample.json
+include pygazpar/resources/daily_data_sample.json
+include pygazpar/resources/weekly_data_sample.json
+include pygazpar/resources/monthly_data_sample.json

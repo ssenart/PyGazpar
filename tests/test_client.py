@@ -47,7 +47,7 @@ class TestClient:
         call.
         """
 
-    # @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Hourly data is not yet implemented")
     def test_hourly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.HOURLY)
         client.update()

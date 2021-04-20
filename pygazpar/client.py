@@ -128,12 +128,11 @@ class Client(IClient):
         }
 
         try:
-            dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/{dataSampleFilenameByFrequency[self.__meterReadingFrequency]}"
+            dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[self.__meterReadingFrequency]}"
 
             with open(dataSampleFilename) as jsonFile:
                 data = json.load(jsonFile)
                 self.__data = data[-self.__lastNRows:]
-
         except Exception:
             WebDriverWrapper.logger.error("An unexpected error occured while loading sample data", exc_info=True)
             raise

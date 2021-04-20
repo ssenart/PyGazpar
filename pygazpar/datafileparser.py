@@ -3,6 +3,7 @@ from datetime import datetime
 from pygazpar.enum import Frequency
 from pygazpar.enum import PropertyName
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.cell.cell import Cell
 from openpyxl import load_workbook
 
 
@@ -43,6 +44,19 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
+    def __fillRow(row: dict, propertyName: str, cell: Cell, isNumber: bool):
+
+        if isNumber:
+            if type(cell.value) is str:
+                if len(cell.value.strip()) > 0:
+                    row[propertyName] = float(cell.value.replace(',', '.'))
+            else:
+                row[propertyName] = float(cell.value)
+        else:
+            row[propertyName] = cell.value
+
+    # ------------------------------------------------------
+    @staticmethod
     def __parseHourly(worksheet: Worksheet, lastNRows: int) -> list:
         return []
 
@@ -60,14 +74,14 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                row[PropertyName.DATE.value] = worksheet.cell(column=2, row=rownum).value
-                row[PropertyName.START_INDEX_M3.value] = worksheet.cell(column=3, row=rownum).value
-                row[PropertyName.END_INDEX_M3.value] = worksheet.cell(column=4, row=rownum).value
-                row[PropertyName.VOLUME_M3.value] = worksheet.cell(column=5, row=rownum).value
-                row[PropertyName.ENERGY_KWH.value] = worksheet.cell(column=6, row=rownum).value
-                row[PropertyName.CONVERTER_FACTOR.value] = worksheet.cell(column=7, row=rownum).value
-                row[PropertyName.LOCAL_TEMPERATURE.value] = worksheet.cell(column=8, row=rownum).value
-                row[PropertyName.TYPE.value] = worksheet.cell(column=9, row=rownum).value
+                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)
+                DataFileParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.END_INDEX.value, worksheet.cell(column=4, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=5, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=6, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.CONVERTER_FACTOR.value, worksheet.cell(column=7, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.TEMPERATURE.value, worksheet.cell(column=8, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.TYPE.value, worksheet.cell(column=9, row=rownum), False)
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 
@@ -89,9 +103,9 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                row[PropertyName.DATE.value] = worksheet.cell(column=2, row=rownum).value
-                row[PropertyName.VOLUME_M3.value] = worksheet.cell(column=3, row=rownum).value
-                row[PropertyName.ENERGY_KWH.value] = worksheet.cell(column=4, row=rownum).value
+                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)
+                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 
@@ -113,9 +127,9 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                row[PropertyName.DATE.value] = worksheet.cell(column=2, row=rownum).value
-                row[PropertyName.VOLUME_M3.value] = worksheet.cell(column=3, row=rownum).value
-                row[PropertyName.ENERGY_KWH.value] = worksheet.cell(column=4, row=rownum).value
+                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)
+                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)
+                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 

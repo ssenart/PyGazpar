@@ -1,0 +1,614 @@
+[
+  {
+    "time_period": "Du 09/05/2019 au 12/05/2019",
+    "volume_m3": 20.3,
+    "energy_kwh": 228.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 13/05/2019 au 19/05/2019",
+    "volume_m3": 26.3,
+    "energy_kwh": 295.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 20/05/2019 au 26/05/2019",
+    "volume_m3": 20.7,
+    "energy_kwh": 232.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 27/05/2019 au 02/06/2019",
+    "volume_m3": 19.6,
+    "energy_kwh": 220.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 03/06/2019 au 09/06/2019",
+    "volume_m3": 19.5,
+    "energy_kwh": 219.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 10/06/2019 au 16/06/2019",
+    "volume_m3": 21.0,
+    "energy_kwh": 236.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 17/06/2019 au 23/06/2019",
+    "volume_m3": 18.3,
+    "energy_kwh": 205.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 24/06/2019 au 30/06/2019",
+    "volume_m3": 14.0,
+    "energy_kwh": 157.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 01/07/2019 au 07/07/2019",
+    "volume_m3": 19.7,
+    "energy_kwh": 220.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 08/07/2019 au 14/07/2019",
+    "volume_m3": 15.4,
+    "energy_kwh": 171.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 15/07/2019 au 21/07/2019",
+    "volume_m3": 11.8,
+    "energy_kwh": 131.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 22/07/2019 au 28/07/2019",
+    "volume_m3": 7.8,
+    "energy_kwh": 87.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 29/07/2019 au 04/08/2019",
+    "volume_m3": 7.7,
+    "energy_kwh": 86.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 05/08/2019 au 11/08/2019",
+    "volume_m3": 13.3,
+    "energy_kwh": 149.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 12/08/2019 au 18/08/2019",
+    "volume_m3": 17.9,
+    "energy_kwh": 201.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 19/08/2019 au 25/08/2019",
+    "volume_m3": 12.1,
+    "energy_kwh": 136.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 26/08/2019 au 01/09/2019",
+    "volume_m3": 15.6,
+    "energy_kwh": 175.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 02/09/2019 au 08/09/2019",
+    "volume_m3": 16.7,
+    "energy_kwh": 187.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 09/09/2019 au 15/09/2019",
+    "volume_m3": 16.5,
+    "energy_kwh": 184.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 16/09/2019 au 22/09/2019",
+    "volume_m3": 15.8,
+    "energy_kwh": 177.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 23/09/2019 au 29/09/2019",
+    "volume_m3": 16.3,
+    "energy_kwh": 182.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 30/09/2019 au 06/10/2019",
+    "volume_m3": 18.2,
+    "energy_kwh": 202.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 07/10/2019 au 13/10/2019",
+    "volume_m3": 18.3,
+    "energy_kwh": 203.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 14/10/2019 au 20/10/2019",
+    "volume_m3": 16.4,
+    "energy_kwh": 182.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 21/10/2019 au 27/10/2019",
+    "volume_m3": 30.7,
+    "energy_kwh": 341.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 28/10/2019 au 03/11/2019",
+    "volume_m3": 39.6,
+    "energy_kwh": 440.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 04/11/2019 au 10/11/2019",
+    "volume_m3": 57.2,
+    "energy_kwh": 636.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 11/11/2019 au 17/11/2019",
+    "volume_m3": 81.7,
+    "energy_kwh": 908.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 18/11/2019 au 24/11/2019",
+    "volume_m3": 81.3,
+    "energy_kwh": 904.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 25/11/2019 au 01/12/2019",
+    "volume_m3": 61.4,
+    "energy_kwh": 682.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 02/12/2019 au 08/12/2019",
+    "volume_m3": 88.8,
+    "energy_kwh": 991.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 09/12/2019 au 15/12/2019",
+    "volume_m3": 75.2,
+    "energy_kwh": 839.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 16/12/2019 au 22/12/2019",
+    "volume_m3": 56.5,
+    "energy_kwh": 631.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 23/12/2019 au 29/12/2019",
+    "volume_m3": 42.2,
+    "energy_kwh": 471.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 30/12/2019 au 05/01/2020",
+    "volume_m3": 85.9,
+    "energy_kwh": 962.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 06/01/2020 au 12/01/2020",
+    "volume_m3": 69.5,
+    "energy_kwh": 781.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 13/01/2020 au 19/01/2020",
+    "volume_m3": 64.2,
+    "energy_kwh": 721.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 20/01/2020 au 26/01/2020",
+    "volume_m3": 102.2,
+    "energy_kwh": 1149.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 27/01/2020 au 02/02/2020",
+    "volume_m3": 59.1,
+    "energy_kwh": 664.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 03/02/2020 au 09/02/2020",
+    "volume_m3": 48.3,
+    "energy_kwh": 542.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 10/02/2020 au 16/02/2020",
+    "volume_m3": 27.6,
+    "energy_kwh": 310.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 17/02/2020 au 23/02/2020",
+    "volume_m3": 65.1,
+    "energy_kwh": 731.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 24/02/2020 au 01/03/2020",
+    "volume_m3": 75.4,
+    "energy_kwh": 846.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 02/03/2020 au 08/03/2020",
+    "volume_m3": 79.3,
+    "energy_kwh": 887.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 09/03/2020 au 15/03/2020",
+    "volume_m3": 55.8,
+    "energy_kwh": 624.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 16/03/2020 au 22/03/2020",
+    "volume_m3": 53.9,
+    "energy_kwh": 603.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 23/03/2020 au 29/03/2020",
+    "volume_m3": 63.3,
+    "energy_kwh": 708.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 30/03/2020 au 05/04/2020",
+    "volume_m3": 58.4,
+    "energy_kwh": 652.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 06/04/2020 au 12/04/2020",
+    "volume_m3": 19.9,
+    "energy_kwh": 222.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 13/04/2020 au 19/04/2020",
+    "volume_m3": 19.8,
+    "energy_kwh": 220.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 20/04/2020 au 26/04/2020",
+    "volume_m3": 17.9,
+    "energy_kwh": 199.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 27/04/2020 au 30/04/2020",
+    "volume_m3": 10.7,
+    "energy_kwh": 119.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 04/05/2020 au 10/05/2020",
+    "volume_m3": 17.8,
+    "energy_kwh": 200.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 11/05/2020 au 17/05/2020",
+    "volume_m3": 17.4,
+    "energy_kwh": 195.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 18/05/2020 au 24/05/2020",
+    "volume_m3": 17.1,
+    "energy_kwh": 192.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 25/05/2020 au 31/05/2020",
+    "volume_m3": 15.1,
+    "energy_kwh": 169.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 01/06/2020 au 07/06/2020",
+    "volume_m3": 15.0,
+    "energy_kwh": 167.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 08/06/2020 au 14/06/2020",
+    "volume_m3": 15.9,
+    "energy_kwh": 176.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 15/06/2020 au 21/06/2020",
+    "volume_m3": 15.7,
+    "energy_kwh": 174.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 22/06/2020 au 28/06/2020",
+    "volume_m3": 7.1,
+    "energy_kwh": 79.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 29/06/2020 au 05/07/2020",
+    "volume_m3": 7.8,
+    "energy_kwh": 86.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 06/07/2020 au 12/07/2020",
+    "volume_m3": 6.9,
+    "energy_kwh": 76.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 13/07/2020 au 19/07/2020",
+    "volume_m3": 7.0,
+    "energy_kwh": 77.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 20/07/2020 au 26/07/2020",
+    "volume_m3": 1.3,
+    "energy_kwh": 14.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 27/07/2020 au 02/08/2020",
+    "volume_m3": 0.0,
+    "energy_kwh": 0.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 03/08/2020 au 09/08/2020",
+    "volume_m3": 3.3,
+    "energy_kwh": 36.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 10/08/2020 au 16/08/2020",
+    "volume_m3": 5.5,
+    "energy_kwh": 61.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 17/08/2020 au 23/08/2020",
+    "volume_m3": 7.5,
+    "energy_kwh": 83.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 24/08/2020 au 30/08/2020",
+    "volume_m3": 7.0,
+    "energy_kwh": 77.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 31/08/2020 au 06/09/2020",
+    "volume_m3": 9.0,
+    "energy_kwh": 99.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 07/09/2020 au 13/09/2020",
+    "volume_m3": 8.7,
+    "energy_kwh": 96.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 14/09/2020 au 20/09/2020",
+    "volume_m3": 9.0,
+    "energy_kwh": 99.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 21/09/2020 au 27/09/2020",
+    "volume_m3": 11.6,
+    "energy_kwh": 128.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 28/09/2020 au 04/10/2020",
+    "volume_m3": 24.4,
+    "energy_kwh": 271.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 05/10/2020 au 11/10/2020",
+    "volume_m3": 27.3,
+    "energy_kwh": 304.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 12/10/2020 au 18/10/2020",
+    "volume_m3": 46.1,
+    "energy_kwh": 513.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 19/10/2020 au 25/10/2020",
+    "volume_m3": 22.8,
+    "energy_kwh": 254.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 26/10/2020 au 01/11/2020",
+    "volume_m3": 33.5,
+    "energy_kwh": 373.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 02/11/2020 au 08/11/2020",
+    "volume_m3": 51.9,
+    "energy_kwh": 583.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 09/11/2020 au 15/11/2020",
+    "volume_m3": 40.4,
+    "energy_kwh": 453.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 16/11/2020 au 22/11/2020",
+    "volume_m3": 62.3,
+    "energy_kwh": 700.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 23/11/2020 au 29/11/2020",
+    "volume_m3": 70.3,
+    "energy_kwh": 789.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 30/11/2020 au 06/12/2020",
+    "volume_m3": 86.9,
+    "energy_kwh": 966.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 07/12/2020 au 13/12/2020",
+    "volume_m3": 88.7,
+    "energy_kwh": 983.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 14/12/2020 au 20/12/2020",
+    "volume_m3": 54.9,
+    "energy_kwh": 608.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 21/12/2020 au 27/12/2020",
+    "volume_m3": 69.1,
+    "energy_kwh": 766.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 28/12/2020 au 03/01/2021",
+    "volume_m3": 99.8,
+    "energy_kwh": 1103.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 04/01/2021 au 10/01/2021",
+    "volume_m3": 111.5,
+    "energy_kwh": 1224.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 11/01/2021 au 17/01/2021",
+    "volume_m3": 92.6,
+    "energy_kwh": 1016.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 18/01/2021 au 24/01/2021",
+    "volume_m3": 91.1,
+    "energy_kwh": 1000.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 25/01/2021 au 31/01/2021",
+    "volume_m3": 79.4,
+    "energy_kwh": 871.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 01/02/2021 au 07/02/2021",
+    "volume_m3": 68.8,
+    "energy_kwh": 766.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 08/02/2021 au 14/02/2021",
+    "volume_m3": 143.5,
+    "energy_kwh": 1603.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 15/02/2021 au 21/02/2021",
+    "volume_m3": 58.0,
+    "energy_kwh": 648.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 22/02/2021 au 28/02/2021",
+    "volume_m3": 47.3,
+    "energy_kwh": 528.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 01/03/2021 au 07/03/2021",
+    "volume_m3": 63.1,
+    "energy_kwh": 709.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 08/03/2021 au 14/03/2021",
+    "volume_m3": 61.2,
+    "energy_kwh": 688.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 15/03/2021 au 21/03/2021",
+    "volume_m3": 77.9,
+    "energy_kwh": 876.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 22/03/2021 au 28/03/2021",
+    "volume_m3": 52.2,
+    "energy_kwh": 587.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 29/03/2021 au 04/04/2021",
+    "volume_m3": 21.4,
+    "energy_kwh": 240.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 05/04/2021 au 11/04/2021",
+    "volume_m3": 58.9,
+    "energy_kwh": 663.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  },
+  {
+    "time_period": "Du 12/04/2021 au 18/04/2021",
+    "volume_m3": 57.1,
+    "energy_kwh": 643.0,
+    "timestamp": "2021-04-20T09:22:12.166500"
+  }
+]

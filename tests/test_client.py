@@ -54,21 +54,21 @@ class TestClient:
 
         assert len(client.data()) == 0
 
-    # @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Live data are not available")
     def test_daily_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.DAILY)
         client.update()
 
         assert len(client.data()) == 1
 
-    # @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Live data are not available")
     def test_weekly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.WEEKLY)
         client.update()
 
         assert len(client.data()) == 1
 
-    # @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Live data are not available")
     def test_monthly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.MONTHLY)
         client.update()

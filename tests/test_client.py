@@ -93,7 +93,7 @@ class TestClient:
         assert len(client.data()) == 31
 
     def test_weekly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.WEEKLY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.WEEKLY, testMode=True)
         client.update()
 
         assert len(client.data()) == 102
@@ -104,7 +104,7 @@ class TestClient:
         assert len(client.data()) == 4
 
     def test_monthly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.MONTHLY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.MONTHLY, testMode=True)
         client.update()
 
         assert len(client.data()) == 24

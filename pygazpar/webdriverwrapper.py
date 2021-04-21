@@ -16,6 +16,10 @@ class WebDriverWrapper:
         self.__wait_time = wait_time
         self.__tmp_directory = tmp_directory
 
+        # We create the tmp directory if not already exists.
+        if not os.path.exists(self.__tmp_directory):
+            os.mkdir(self.__tmp_directory)
+
         # Transform tmp directory into absolute path for Webdriver.
         if not os.path.isabs(self.__tmp_directory):
             self.__tmp_directory = f"{os.getcwd()}/{self.__tmp_directory}"
@@ -23,10 +27,8 @@ class WebDriverWrapper:
         # Normalize path separator.
         self.__tmp_directory = os.path.normpath(self.__tmp_directory)
 
-        # We remove the geckodriver log file
+        # Geckodriver log file.
         geckodriverLogFile = f"{self.__tmp_directory}/pygazpar_geckodriver.log"
-        if os.path.isfile(geckodriverLogFile):
-            os.remove(geckodriverLogFile)
 
         # Initialize the Firefox WebDriver
         options = webdriver.FirefoxOptions()

@@ -4,14 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0](https://github.com/ssenart/PyGazpar/compare/0.1.26...0.2.0) - 2021-04-18
-### Fixed
-- [#10](https://github.com/ssenart/PyGazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory). The previous attempt in version 0.1.26 is a failure. The origin of the bug is that we send relative tmp directory path to Webdriver. Additionally, it has to be normalized to the runtime OS.
-
+## [0.2.0](https://github.com/ssenart/PyGazpar/compare/0.1.27...0.2.0) - 2021-04-21
 ### Added
-- Be able to retrieve consumption not only on a daily basis, but weekly and monthly:
+- [#12](https://github.com/ssenart/PyGazpar/issues/10): Be able to retrieve consumption not only on a daily basis, but weekly and monthly:
     - API : Add a new parameter 'meterReadingFrequency' to Client that accepts enumeration: Frequency.DAILY, Frequency.WEEKLY or Frequency.MONTHLY.
     - Command line : Add a new argument '--frequency' that accepts values : DAILY, WEEKLY or MONTHLY.
+- Be able to test using offline data :
+    - API : Add a new parameter 'testMode' to Clients used to specify whether we want to get some live data (testMode=False) and static testing data (testMode=True).
+    - Command line : Add a new argument '--testMode' (True if specified and False by default).
+
+### Changed
+- Some ouput energy property names have changed:
+    - 'date' => 'time_period'.
+    - 'converter_factor' => 'converter_factor_kwh/m3'.
+    - 'local_temperature' => 'temperature_degC'.
+
+## [0.1.27](https://github.com/ssenart/PyGazpar/compare/0.1.26...0.1.27) - 2021-04-20
+### Fixed
+- [#10](https://github.com/ssenart/PyGazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory). The previous attempt in version 0.1.26 is a failure. The origin of the bug is that we send relative tmp directory path to Webdriver. Additionally, it has to be normalized to the runtime OS.
 
 ## [0.1.26](https://github.com/ssenart/PyGazpar/compare/0.1.25...0.1.26) - 2021-04-18
 ### Fixed

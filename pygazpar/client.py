@@ -2,6 +2,8 @@ import os
 import time
 import glob
 import logging
+import json
+from abc import ABC, abstractmethod
 from pygazpar.enum import Frequency
 from pygazpar.datafileparser import DataFileParser
 from pygazpar.webdriverwrapper import WebDriverWrapper
@@ -28,12 +30,24 @@ class LoginError(Exception):
 
 
 # ------------------------------------------------------------------------------------------------------------
-class Client(object):
+class IClient(ABC):
+
+    @abstractmethod
+    def data(self) -> dict:
+        pass
+
+    @abstractmethod
+    def update(self):
+        pass
+
+
+# ------------------------------------------------------------------------------------------------------------
+class Client(IClient):
 
     logger = logging.getLogger(__name__)
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = DEFAULT_LAST_N_ROWS, headLessMode: bool = DEFAULT_HEADLESS_MODE, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY):
+    def __init__(self, username: str, password: str, firefox_webdriver_executable: str = DEFAULT_FIREFOX_WEBDRIVER, wait_time: int = DEFAULT_WAIT_TIME, tmp_directory: str = DEFAULT_TMP_DIRECTORY, lastNRows: int = DEFAULT_LAST_N_ROWS, headLessMode: bool = DEFAULT_HEADLESS_MODE, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY, testMode: bool = False):
         self.__username = username
         self.__password = password
         self.__firefox_webdriver_executable = firefox_webdriver_executable
@@ -43,13 +57,14 @@ class Client(object):
         self.__lastNRows = lastNRows
         self.__headlessMode = headLessMode
         self.__meterReadingFrequency = meterReadingFrequency
+        self.__testMode = testMode
 
     # ------------------------------------------------------
-    def data(self):
+    def data(self) -> dict:
         return self.__data
 
     # ------------------------------------------------------
-    def acceptCookies(self, driver: WebDriverWrapper):
+    def __acceptCookies(self, driver: WebDriverWrapper):
 
         try:
             cookies_accept_button = driver.find_element_by_xpath("//a[@id='_EPcommonPage_WAR_EPportlet_:formBandeauCnil:j_idt12']", "Cookies accept button", False)
@@ -59,7 +74,7 @@ class Client(object):
             pass
 
     # ------------------------------------------------------
-    def acceptPrivacyConditions(self, driver: WebDriverWrapper):
+    def __acceptPrivacyConditions(self, driver: WebDriverWrapper):
 
         try:
             # id=btn_accept_banner
@@ -70,13 +85,13 @@ class Client(object):
             pass
 
     # ------------------------------------------------------
-    def closeEventualPopup(self, driver: WebDriverWrapper):
+    def __closeEventualPopup(self, driver: WebDriverWrapper):
 
         # Accept an eventual Privacy Conditions popup.
-        self.acceptPrivacyConditions(driver)
+        self.__acceptPrivacyConditions(driver)
 
         # Eventually, click Accept in the lower banner to accept cookies from the site.
-        self.acceptCookies(driver)
+        self.__acceptCookies(driver)
 
         # Eventually, close Advertisement Popup Windows.
         try:
@@ -97,12 +112,40 @@ class Client(object):
     # ------------------------------------------------------
     def update(self):
 
+        if self.__testMode:
+            self.__updateTestMode()
+        else:
+            self.__updateLiveMode()
+
+    # ------------------------------------------------------
+    def __updateTestMode(self):
+
+        dataSampleFilenameByFrequency = {
+            Frequency.HOURLY: "hourly_data_sample.json",
+            Frequency.DAILY: "daily_data_sample.json",
+            Frequency.WEEKLY: "weekly_data_sample.json",
+            Frequency.MONTHLY: "monthly_data_sample.json"
+        }
+
+        try:
+            dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[self.__meterReadingFrequency]}"
+
+            with open(dataSampleFilename) as jsonFile:
+                data = json.load(jsonFile)
+                self.__data = data[-self.__lastNRows:]
+        except Exception:
+            WebDriverWrapper.logger.error("An unexpected error occured while loading sample data", exc_info=True)
+            raise
+
+    # ------------------------------------------------------
+    def __updateLiveMode(self):
+
         Client.logger.debug("Start updating the data...")
 
         # XLSX is in the TMP directory
         data_file_path_pattern = self.__tmp_directory + '/' + DATA_FILENAME
 
-        # We remove an eventual existing data file (from a previous run that has not deleted it)
+        # We remove an eventual existing data file (from a previous run that has not deleted it).
         file_list = glob.glob(data_file_path_pattern)
         for filename in file_list:
             if os.path.isfile(filename):
@@ -117,7 +160,7 @@ class Client(object):
             driver.get(LOGIN_URL, "Go to login page")
 
             # Accept an eventual Privacy Conditions popup.
-            self.acceptPrivacyConditions(driver)
+            self.__acceptPrivacyConditions(driver)
 
             # Fill login form
             email_element = driver.find_element_by_id("_EspacePerso_WAR_EPportlet_:seConnecterForm:email", "Login page: Email text field")
@@ -131,7 +174,7 @@ class Client(object):
             submit_button_element.click()
 
             # Close eventual popup Windows or Assistant appearing.
-            self.closeEventualPopup(driver)
+            self.__closeEventualPopup(driver)
 
             # Once we find the 'Acceder' button from the main page, we are logged on successfully.
             try:

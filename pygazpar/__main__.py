@@ -46,6 +46,11 @@ def main():
                         type=lambda frequency: pygazpar.Frequency[frequency], choices=list(pygazpar.Frequency),
                         default="DAILY",
                         help="Meter reading frequency (DAILY, WEEKLY, MONTHLY)")
+    parser.add_argument("--testMode",
+                        required=False,
+                        action='store_true',
+                        default=False,
+                        help="Run PyGazpar in test mode (Get static sample data)")
 
     args = parser.parse_args()
 
@@ -73,8 +78,9 @@ def main():
     logging.info(f"--lastNRows {int(args.lastNRows)}")
     logging.info(f"--headfull {bool(args.headfull)}")
     logging.info(f"--frequency {args.frequency}")
+    logging.info(f"--testMode {bool(args.testMode)}")
 
-    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows), not bool(args.headfull), args.frequency)
+    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows), not bool(args.headfull), args.frequency, bool(args.testMode))
 
     try:
         client.update()

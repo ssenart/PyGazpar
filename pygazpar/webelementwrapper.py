@@ -37,3 +37,15 @@ class WebElementWrapper:
             WebElementWrapper.logger.warning(f"send_keys({value}): {self.__description} -> Error", exc_info=True)
             self.__element.parent.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
             raise
+
+    # ------------------------------------------------------
+    def clear(self):
+
+        WebElementWrapper.logger.debug(f"clear(): {self.__description}...")
+        try:
+            self.__element.clear()
+            WebElementWrapper.logger.debug("clear() -> Ok")
+        except Exception:
+            WebElementWrapper.logger.warning(f"clear(): {self.__description} -> Error", exc_info=True)
+            self.__element.parent.save_screenshot(f"{self.__tmp_directory}/error_screenshot.png")
+            raise

@@ -23,18 +23,19 @@ class DataFileParser:
             Frequency.MONTHLY: DataFileParser.__parseMonthly
         }
 
-        worksheetNameByFrequency = {
-            Frequency.HOURLY: "Historique par heure",
-            Frequency.DAILY: "Historique par jour",
-            Frequency.WEEKLY: "Historique par semaine",
-            Frequency.MONTHLY: "Historique par mois"
-        }
+        # worksheetNameByFrequency = {
+        #     Frequency.HOURLY: "Historique par heure",
+        #     Frequency.DAILY: "Historique par jour",
+        #     Frequency.WEEKLY: "Historique par semaine",
+        #     Frequency.MONTHLY: "Historique par mois"
+        # }
 
         DataFileParser.logger.debug(f"Loading Excel data file '{dataFilename}'...")
 
         workbook = load_workbook(filename=dataFilename)
 
-        worksheet = workbook[worksheetNameByFrequency[dataReadingFrequency]]
+        # worksheet = workbook[worksheetNameByFrequency[dataReadingFrequency]]
+        worksheet = workbook.active
 
         res = parseByFrequency[dataReadingFrequency](worksheet, lastNRows)
 
@@ -46,14 +47,17 @@ class DataFileParser:
     @staticmethod
     def __fillRow(row: dict, propertyName: str, cell: Cell, isNumber: bool):
 
-        if isNumber:
-            if type(cell.value) is str:
-                if len(cell.value.strip()) > 0:
-                    row[propertyName] = float(cell.value.replace(',', '.'))
+        if cell.value is not None:
+            if isNumber:
+                if type(cell.value) is str:
+                    if len(cell.value.strip()) > 0:
+                        row[propertyName] = float(cell.value.replace(',', '.'))
+                else:
+                    row[propertyName] = float(cell.value)
             else:
-                row[propertyName] = float(cell.value)
+                row[propertyName] = cell.value
         else:
-            row[propertyName] = cell.value
+            row[propertyName] = ""            
 
     # ------------------------------------------------------
     @staticmethod

@@ -54,21 +54,21 @@ class TestClient:
 
         assert len(client.data()) == 0
 
-    @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Required live data")
     def test_daily_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.DAILY)
         client.update()
 
         assert len(client.data()) == 1
 
-    @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Required live data")
     def test_weekly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.WEEKLY)
         client.update()
 
         assert len(client.data()) == 1
 
-    @pytest.mark.skip(reason="Live data are not available")
+    @pytest.mark.skip(reason="Required live data")
     def test_monthly_live(self):
         client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.MONTHLY)
         client.update()
@@ -76,40 +76,40 @@ class TestClient:
         assert len(client.data()) == 1
 
     def test_hourly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.HOURLY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.HOURLY, 365, True)
         client.update()
 
         assert len(client.data()) == 0
 
     def test_daily_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.DAILY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.DAILY, 365, True)
         client.update()
 
         assert len(client.data()) == 711
 
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 31, True, Frequency.DAILY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 31, True, Frequency.DAILY, 365, True)
         client.update()
 
         assert len(client.data()) == 31
 
     def test_weekly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.WEEKLY, testMode=True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.WEEKLY, lastNDays=365, testMode=True)
         client.update()
 
         assert len(client.data()) == 102
 
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 4, True, Frequency.WEEKLY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 4, True, Frequency.WEEKLY, 365, True)
         client.update()
 
         assert len(client.data()) == 4
 
     def test_monthly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.MONTHLY, testMode=True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.MONTHLY, lastNDays=365, testMode=True)
         client.update()
 
         assert len(client.data()) == 24
 
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 12, True, Frequency.MONTHLY, True)
+        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 12, True, Frequency.MONTHLY, 365, True)
         client.update()
 
         assert len(client.data()) == 12

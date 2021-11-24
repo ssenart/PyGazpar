@@ -57,7 +57,7 @@ class DataFileParser:
             else:
                 row[propertyName] = cell.value
         else:
-            row[propertyName] = ""            
+            row[propertyName] = ""
 
     # ------------------------------------------------------
     @staticmethod

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.2](https://github.com/ssenart/PyGazpar/compare/1.0.1...1.0.2) - 2021-11-25
 ### Fixed
 - Fix broken command line pygazpar caused by adding the new lastNDays parameter.
-- Fix the error : ValueError: could not convert string to float: 'Index de début de période (m3)'. It occurs because the records in the Excel file now starts at line 10 instead of line 8 before (thanks to DEFAYArnaud(https://github.com/DEFAYArnaud) for having spotted the issue and bringing the fix).
+- Fix the error : ValueError: could not convert string to float: 'Index de début de période (m3)'. It occurs because the records in the Excel file now starts at line 10 instead of line 8 before (thanks to [DEFAYArnaud](https://github.com/DEFAYArnaud) for having spotted the issue and bringing the fix).
 
 ### Changed
 - In the Excel file, if a cell is empty, then no corresponding key will be inserted in the result dictionary (before we inserted a key with an empty string).

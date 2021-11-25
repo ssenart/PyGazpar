@@ -7,6 +7,9 @@ from openpyxl.cell.cell import Cell
 from openpyxl import load_workbook
 
 
+FIRST_DATA_LINE_NUMBER = 10
+
+
 # ------------------------------------------------------------------------------------------------------------
 class DataFileParser:
 
@@ -56,8 +59,6 @@ class DataFileParser:
                     row[propertyName] = float(cell.value)
             else:
                 row[propertyName] = cell.value
-        else:
-            row[propertyName] = ""
 
     # ------------------------------------------------------
     @staticmethod
@@ -73,7 +74,7 @@ class DataFileParser:
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(8, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else 8
+        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
@@ -102,7 +103,7 @@ class DataFileParser:
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(8, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else 8
+        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
@@ -126,7 +127,7 @@ class DataFileParser:
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(8, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else 8
+        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}

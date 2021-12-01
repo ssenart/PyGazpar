@@ -1,5 +1,6 @@
 from pygazpar.enum import Frequency
 from pygazpar.client import Client
+from pygazpar.clientV2 import ClientV2
 import os
 import pytest
 
@@ -35,6 +36,7 @@ class TestClient:
 
         self.__username = os.environ["GRDF_USERNAME"]
         self.__password = os.environ["GRDF_PASSWORD"]
+        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]
         if os.name == 'nt':
             self.__webdriver = "./drivers/geckodriver.exe"
         else:
@@ -49,67 +51,59 @@ class TestClient:
 
     @pytest.mark.skip(reason="Hourly data is not yet implemented")
     def test_hourly_live(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.HOURLY)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.HOURLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert len(client.data()) == 0
+        assert(len(client.data()) > 0)
 
-    @pytest.mark.skip(reason="Required live data")
+    @pytest.mark.skip(reason="Requires live data")
     def test_daily_live(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.DAILY)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert len(client.data()) == 1
+        assert(len(client.data()) > 0)
 
-    @pytest.mark.skip(reason="Required live data")
+    @pytest.mark.skip(reason="Requires live data")
     def test_weekly_live(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.WEEKLY)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.WEEKLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert len(client.data()) == 1
+        assert(len(client.data()) > 0)
 
-    @pytest.mark.skip(reason="Required live data")
+    @pytest.mark.skip(reason="Requires live data")
     def test_monthly_live(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 1, True, Frequency.MONTHLY)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.MONTHLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert len(client.data()) == 1
+        assert(len(client.data()) > 0)
 
     def test_hourly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.HOURLY, 365, True)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.HOURLY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert len(client.data()) == 0
+        assert(len(client.data()) == 0)
 
     def test_daily_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 0, True, Frequency.DAILY, 365, True)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert len(client.data()) == 711
-
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 31, True, Frequency.DAILY, 365, True)
-        client.update()
-
-        assert len(client.data()) == 31
+        assert(len(client.data()) > 0)
 
     def test_weekly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.WEEKLY, lastNDays=365, testMode=True)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.WEEKLY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert len(client.data()) == 102
-
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 4, True, Frequency.WEEKLY, 365, True)
-        client.update()
-
-        assert len(client.data()) == 4
+        assert(len(client.data()) > 0)
 
     def test_monthly_sample(self):
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, meterReadingFrequency=Frequency.MONTHLY, lastNDays=365, testMode=True)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.MONTHLY, tmpDirectory=self.__tmp_directory, lastNDays=30, testMode=True)
         client.update()
 
-        assert len(client.data()) == 24
+        assert(len(client.data()) > 0)
 
-        client = Client(self.__username, self.__password, self.__webdriver, self.__wait_time, self.__tmp_directory, 12, True, Frequency.MONTHLY, 365, True)
+    @pytest.mark.skip(reason="Requires live data")
+    def test_clientV2(self):
+        client = ClientV2(self.__username, self.__password, self.__pceIdentifier, lastNDays=10, testMode=False)
         client.update()
 
-        assert len(client.data()) == 12
+        assert(len(client.data()) == 360)

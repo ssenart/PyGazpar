@@ -17,7 +17,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency, lastNRows: int) -> list:
+    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> list:
 
         parseByFrequency = {
             Frequency.HOURLY: DataFileParser.__parseHourly,
@@ -40,7 +40,7 @@ class DataFileParser:
         # worksheet = workbook[worksheetNameByFrequency[dataReadingFrequency]]
         worksheet = workbook.active
 
-        res = parseByFrequency[dataReadingFrequency](worksheet, lastNRows)
+        res = parseByFrequency[dataReadingFrequency](worksheet)
 
         workbook.close()
 
@@ -62,19 +62,19 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet, lastNRows: int) -> list:
+    def __parseHourly(worksheet: Worksheet) -> list:
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet, lastNRows: int) -> list:
+    def __parseDaily(worksheet: Worksheet) -> list:
 
         res = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
+        minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
@@ -96,14 +96,14 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet, lastNRows: int) -> list:
+    def __parseWeekly(worksheet: Worksheet) -> list:
 
         res = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
+        minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
@@ -120,14 +120,14 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet, lastNRows: int) -> list:
+    def __parseMonthly(worksheet: Worksheet) -> list:
 
         res = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = max(FIRST_DATA_LINE_NUMBER, len(worksheet['B']) + 1 - lastNRows) if lastNRows > 0 else FIRST_DATA_LINE_NUMBER
+        minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}

@@ -5,20 +5,14 @@ Their natural gas meter is called Gazpar. It is wireless and transmit the gas co
 
 All consumption data is available on the client account at GrDF Web Site (https://monespace.grdf.fr).
 
-PyGazpar automatically go through the Web Site and download the consumption data Excel file, and make it available in a Python structure (list of dictionaries).
+PyGazpar automatically goes through the Web Site and download the consumption data Excel file, and make it available in a Python structure (list of dictionaries).
 
 ## Installation
 
 ### Requirements
-PyGazpar is working with Selenium Python library to automate navigation through GrDF Web site. Selenium requires a WebDriver that acts as gateway between automatic actions from PyGazpar and a native browser already installed on the system.
+PyGazpar does not require Selenium and corresponding geckodriver to work.
 
-PyGazpar has been developped and tested with Firefox browser (version 68.8) and its corresponding Web Driver geckodriver (version 0.24).
-
-#### Firefox browser installation
-Follow instructions [here](https://www.mozilla.org/fr/firefox/new)
-
-#### Firefox Web Driver (geckodriver) installation
-Follow instructions [here](https://github.com/mozilla/geckodriver/releases)
+With the new GrDF web site, it is possible to load the consumption data far easily than before.
 
 ### Create your virtual environment
 ```bash
@@ -49,7 +43,7 @@ python setup.py install
 #### Command line:
 
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -s 30 -t 'temporary directory where to store XSLX file (ex: /tmp)'
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)'
 ```
 
 #### Library:
@@ -57,11 +51,12 @@ $ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -
 ```python
 import pygazpar
 
-client = pygazpar.Client('your login',
-                         'your password',
-                         'path/to/Selenium Web Driver',
-                         30,
-                         'temporary directory where to store XSLX file (ex: /tmp)')
+client = pygazpar.Client(username='your login',
+                         password='your password',
+                         pceIdentifier='your PCE identifier',
+                         meterReadingFrequency=Frequency.DAILY,
+                         lastNDays=10,
+                         tmpDirectory='/tmp/pygazpar')
 
 client.update()
 
@@ -118,19 +113,19 @@ However, it is also possible to get weekly or monthly consumption data :
 
 #### Command line:
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -s 30 -t 'temporary directory where to store XSLX file (ex: /tmp)' -f WEEKLY
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' -f WEEKLY
 ```
 
 #### Library:
 ```python
 import pygazpar
 
-client = pygazpar.Client('your login',
-                         'your password',
-                         'path/to/Selenium Web Driver',
-                         30,
-                         'temporary directory where to store XSLX file (ex: /tmp)',
-                         meterReadingFrequency = Frequency.WEEKLY)
+client = pygazpar.Client(username='your login',
+                         password='your password',
+                         pceIdentifier='your PCE identifier',
+                         meterReadingFrequency=Frequency.WEEKLY,
+                         lastNDays=10,
+                         tmpDirectory='/tmp/pygazpar')
 
 client.update()
 
@@ -167,19 +162,19 @@ data =>
 
 #### Command line:
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -s 30 -t 'temporary directory where to store XSLX file (ex: /tmp)' -f MONTHLY
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' -f MONTHLY
 ```
 
 #### Library:
 ```python
 import pygazpar
 
-client = pygazpar.Client('your login',
-                         'your password',
-                         'path/to/Selenium Web Driver',
-                         30,
-                         'temporary directory where to store XSLX file (ex: /tmp)',
-                         meterReadingFrequency = Frequency.MONTHLY)
+client = pygazpar.Client(username='your login',
+                         password='your password',
+                         pceIdentifier='your PCE identifier',
+                         meterReadingFrequency=Frequency.MONTHLY,
+                         lastNDays=10,
+                         tmpDirectory='/tmp/pygazpar')
 
 client.update()
 
@@ -220,18 +215,17 @@ There is a test mode that permits to work with static data. Those data are taken
 
 #### Command line:
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -w 'path/to/Selenium Web Driver' -s 30 -t 'temporary directory where to store XSLX file (ex: /tmp)' --testMode
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' --testMode
 ```
 
 #### Library:
 ```python
 import pygazpar
 
-client = pygazpar.Client('your login',
-                         'your password',
-                         'path/to/Selenium Web Driver',
-                         30,
-                         'temporary directory where to store XSLX file (ex: /tmp)',
+client = pygazpar.Client(username='your login',
+                         password='your password',
+                         pceIdentifier='your PCE identifier',
+                         tmpDirectory='/tmp/pygazpar',
                          testMode = True)
 
 client.update()
@@ -240,11 +234,11 @@ data = client.data()
 ```
 
 ## Limitation
-PyGazpar relies on how GrDF Web Site is built. It goes through each Web pages and automatically fill forms, click buttons using their internal identifiers.
+PyGazpar relies on how GrDF Web Site is built.
 
-Any change in the Web site structure or identifier naming may break this library.
+Any change in the Web site may break this library.
 
-We expect in close Future that GrDF makes available a standard API from which we can get safely their data.
+We expect in close Future that GrDF makes available an open API from which we can get safely their data.
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

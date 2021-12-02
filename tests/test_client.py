@@ -1,5 +1,5 @@
 from pygazpar.enum import Frequency
-from pygazpar.client import Client
+from pygazpar.client import Client, LoginError
 from pygazpar.clientV2 import ClientV2
 import os
 import pytest
@@ -48,6 +48,12 @@ class TestClient:
         """ teardown any state that was previously setup with a setup_method
         call.
         """
+
+    def test_login_error(self):
+        client = Client("WrongUserName", "WrongPassword", "WrongPCENumber", Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=False)
+
+        with pytest.raises(LoginError):
+            client.update()
 
     @pytest.mark.skip(reason="Hourly data is not yet implemented")
     def test_hourly_live(self):

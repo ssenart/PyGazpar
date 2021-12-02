@@ -19,28 +19,14 @@ def main():
     parser.add_argument("-p", "--password",
                         required=True,
                         help="GRDF password")
-    parser.add_argument("-w", "--webdriver",
+    parser.add_argument("-c", "--pce",
                         required=True,
-                        help="Firefox webdriver executable (geckodriver)")
-    parser.add_argument("-s", "--wait_time",
-                        required=False,
                         type=int,
-                        default=30,
-                        help="Wait time in seconds (see https://selenium-python.readthedocs.io/waits.html for details)")
+                        help="GRDF PCE identifier")
     parser.add_argument("-t", "--tmpdir",
                         required=False,
                         default="/tmp",
                         help="tmp directory (default is /tmp)")
-    parser.add_argument("-l", "--lastNRows",
-                        required=False,
-                        type=int,
-                        default=0,
-                        help="Get only the last N rows (default is 0: it means all rows are retrieved)")
-    parser.add_argument("--headfull",
-                        required=False,
-                        action='store_true',
-                        default=False,
-                        help="Run Selenium in headfull mode (default is headless)")
     parser.add_argument("-f", "--frequency",
                         required=False,
                         type=lambda frequency: pygazpar.Frequency[frequency], choices=list(pygazpar.Frequency),
@@ -77,16 +63,12 @@ def main():
     logging.basicConfig(filename=f"{pygazparLogFile}", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 
     logging.info(f"PyGazpar {pygazpar.__version__}")
-    logging.info(f"--webdriver {args.webdriver}")
-    logging.info(f"--wait_time {int(args.wait_time)}")
     logging.info(f"--tmpdir {args.tmpdir}")
-    logging.info(f"--lastNRows {int(args.lastNRows)}")
-    logging.info(f"--headfull {bool(args.headfull)}")
     logging.info(f"--frequency {args.frequency}")
     logging.info(f"--lastNDays {args.lastNDays}")
     logging.info(f"--testMode {bool(args.testMode)}")
 
-    client = pygazpar.Client(args.username, args.password, args.webdriver, int(args.wait_time), args.tmpdir, int(args.lastNRows), not bool(args.headfull), args.frequency, int(args.lastNDays), bool(args.testMode))
+    client = pygazpar.Client(args.username, args.password, int(args.pce), args.frequency, int(args.lastNDays), args.tmpdir, bool(args.testMode))
 
     try:
         client.update()

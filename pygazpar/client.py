@@ -34,7 +34,7 @@ class LoginError(Exception):
 class Client:
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, pceIdentifier: int, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY, lastNDays: int = DEFAULT_LAST_N_DAYS, tmpDirectory: str = DEFAULT_TMP_DIRECTORY, testMode: bool = False):
+    def __init__(self, username: str, password: str, pceIdentifier: str, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY, lastNDays: int = DEFAULT_LAST_N_DAYS, tmpDirectory: str = DEFAULT_TMP_DIRECTORY, testMode: bool = False):
         self.__username = username
         self.__password = password
         self.__pceIdentifier = pceIdentifier

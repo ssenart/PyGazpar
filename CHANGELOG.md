@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.2](https://github.com/ssenart/PyGazpar/compare/1.1.1...1.1.2) - 2022-01-08
 ### Fixed
-- Numéro PCE pas forcément un nombre: Le numéro PCE de mon compteur commence par un 0 et lorsque j'essaie de récupérer mes relevés avec PyGazpar, une erreur de l'API est renvoyée. Le numéro PCE ne doit donc pas être converti en int lorsque il est passé en paramètre mais doit être une string (thanks to [maelgangloff ](https://github.com/maelgangloff)).
+- [#39](https://github.com/ssenart/PyGazpar/issues/39): NameError: name 'Frequency' is not defined (thanks [nicolas-r](https://github.com/nicolas-r)).
+- Numéro PCE pas forcément un nombre: Le numéro PCE de mon compteur commence par un 0 et lorsque j'essaie de récupérer mes relevés avec PyGazpar, une erreur de l'API est renvoyée. Le numéro PCE ne doit donc pas être converti en int lorsque il est passé en paramètre mais doit être une string (thanks  [maelgangloff](https://github.com/maelgangloff)).
 
 ## [1.1.1](https://github.com/ssenart/PyGazpar/compare/1.1.0...1.1.1) - 2021-12-02
 ### Changed

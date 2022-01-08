@@ -54,7 +54,7 @@ import pygazpar
 client = pygazpar.Client(username='your login',
                          password='your password',
                          pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=Frequency.DAILY,
+                         meterReadingFrequency=pygazpar.Frequency.DAILY,
                          lastNDays=10,
                          tmpDirectory='/tmp/pygazpar')
 
@@ -123,7 +123,7 @@ import pygazpar
 client = pygazpar.Client(username='your login',
                          password='your password',
                          pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=Frequency.WEEKLY,
+                         meterReadingFrequency=pygazpar.Frequency.WEEKLY,
                          lastNDays=10,
                          tmpDirectory='/tmp/pygazpar')
 
@@ -172,7 +172,7 @@ import pygazpar
 client = pygazpar.Client(username='your login',
                          password='your password',
                          pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=Frequency.MONTHLY,
+                         meterReadingFrequency=pygazpar.Frequency.MONTHLY,
                          lastNDays=10,
                          tmpDirectory='/tmp/pygazpar')
 

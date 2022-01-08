@@ -20,7 +20,7 @@ def main():
                         required=True,
                         help="GRDF password")
     parser.add_argument("-c", "--pce",
-                        required=True,,
+                        required=True,
                         help="GRDF PCE identifier")
     parser.add_argument("-t", "--tmpdir",
                         required=False,

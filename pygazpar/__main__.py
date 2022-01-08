@@ -20,8 +20,7 @@ def main():
                         required=True,
                         help="GRDF password")
     parser.add_argument("-c", "--pce",
-                        required=True,
-                        type=int,
+                        required=True,,
                         help="GRDF PCE identifier")
     parser.add_argument("-t", "--tmpdir",
                         required=False,
@@ -68,7 +67,7 @@ def main():
     logging.info(f"--lastNDays {args.lastNDays}")
     logging.info(f"--testMode {bool(args.testMode)}")
 
-    client = pygazpar.Client(args.username, args.password, int(args.pce), args.frequency, int(args.lastNDays), args.tmpdir, bool(args.testMode))
+    client = pygazpar.Client(args.username, args.password, args.pce, args.frequency, int(args.lastNDays), args.tmpdir, bool(args.testMode))
 
     try:
         client.update()

@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.3](https://github.com/ssenart/PyGazpar/compare/1.1.2...1.1.3) - 2022-01-18
 ### Changed
-- [#43](https://github.com/ssenart/PyGazpar/issues/43): Downloaded Excel file name has changed from Donnees_informatives_PCE_{dateDebut}{dateFin}.xlsx to Donnees_informatives{NumeroPCE}{dateDebut}{dateFin}.xlsx.
+- [#43](https://github.com/ssenart/PyGazpar/issues/43): Downloaded Excel file name has changed from Donnees_informatives_PCE_$dateDebut_$dateFin.xlsx to Donnees_informatives_$numeroPCE_$dateDebut_$dateFin.xlsx.
 
 ## [1.1.2](https://github.com/ssenart/PyGazpar/compare/1.1.1...1.1.2) - 2022-01-08
 ### Fixed

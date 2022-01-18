@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3](https://github.com/ssenart/PyGazpar/compare/1.1.2...1.1.3) - 2022-01-18
+### Changed
+- [#43](https://github.com/ssenart/PyGazpar/issues/43): Downloaded Excel file name has changed from Donnees_informatives_PCE_$dateDebut_$dateFin.xlsx to Donnees_informatives_$numeroPCE_$dateDebut_$dateFin.xlsx.
+
 ## [1.1.2](https://github.com/ssenart/PyGazpar/compare/1.1.1...1.1.2) - 2022-01-08
 ### Fixed
 - [#39](https://github.com/ssenart/PyGazpar/issues/39): NameError: name 'Frequency' is not defined (thanks [nicolas-r](https://github.com/nicolas-r)).

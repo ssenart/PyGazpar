@@ -30,9 +30,9 @@ jobs:
         includePrerelease: false
 
     # GitVersion execution : see examples at https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute/usage-examples.md
-    - name: Determine Version
-      id:   gitversion
-      uses: gittools/actions/gitversion/execute@v0.9.7
+    # - name: Determine Version
+    #   id:   gitversion
+    #   uses: gittools/actions/gitversion/execute@v0.9.7
 
     - name: Display GitVersion outputs
       run: |

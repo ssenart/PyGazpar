@@ -8,6 +8,7 @@ from pygazpar.enum import Frequency
 from pygazpar.datafileparser import DataFileParser
 
 LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
+LOGIN_HEADER = {"domain": "grdf.fr"}
 LOGIN_PAYLOAD = """{{
     "email": "{0}",
     "password": "{1}",
@@ -93,6 +94,8 @@ class Client:
         try:
 
             session = requests.Session()
+
+            session.headers.update(LOGIN_HEADER)
 
             self.__login(session)
 

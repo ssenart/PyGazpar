@@ -58,7 +58,7 @@ class ClientV2:
                 }
             )
 
-            # Get nonce
+            # Get auth_nonce cookie.
             _ = session.get("https://monespace.grdf.fr/client/particulier/accueil")
             if "auth_nonce" not in session.cookies:
                 raise Exception("Cannot get auth_nonce.")

@@ -40,11 +40,11 @@ class Client:
         self.__username = username
         self.__password = password
         self.__pceIdentifier = pceIdentifier
-        self.__tmpDirectory = tmpDirectory
-        self.__data = list[dict[str, Any]]()
+        self.__tmpDirectory = tmpDirectory        
         self.__meterReadingFrequency = meterReadingFrequency
         self.__lastNDays = lastNDays
         self.__testMode = testMode
+        self.__data = []
 
     # ------------------------------------------------------
     def data(self) -> list[dict[str, Any]]:

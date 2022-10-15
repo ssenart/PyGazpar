@@ -19,7 +19,7 @@ class TestClient:
         setup_class.
         """
 
-    def setup_method(self, method):
+    def setup_method(self):
         """ setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
@@ -37,14 +37,9 @@ class TestClient:
         self.__username = os.environ["GRDF_USERNAME"]
         self.__password = os.environ["GRDF_PASSWORD"]
         self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]
-        if os.name == 'nt':
-            self.__webdriver = "./drivers/geckodriver.exe"
-        else:
-            self.__webdriver = "./drivers/geckodriver"
-        self.__wait_time = 30
         self.__tmp_directory = tmpdir
 
-    def teardown_method(self, method):
+    def teardown_method(self):
         """ teardown any state that was previously setup with a setup_method
         call.
         """

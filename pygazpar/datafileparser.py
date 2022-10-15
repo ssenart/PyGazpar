@@ -60,9 +60,9 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet) -> list[dict[str, str]]:
+    def __parseDaily(worksheet: Worksheet) -> list[dict[str, Any]]:
 
-        res = list[dict[str, str]]()
+        res = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
@@ -89,7 +89,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet) -> list[dict[str, str]]:
+    def __parseWeekly(worksheet: Worksheet) -> list[dict[str, Any]]:
 
         res = []
 
@@ -113,7 +113,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet) -> list[dict[str, str]]:
+    def __parseMonthly(worksheet: Worksheet) -> list[dict[str, Any]]:
 
         res = []
 

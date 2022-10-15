@@ -13,7 +13,7 @@ Logger = logging.getLogger(__name__)
 class ClientV2:
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, pceIdentifier: int, lastNDays: int = DEFAULT_LAST_N_DAYS, testMode: bool = False):
+    def __init__(self, username: str, password: str, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, testMode: bool = False):
         self.__username = username
         self.__password = password
         self.__pceIdentifier = pceIdentifier

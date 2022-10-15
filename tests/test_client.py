@@ -60,56 +60,56 @@ class TestClient:
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.HOURLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
-    @pytest.mark.skip(reason="Requires live data")
+    # @pytest.mark.skip(reason="Requires live data")
     def test_daily_live(self):
-        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=30)
+        client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=720)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
     @pytest.mark.skip(reason="Requires live data")
     def test_weekly_live(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.WEEKLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
     @pytest.mark.skip(reason="Requires live data")
     def test_monthly_live(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.MONTHLY, tmpDirectory=self.__tmp_directory, lastNDays=30)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
     def test_hourly_sample(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.HOURLY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert(len(client.data()) == 0)
+        assert (len(client.data()) == 0)
 
     def test_daily_sample(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.DAILY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
     def test_weekly_sample(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.WEEKLY, tmpDirectory=self.__tmp_directory, lastNDays=365, testMode=True)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
     def test_monthly_sample(self):
         client = Client(self.__username, self.__password, self.__pceIdentifier, Frequency.MONTHLY, tmpDirectory=self.__tmp_directory, lastNDays=30, testMode=True)
         client.update()
 
-        assert(len(client.data()) > 0)
+        assert (len(client.data()) > 0)
 
-    @pytest.mark.skip(reason="Requires live data")
+    # @pytest.mark.skip(reason="Requires live data")
     def test_clientV2(self):
         client = ClientV2(self.__username, self.__password, self.__pceIdentifier, lastNDays=10, testMode=False)
         client.update()
 
-        assert(len(client.data()) == 360)
+        assert (len(client.data()) == 360)

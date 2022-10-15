@@ -6,6 +6,7 @@ import datetime
 import requests
 from pygazpar.enum import Frequency
 from pygazpar.datafileparser import DataFileParser
+from typing import Any, cast
 
 LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
 LOGIN_HEADER = {"domain": "grdf.fr"}
@@ -40,13 +41,13 @@ class Client:
         self.__password = password
         self.__pceIdentifier = pceIdentifier
         self.__tmpDirectory = tmpDirectory
-        self.__data = []
+        self.__data = list[dict[str, Any]]()
         self.__meterReadingFrequency = meterReadingFrequency
         self.__lastNDays = lastNDays
         self.__testMode = testMode
 
     # ------------------------------------------------------
-    def data(self) -> dict:
+    def data(self) -> list[dict[str, Any]]:
         return self.__data
 
     # ------------------------------------------------------
@@ -71,7 +72,7 @@ class Client:
             dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[self.__meterReadingFrequency]}"
 
             with open(dataSampleFilename) as jsonFile:
-                data = json.load(jsonFile)
+                data = cast(list[dict[str, Any]], json.load(jsonFile))
                 self.__data = data
         except Exception:
             Logger.error("An unexpected error occured while loading sample data", exc_info=True)

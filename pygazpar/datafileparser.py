@@ -51,7 +51,7 @@ class DataFileParser:
                 else:
                     row[propertyName] = cell.value
             else:
-                row[propertyName] = cell.value
+                row[propertyName] = cell.value.strip() if type(cell.value) is str else cell.value
 
     # ------------------------------------------------------
     @staticmethod

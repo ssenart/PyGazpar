@@ -8,13 +8,14 @@ from pygazpar.enum import Frequency
 from pygazpar.datafileparser import DataFileParser
 from typing import Any, cast
 
+AUTH_NONCE_URL = "https://monespace.grdf.fr/client/particulier/accueil"
 LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
 LOGIN_HEADER = {"domain": "grdf.fr"}
 LOGIN_PAYLOAD = """{{
     "email": "{0}",
     "password": "{1}",
     "capp": "meg",
-    "goto": "https://sofa-connexion.grdf.fr:443/openam/oauth2/externeGrdf/authorize?response_type=code&scope=openid%20profile%20email%20infotravaux%20%2Fv1%2Faccreditation%20%2Fv1%2Faccreditations%20%2Fdigiconso%2Fv1%20%2Fdigiconso%2Fv1%2Fconsommations%20new_meg&client_id=prod_espaceclient&state=0&redirect_uri=https%3A%2F%2Fmonespace.grdf.fr%2F_codexch&nonce=skywsNPCVa-AeKo1Rps0HjMVRNbUqA46j7XYA4tImeI&by_pass_okta=1&capp=meg"}}"""
+    "goto": "https://sofa-connexion.grdf.fr:443/openam/oauth2/externeGrdf/authorize?response_type=code&scope=openid%20profile%20email%20infotravaux%20%2Fv1%2Faccreditation%20%2Fv1%2Faccreditations%20%2Fdigiconso%2Fv1%20%2Fdigiconso%2Fv1%2Fconsommations%20new_meg&client_id=prod_espaceclient&state=0&redirect_uri=https%3A%2F%2Fmonespace.grdf.fr%2F_codexch&nonce={2}&by_pass_okta=1&capp=meg"}}"""
 DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={1}&dateFin={2}&frequence={0}&pceList%5B%5D={3}"
 DATA_FILENAME = 'Donnees_informatives_*.xlsx'
 
@@ -24,12 +25,6 @@ DEFAULT_LAST_N_DAYS = 365
 
 
 Logger = logging.getLogger(__name__)
-
-
-# ------------------------------------------------------------------------------------------------------------
-class LoginError(Exception):
-    """ Client has failed to login in GrDF Web site (check username/password)"""
-    pass
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -138,18 +133,31 @@ class Client:
     # ------------------------------------------------------
     def __login(self, session: requests.Session):
 
-        payload = LOGIN_PAYLOAD.format(self.__username, self.__password)
+        # Get auth_nonce token.
+        session.get(AUTH_NONCE_URL)
+        if "auth_nonce" not in session.cookies:
+            raise Exception("Login error: Cannot get auth_nonce token")
+        auth_nonce = session.cookies.get("auth_nonce")
 
+        # Build the login payload as a json string.
+        payload = LOGIN_PAYLOAD.format(self.__username, self.__password, auth_nonce)
+
+        # Build the login payload as a python object.
         data = json.loads(payload)
 
-        response = session.post('https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth', data=data)
+        # Send the login command.
+        response = session.post(LOGIN_URL, data=data)
+
+        # Check login result.
+        loginData = response.json()
 
         response.raise_for_status()
 
-        loginData = response.json()
+        if "status" in loginData and "error" in loginData and loginData["status"] >= 400:
+            raise Exception(f"{loginData['error']} ({loginData['status']})")
 
-        if loginData["state"] != "SUCCESS":
-            raise LoginError()
+        if "state" in loginData and loginData["state"] != "SUCCESS":
+            raise Exception(loginData["error"])
 
     # ------------------------------------------------------
     def __downloadFile(self, session: requests.Session, url: str, path: str):

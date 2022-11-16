@@ -35,7 +35,7 @@ class Client:
         self.__username = username
         self.__password = password
         self.__pceIdentifier = pceIdentifier
-        self.__tmpDirectory = tmpDirectory        
+        self.__tmpDirectory = tmpDirectory
         self.__meterReadingFrequency = meterReadingFrequency
         self.__lastNDays = lastNDays
         self.__testMode = testMode

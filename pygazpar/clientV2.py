@@ -2,6 +2,7 @@ import logging
 import requests
 import datetime
 import json
+from typing import Dict
 
 DEFAULT_LAST_N_DAYS = 365
 
@@ -22,7 +23,7 @@ class ClientV2:
         self.__data = {}
 
     # ------------------------------------------------------
-    def data(self) -> dict:
+    def data(self) -> Dict:
         return self.__data
 
     # ------------------------------------------------------

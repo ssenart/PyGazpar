@@ -5,7 +5,7 @@ from pygazpar.enum import PropertyName
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
 from openpyxl import load_workbook
-from typing import Any
+from typing import Any, List, Dict
 
 
 FIRST_DATA_LINE_NUMBER = 10
@@ -18,7 +18,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> list[dict[str, Any]]:
+    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> List[Dict[str, Any]]:
 
         parseByFrequency = {
             Frequency.HOURLY: DataFileParser.__parseHourly,
@@ -41,7 +41,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __fillRow(row: dict, propertyName: str, cell: Cell, isNumber: bool):
+    def __fillRow(row: Dict, propertyName: str, cell: Cell, isNumber: bool):
 
         if cell.value is not None:
             if isNumber:
@@ -55,12 +55,12 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseHourly(worksheet: Worksheet) -> List[Dict[str, Any]]:
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseDaily(worksheet: Worksheet) -> List[Dict[str, Any]]:
 
         res = []
 
@@ -70,7 +70,7 @@ class DataFileParser:
         minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet['B'])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = dict[str, str]()
+            row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
                 DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
                 DataFileParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
@@ -89,7 +89,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseWeekly(worksheet: Worksheet) -> List[Dict[str, Any]]:
 
         res = []
 
@@ -113,7 +113,7 @@ class DataFileParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseMonthly(worksheet: Worksheet) -> List[Dict[str, Any]]:
 
         res = []
 

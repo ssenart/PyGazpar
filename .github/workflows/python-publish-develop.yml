@@ -128,13 +128,31 @@ jobs:
         replace-with: 'py$1$2'
         flags: 'g'
 
+    - name: Version preReleaseTag alpha replaced by a letter
+      uses: frabert/replace-string-action@master
+      id: alpha_PreReleaseTag
+      with:
+        pattern: 'alpha'
+        string: '${{ steps.gitversion.outputs.preReleaseTag }}'
+        replace-with: 'a'
+        flags: 'g'        
+
+    - name: Version preReleaseTag beta replaced by b letter
+      uses: frabert/replace-string-action@master
+      id: PreReleaseTag
+      with:
+        pattern: 'beta'
+        string: '${{ steps.alpha_PreReleaseTag.outputs.replaced }}'
+        replace-with: 'b'
+        flags: 'g' 
+
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
       run: |
-        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.majorMinorPatch }}.dev${{ steps.gitversion.outputs.buildMetaData }}
+        python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.majorMinorPatch }}${{ steps.gitversion.outputs.majorMinorPatch }}${{ steps.PreReleaseTag.outputs.replaced }}${{ steps.gitversion.outputs.preReleaseNumber }}.dev${{ steps.gitversion.outputs.buildMetaData }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
         twine upload --skip-existing --repository testpypi dist/*
-      if: ${{ matrix.python-version == 3.10 && github.repository == 'ssenart/PyGazpar' }}
+      if: ${{ github.repository == 'ssenart/PyGazpar' }}
 

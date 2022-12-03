@@ -4,14 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0](https://github.com/ssenart/PyGazpar/compare/1.1.7...2.0.0) - 2022-12-03
+## [2.0.0](https://github.com/ssenart/PyGazpar/compare/1.1.6...2.0.0) - 2022-12-03
 
 ### Changed
-- [#59](https://github.com/ssenart/PyGazpar/issues/59): [Feature] Support both Excel and Json data source format.
-
-## [1.1.7](https://github.com/ssenart/PyGazpar/compare/1.1.6...1.1.7) - 2022-12-01
-### Fixed
-- [#28](https://github.com/ssenart/PyGazpar/issues/28): GrDF web site update: use the new API URL to get the data from.
+- [#59](https://github.com/ssenart/PyGazpar/issues/59): [Feature] Support both Excel and Json data source format from GrDF site.
 
 ## [1.1.6](https://github.com/ssenart/PyGazpar/compare/1.1.5...1.1.6) - 2022-11-16
 ### Fixed

@@ -106,7 +106,7 @@ By default, PyGazpar queries for daily consumption data.
 
 However, it is also possible to get weekly or monthly consumption data :
 
-### Weekly
+### Weekly (Not yet available in version 2.0.0)
 
 #### Command line:
 ```bash
@@ -151,7 +151,7 @@ data =>
 ]
 ```
 
-### Monthly
+### Monthly (Not yet available in version 2.0.0)
 
 #### Command line:
 ```bash
@@ -211,15 +211,9 @@ $ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'tempo
 ```python
 import pygazpar
 
-client = pygazpar.Client(username='your login',
-                         password='your password',
-                         pceIdentifier='your PCE identifier',
-                         tmpDirectory='/tmp/pygazpar',
-                         testMode = True)
+client = pygazpar.Client(pygazpar.TestDataSource())
 
-client.update()
-
-data = client.data()
+data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.DAILY)
 ```
 
 ## Limitation

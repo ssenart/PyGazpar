@@ -20,6 +20,7 @@ class Frequency(Enum):
     DAILY = 1
     WEEKLY = 2
     MONTHLY = 3
+    YEARLY = 4
 
     def __str__(self):
         return self.name

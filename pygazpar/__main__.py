@@ -67,15 +67,18 @@ def main():
     logging.info(f"--lastNDays {args.lastNDays}")
     logging.info(f"--testMode {bool(args.testMode)}")
 
-    client = pygazpar.Client(args.username, args.password, args.pce, args.frequency, int(args.lastNDays), args.tmpdir, bool(args.testMode))
+    if bool(args.testMode):
+        client = pygazpar.Client(pygazpar.TestDataSource())
+    else:
+        client = pygazpar.Client(pygazpar.JsonWebDataSource(args.username, args.password))
 
     try:
-        client.update()
+        data = client.loadSince(args.pce, int(args.lastNDays), args.frequency)
     except BaseException:
         print('An error occured while querying PyGazpar library : %s', traceback.format_exc())
         return 1
 
-    print(json.dumps(client.data(), indent=2))
+    print(json.dumps(data, indent=2))
 
 
 if __name__ == '__main__':

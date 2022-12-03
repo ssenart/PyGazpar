@@ -10,24 +10,24 @@ from typing import Any, List, Dict
 
 FIRST_DATA_LINE_NUMBER = 10
 
+Logger = logging.getLogger(__name__)
+
 
 # ------------------------------------------------------------------------------------------------------------
-class DataFileParser:
-
-    logger = logging.getLogger(__name__)
+class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
     def parse(dataFilename: str, dataReadingFrequency: Frequency) -> List[Dict[str, Any]]:
 
         parseByFrequency = {
-            Frequency.HOURLY: DataFileParser.__parseHourly,
-            Frequency.DAILY: DataFileParser.__parseDaily,
-            Frequency.WEEKLY: DataFileParser.__parseWeekly,
-            Frequency.MONTHLY: DataFileParser.__parseMonthly
+            Frequency.HOURLY: ExcelParser.__parseHourly,
+            Frequency.DAILY: ExcelParser.__parseDaily,
+            Frequency.WEEKLY: ExcelParser.__parseWeekly,
+            Frequency.MONTHLY: ExcelParser.__parseMonthly
         }
 
-        DataFileParser.logger.debug(f"Loading Excel data file '{dataFilename}'...")
+        Logger.debug(f"Loading Excel data file '{dataFilename}'...")
 
         workbook = load_workbook(filename=dataFilename)
 
@@ -72,18 +72,18 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.END_INDEX.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=5, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=6, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.CONVERTER_FACTOR.value, worksheet.cell(column=7, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.TEMPERATURE.value, worksheet.cell(column=8, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.TYPE.value, worksheet.cell(column=9, row=rownum), False)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.END_INDEX.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=5, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=6, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.CONVERTER_FACTOR.value, worksheet.cell(column=7, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.TEMPERATURE.value, worksheet.cell(column=8, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.TYPE.value, worksheet.cell(column=9, row=rownum), False)  # type: ignore
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 
-        DataFileParser.logger.debug(f"Daily data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"Daily data read successfully between row #{minRowNum} and row #{maxRowNum}")
 
         return res
 
@@ -101,13 +101,13 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 
-        DataFileParser.logger.debug(f"Weekly data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"Weekly data read successfully between row #{minRowNum} and row #{maxRowNum}")
 
         return res
 
@@ -125,12 +125,12 @@ class DataFileParser:
         for rownum in range(minRowNum, maxRowNum + 1):
             row = {}
             if worksheet.cell(column=2, row=rownum).value is not None:
-                DataFileParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                DataFileParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
+                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
                 row[PropertyName.TIMESTAMP.value] = data_timestamp
                 res.append(row)
 
-        DataFileParser.logger.debug(f"Monthly data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"Monthly data read successfully between row #{minRowNum} and row #{maxRowNum}")
 
         return res

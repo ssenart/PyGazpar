@@ -51,16 +51,13 @@ $ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'tempo
 ```python
 import pygazpar
 
-client = pygazpar.Client(username='your login',
-                         password='your password',
-                         pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=pygazpar.Frequency.DAILY,
-                         lastNDays=10,
-                         tmpDirectory='/tmp/pygazpar')
+client = pygazpar.Client(pygazpar.JsonWebDataSource(
+                            username='your login',
+                            password='your password')
+                        )
 
-client.update()
+data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.DAILY)
 
-data = client.data()
 ```
 
 #### Output:
@@ -120,16 +117,12 @@ $ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'tempo
 ```python
 import pygazpar
 
-client = pygazpar.Client(username='your login',
-                         password='your password',
-                         pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=pygazpar.Frequency.WEEKLY,
-                         lastNDays=10,
-                         tmpDirectory='/tmp/pygazpar')
+client = pygazpar.Client(pygazpar.JsonWebDataSource(
+                            username='your login',
+                            password='your password')
+                        )
 
-client.update()
-
-data = client.data()
+data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.WEEKLY)
 ```
 
 #### Output:
@@ -169,16 +162,12 @@ $ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'tempo
 ```python
 import pygazpar
 
-client = pygazpar.Client(username='your login',
-                         password='your password',
-                         pceIdentifier='your PCE identifier',
-                         meterReadingFrequency=pygazpar.Frequency.MONTHLY,
-                         lastNDays=10,
-                         tmpDirectory='/tmp/pygazpar')
+client = pygazpar.Client(pygazpar.JsonWebDataSource(
+                            username='your login',
+                            password='your password')
+                        )
 
-client.update()
-
-data = client.data()
+data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.MONTHLY)
 ```
 
 #### Output:

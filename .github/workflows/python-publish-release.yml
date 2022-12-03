@@ -31,12 +31,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Firefox
-      run: |
-        sudo apt -y update
-        sudo apt -y install firefox
-        sudo apt -y --only-upgrade install firefox
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

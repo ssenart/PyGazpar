@@ -147,6 +147,7 @@ jobs:
       run: |
         python updateVersion.py --nextVersion ${{ steps.gitversion.outputs.majorMinorPatch }}${{ steps.PreReleaseLabel.outputs.replaced }}${{ steps.gitversion.outputs.preReleaseNumber }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
-        twine upload --skip-existing --repository testpypi dist/*
+        # twine upload --skip-existing --repository testpypi dist/*
+        twine upload --skip-existing dist/*
       if: ${{ github.repository == 'ssenart/PyGazpar' }}
 

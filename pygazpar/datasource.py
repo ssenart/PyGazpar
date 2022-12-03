@@ -190,7 +190,7 @@ class JsonWebDataSource(WebDataSource):
 
         # For the moment, only daily is supported.
         if frequency != Frequency.DAILY:
-            raise Exception("Only daily data are supported with JsonWebDataSource")
+            return []
 
         # Inject parameters.
         downloadUrl = JsonWebDataSource.DATA_URL.format(startDate.strftime(JsonWebDataSource.DATE_FORMAT), endDate.strftime(JsonWebDataSource.DATE_FORMAT), pceIdentifier)

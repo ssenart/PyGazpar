@@ -61,29 +61,26 @@ class TestClient:
 
         assert (len(data) > 0)
 
-    @pytest.mark.skip(reason="Weekly data is not yet implemented")
     def test_weekly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.WEEKLY)
 
-        assert (len(data) > 0)
+        assert (len(data) == 0)
 
-    @pytest.mark.skip(reason="Monthly data is not yet implemented")
     def test_monthly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.MONTHLY)
 
-        assert (len(data) > 0)
+        assert (len(data) == 0)
 
-    @pytest.mark.skip(reason="Yearly data is not yet implemented")
     def test_yearly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.YEARLY)
 
-        assert (len(data) > 0)
+        assert (len(data) == 0)
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())

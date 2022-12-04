@@ -6,7 +6,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict, cast
 from requests import Session
-from datetime import date
+from datetime import date, timedelta
 from pygazpar.enum import Frequency
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
@@ -181,6 +181,8 @@ class JsonWebDataSource(WebDataSource):
 
     DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut={0}&dateFin={1}&pceList%5B%5D={2}"
 
+    TEMPERATURES_URL = "https://monespace.grdf.fr/api/e-conso/pce/{0}/meteo?dateFinPeriode={1}&nbJours={2}"
+
     INPUT_DATE_FORMAT = "%Y-%m-%d"
 
     OUTPUT_DATE_FORMAT = "%d/%m/%Y"
@@ -203,16 +205,25 @@ class JsonWebDataSource(WebDataSource):
             Frequency.YEARLY: FrequencyConverter.computeYearly
         }
 
-        # Inject parameters.
+        # Data URL: Inject parameters.
         downloadUrl = JsonWebDataSource.DATA_URL.format(startDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), pceIdentifier)
 
         # First request never returns data.
         session.get(downloadUrl)
 
-        # Get data
+        # Get consumption data.
         data = session.get(downloadUrl).text
 
-        daily = JsonParser.parse(data, pceIdentifier)
+        # Temperatures URL: Inject parameters.
+        endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
+        days = min((endDate - startDate).days, 730)
+        temperaturesUrl = JsonWebDataSource.TEMPERATURES_URL.format(pceIdentifier, endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), days)
+
+        # Get weather data.
+        temperatures = session.get(temperaturesUrl).text
+
+        # Transform all the data into the target structure.
+        daily = JsonParser.parse(data, temperatures, pceIdentifier)
 
         res = computeByFrequency[frequency](daily)
 
@@ -222,9 +233,10 @@ class JsonWebDataSource(WebDataSource):
 # ------------------------------------------------------------------------------------------------------------
 class JsonFileDataSource(IDataSource):
 
-    def __init__(self, jsonFile: str):
+    def __init__(self, consumptionJsonFile: str, temperatureJsonFile):
 
-        self.__jsonFile = jsonFile
+        self.__consumptionJsonFile = consumptionJsonFile
+        self.__temperatureJsonFile = temperatureJsonFile
 
     def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
 
@@ -232,8 +244,9 @@ class JsonFileDataSource(IDataSource):
         if frequency == Frequency.HOURLY:
             return []
 
-        with open(self.__jsonFile) as jsonFile:
-            daily = JsonParser.parse(jsonFile.read(), pceIdentifier)
+        with open(self.__consumptionJsonFile) as consumptionJsonFile:
+            with open(self.__temperatureJsonFile) as temperatureJsonFile:
+                daily = JsonParser.parse(consumptionJsonFile.read(), temperatureJsonFile.read(), pceIdentifier)
 
         computeByFrequency = {
             Frequency.HOURLY: FrequencyConverter.computeHourly,

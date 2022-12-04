@@ -60,7 +60,7 @@ class TestAllDataSource:
     # ------------------------------------------------------
     def test_daily_jsonfile_sample(self):
 
-        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json", "tests/resources/temperatures.json")
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
@@ -72,7 +72,7 @@ class TestAllDataSource:
     # ------------------------------------------------------
     def test_weekly_jsonfile_sample(self):
 
-        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json", "tests/resources/temperatures.json")
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
@@ -84,7 +84,7 @@ class TestAllDataSource:
     # ------------------------------------------------------
     def test_monthly_jsonfile_sample(self):
 
-        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json", "tests/resources/temperatures.json")
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
@@ -96,7 +96,7 @@ class TestAllDataSource:
     # ------------------------------------------------------
     def test_yearly_jsonfile_sample(self):
 
-        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json", "tests/resources/temperatures.json")
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)

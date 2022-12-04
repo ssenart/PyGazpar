@@ -3,7 +3,6 @@ import glob
 import os
 import json
 import pandas as pd
-import locale
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict, cast
 from requests import Session
@@ -279,6 +278,21 @@ class TestDataSource(IDataSource):
 # ------------------------------------------------------------------------------------------------------------
 class FrequencyConverter:
 
+    MONTHS = [
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre"
+    ]
+
     # ------------------------------------------------------
     @staticmethod
     def computeHourly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -294,9 +308,6 @@ class FrequencyConverter:
     # ------------------------------------------------------
     @staticmethod
     def computeWeekly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
-        # Switch to French locale for date format.
-        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         df = pd.DataFrame(daily)
 
@@ -326,17 +337,11 @@ class FrequencyConverter:
 
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
 
-        # Restore default locale.
-        locale.setlocale(locale.LC_ALL, "")
-
         return res
 
     # ------------------------------------------------------
     @staticmethod
     def computeMonthly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
-        # Switch to French locale for date format.
-        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         df = pd.DataFrame(daily)
 
@@ -344,10 +349,7 @@ class FrequencyConverter:
         df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
 
         # Get the corresponding month-year.
-        df["month_year"] = df["date_time"].dt.strftime("%B %Y")
-
-        # Capitalize the month name.
-        df["month_year"] = df["month_year"].apply(lambda x: x.capitalize())
+        df["month_year"] = df["date_time"].apply(lambda x: FrequencyConverter.MONTHS[x.month - 1]).astype(str) + " " + df["date_time"].dt.strftime("%Y").astype(str)
 
         # Aggregate rows by month_year.
         df = df[["date_time", "month_year", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]].groupby("month_year").agg(first_day_of_month=('date_time', 'min'), start_index_m3=('start_index_m3', 'min'), end_index_m3=('end_index_m3', 'max'), volume_m3=('volume_m3', 'sum'), energy_kwh=('energy_kwh', 'sum'), timestamp=('timestamp', 'min'), count=('energy_kwh', 'count')).reset_index()
@@ -366,17 +368,11 @@ class FrequencyConverter:
 
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
 
-        # Restore default locale.
-        locale.setlocale(locale.LC_ALL, "")
-
         return res
 
     # ------------------------------------------------------
     @staticmethod
     def computeYearly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
-        # Switch to French locale for date format.
-        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
 
         df = pd.DataFrame(daily)
 
@@ -402,8 +398,5 @@ class FrequencyConverter:
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
 
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
-
-        # Restore default locale.
-        locale.setlocale(locale.LC_ALL, "")
 
         return res

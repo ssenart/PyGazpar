@@ -327,7 +327,7 @@ class FrequencyConverter:
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
 
         # Restore default locale.
-        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+        locale.setlocale(locale.LC_ALL, "")
 
         return res
 
@@ -367,7 +367,7 @@ class FrequencyConverter:
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
 
         # Restore default locale.
-        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+        locale.setlocale(locale.LC_ALL, "")
 
         return res
 
@@ -404,6 +404,6 @@ class FrequencyConverter:
         res = cast(List[Dict[str, Any]], df.to_dict('records'))
 
         # Restore default locale.
-        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+        locale.setlocale(locale.LC_ALL, "")
 
         return res

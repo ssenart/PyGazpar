@@ -66,21 +66,21 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.WEEKLY)
 
-        assert (len(data) == 0)
+        assert (len(data) == 52)
 
     def test_monthly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.MONTHLY)
 
-        assert (len(data) == 0)
+        assert (len(data) == 13)
 
     def test_yearly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.YEARLY)
 
-        assert (len(data) == 0)
+        assert (len(data) == 1)
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())

@@ -2,6 +2,8 @@ import logging
 import glob
 import os
 import json
+import pandas as pd
+import locale
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict, cast
 from requests import Session
@@ -180,7 +182,9 @@ class JsonWebDataSource(WebDataSource):
 
     DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut={0}&dateFin={1}&pceList%5B%5D={2}"
 
-    DATE_FORMAT = "%Y-%m-%d"
+    INPUT_DATE_FORMAT = "%Y-%m-%d"
+
+    OUTPUT_DATE_FORMAT = "%d/%m/%Y"
 
     def __init__(self, username: str, password: str):
 
@@ -188,12 +192,20 @@ class JsonWebDataSource(WebDataSource):
 
     def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
 
-        # For the moment, only daily is supported.
-        if frequency != Frequency.DAILY:
+        # Shortcut to avoid useless daily data query.
+        if frequency == Frequency.HOURLY:
             return []
 
+        computeByFrequency = {
+            Frequency.HOURLY: FrequencyConverter.computeHourly,
+            Frequency.DAILY: FrequencyConverter.computeDaily,
+            Frequency.WEEKLY: FrequencyConverter.computeWeekly,
+            Frequency.MONTHLY: FrequencyConverter.computeMonthly,
+            Frequency.YEARLY: FrequencyConverter.computeYearly
+        }
+
         # Inject parameters.
-        downloadUrl = JsonWebDataSource.DATA_URL.format(startDate.strftime(JsonWebDataSource.DATE_FORMAT), endDate.strftime(JsonWebDataSource.DATE_FORMAT), pceIdentifier)
+        downloadUrl = JsonWebDataSource.DATA_URL.format(startDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), pceIdentifier)
 
         # First request never returns data.
         session.get(downloadUrl)
@@ -201,7 +213,9 @@ class JsonWebDataSource(WebDataSource):
         # Get data
         data = session.get(downloadUrl).text
 
-        res = JsonParser.parse(data, pceIdentifier)
+        daily = JsonParser.parse(data, pceIdentifier)
+
+        res = computeByFrequency[frequency](daily)
 
         return res
 
@@ -215,10 +229,22 @@ class JsonFileDataSource(IDataSource):
 
     def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
 
-        res = []
+        # Shortcut to avoid useless daily data query.
+        if frequency == Frequency.HOURLY:
+            return []
 
         with open(self.__jsonFile) as jsonFile:
-            res = JsonParser.parse(jsonFile.read(), pceIdentifier)
+            daily = JsonParser.parse(jsonFile.read(), pceIdentifier)
+
+        computeByFrequency = {
+            Frequency.HOURLY: FrequencyConverter.computeHourly,
+            Frequency.DAILY: FrequencyConverter.computeDaily,
+            Frequency.WEEKLY: FrequencyConverter.computeWeekly,
+            Frequency.MONTHLY: FrequencyConverter.computeMonthly,
+            Frequency.YEARLY: FrequencyConverter.computeYearly
+        }
+
+        res = computeByFrequency[frequency](daily)
 
         return res
 
@@ -246,5 +272,138 @@ class TestDataSource(IDataSource):
 
         with open(dataSampleFilename) as jsonFile:
             res = cast(List[Dict[str, Any]], json.load(jsonFile))
+
+        return res
+
+
+# ------------------------------------------------------------------------------------------------------------
+class FrequencyConverter:
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeHourly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+        return []
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeDaily(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+        return daily
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeWeekly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+        # Switch to French locale for date format.
+        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+
+        df = pd.DataFrame(daily)
+
+        # Trimming head and trailing spaces and convert to datetime.
+        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
+
+        # Get the first day of week.
+        df["first_day_of_week"] = pd.to_datetime(df["date_time"].dt.strftime("%W %Y 1"), format="%W %Y %w")
+
+        # Get the last day of week.
+        df["last_day_of_week"] = pd.to_datetime(df["date_time"].dt.strftime("%W %Y 0"), format="%W %Y %w")
+
+        # Reformat the time period.
+        df["time_period"] = "Du " + df["first_day_of_week"].dt.strftime(JsonWebDataSource.OUTPUT_DATE_FORMAT).astype(str) + " au " + df["last_day_of_week"].dt.strftime(JsonWebDataSource.OUTPUT_DATE_FORMAT).astype(str)
+
+        # Aggregate rows by month_year.
+        df = df[["first_day_of_week", "time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]].groupby("time_period").agg(first_day_of_week=('first_day_of_week', 'min'), start_index_m3=('start_index_m3', 'min'), end_index_m3=('end_index_m3', 'max'), volume_m3=('volume_m3', 'sum'), energy_kwh=('energy_kwh', 'sum'), timestamp=('timestamp', 'min'), count=('energy_kwh', 'count')).reset_index()
+
+        # Sort rows by month ascending.
+        df = df.sort_values(by=['first_day_of_week'])
+
+        # Select rows where we have a full week (7 days) except for the current week.
+        df = pd.concat([df[(df["count"] == 7)], df.tail(1)])
+
+        # Select target columns.
+        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
+
+        res = cast(List[Dict[str, Any]], df.to_dict('records'))
+
+        # Restore default locale.
+        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+
+        return res
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeMonthly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+        # Switch to French locale for date format.
+        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+
+        df = pd.DataFrame(daily)
+
+        # Trimming head and trailing spaces and convert to datetime.
+        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
+
+        # Get the corresponding month-year.
+        df["month_year"] = df["date_time"].dt.strftime("%B %Y")
+
+        # Capitalize the month name.
+        df["month_year"] = df["month_year"].apply(lambda x: x.capitalize())
+
+        # Aggregate rows by month_year.
+        df = df[["date_time", "month_year", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]].groupby("month_year").agg(first_day_of_month=('date_time', 'min'), start_index_m3=('start_index_m3', 'min'), end_index_m3=('end_index_m3', 'max'), volume_m3=('volume_m3', 'sum'), energy_kwh=('energy_kwh', 'sum'), timestamp=('timestamp', 'min'), count=('energy_kwh', 'count')).reset_index()
+
+        # Sort rows by month ascending.
+        df = df.sort_values(by=['first_day_of_month'])
+
+        # Select rows where we have a full month (more than 27 days) except for the current month.
+        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)])
+
+        # Rename columns for their target names.
+        df = df.rename(columns={"month_year": "time_period"})
+
+        # Select target columns.
+        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
+
+        res = cast(List[Dict[str, Any]], df.to_dict('records'))
+
+        # Restore default locale.
+        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+
+        return res
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeYearly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+        # Switch to French locale for date format.
+        locale.setlocale(locale.LC_ALL, "fr_FR.UTF-8")
+
+        df = pd.DataFrame(daily)
+
+        # Trimming head and trailing spaces and convert to datetime.
+        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
+
+        # Get the corresponding year.
+        df["year"] = df["date_time"].dt.strftime("%Y")
+
+        # Aggregate rows by month_year.
+        df = df[["year", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]].groupby("year").agg(start_index_m3=('start_index_m3', 'min'), end_index_m3=('end_index_m3', 'max'), volume_m3=('volume_m3', 'sum'), energy_kwh=('energy_kwh', 'sum'), timestamp=('timestamp', 'min'), count=('energy_kwh', 'count')).reset_index()
+
+        # Sort rows by month ascending.
+        df = df.sort_values(by=['year'])
+
+        # Select rows where we have almost a full year (more than 360) except for the current month.
+        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)])
+
+        # Rename columns for their target names.
+        df = df.rename(columns={"year": "time_period"})
+
+        # Select target columns.
+        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
+
+        res = cast(List[Dict[str, Any]], df.to_dict('records'))
+
+        # Restore default locale.
+        locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
 
         return res

@@ -70,6 +70,42 @@ class TestAllDataSource:
         assert (len(data) == 1096)
 
     # ------------------------------------------------------
+    def test_weekly_jsonfile_sample(self):
+
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.WEEKLY)
+
+        assert (len(data) == 155)
+
+    # ------------------------------------------------------
+    def test_monthly_jsonfile_sample(self):
+
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.MONTHLY)
+
+        assert (len(data) == 37)
+
+    # ------------------------------------------------------
+    def test_yearly_jsonfile_sample(self):
+
+        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json")
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.YEARLY)
+
+        assert (len(data) == 3)
+
+    # ------------------------------------------------------
     def test_daily_excelfile_sample(self):
 
         dataSource = ExcelFileDataSource("tests/resources/Donnees_informatives_PCE_DAILY.xlsx")
@@ -92,3 +128,39 @@ class TestAllDataSource:
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.DAILY)
 
         assert (len(data) > 0)
+
+    # ------------------------------------------------------
+    def test_weekly_jsonweb(self):
+
+        dataSource = JsonWebDataSource(self.__username, self.__password)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.WEEKLY)
+
+        assert (len(data) >= 52 and len(data) <= 54)
+
+    # ------------------------------------------------------
+    def test_monthly_jsonweb(self):
+
+        dataSource = JsonWebDataSource(self.__username, self.__password)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.MONTHLY)
+
+        assert (len(data) >= 12 and len(data) <= 13)
+
+    # ------------------------------------------------------
+    def test_yearly_jsonweb(self):
+
+        dataSource = JsonWebDataSource(self.__username, self.__password)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.YEARLY)
+
+        assert (len(data) == 1)

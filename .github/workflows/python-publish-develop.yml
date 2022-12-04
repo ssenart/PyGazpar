@@ -7,11 +7,6 @@ name: Upload Python Package to TestPyPi index
 
 on: [push]
 
-env:
-  LANG: "fr_FR.UTF-8"
-  LANGUAGE: "fr_FR:fr"
-  LC_ALL: "fr_FR.UTF-8"
-
 jobs:
   deploy:
 
@@ -107,8 +102,8 @@ jobs:
         GRDF_PASSWORD: ${{ secrets.GRDF_PASSWORD }}
         PCE_IDENTIFIER: ${{ secrets.PCE_IDENTIFIER }}
       run: |
-        sudo locale-gen ${{ env.LANG }}
-        sudo update-locale LANG=${{ env.LANG }}
+        sudo locale-gen fr_FR.UTF-8
+        sudo update-locale LANG=fr_FR.UTF-8
         pytest tests --doctest-modules --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov=pygazpar --cov-report=xml --cov-report=html --log-cli-level=DEBUG --log-cli-format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
 
     - name: Upload pytest test results

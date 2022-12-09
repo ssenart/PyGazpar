@@ -108,7 +108,7 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.YEARLY)
 
-        assert (len(data) == 1)        
+        assert (len(data) == 1)
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())

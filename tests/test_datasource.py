@@ -1,5 +1,5 @@
 import os
-from pygazpar.datasource import TestDataSource, JsonFileDataSource, ExcelFileDataSource, JsonWebDataSource
+from pygazpar.datasource import TestDataSource, JsonFileDataSource, ExcelFileDataSource, JsonWebDataSource, ExcelWebDataSource
 from pygazpar.enum import Frequency
 from datetime import date, timedelta
 from dotenv import load_dotenv
@@ -139,7 +139,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.WEEKLY)
 
-        assert (len(data) >= 52 and len(data) <= 54)
+        assert (len(data) >= 51 and len(data) <= 54)
 
     # ------------------------------------------------------
     def test_monthly_jsonweb(self):
@@ -157,6 +157,54 @@ class TestAllDataSource:
     def test_yearly_jsonweb(self):
 
         dataSource = JsonWebDataSource(self.__username, self.__password)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.YEARLY)
+
+        assert (len(data) == 1)
+
+    # ------------------------------------------------------
+    def test_daily_excelweb(self):
+
+        dataSource = ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.DAILY)
+
+        assert (len(data) > 0)
+
+    # ------------------------------------------------------
+    def test_weekly_excelweb(self):
+
+        dataSource = ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.WEEKLY)
+
+        assert (len(data) >= 51 and len(data) <= 54)
+
+    # ------------------------------------------------------
+    def test_monthly_excelweb(self):
+
+        dataSource = ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory)
+
+        endDate = date.today()
+        startDate = endDate + timedelta(days=-365)
+
+        data = dataSource.load(self.__pceIdentifier, startDate, endDate, Frequency.MONTHLY)
+
+        assert (len(data) >= 12 and len(data) <= 13)
+
+    # ------------------------------------------------------
+    def test_yearly_excelweb(self):
+
+        dataSource = ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory)
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)

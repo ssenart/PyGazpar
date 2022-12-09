@@ -101,7 +101,8 @@ class ExcelWebDataSource(WebDataSource):
         Frequency.HOURLY: "Horaire",
         Frequency.DAILY: "Journalier",
         Frequency.WEEKLY: "Hebdomadaire",
-        Frequency.MONTHLY: "Mensuel"
+        Frequency.MONTHLY: "Mensuel",
+        Frequency.YEARLY: "Journalier"
     }
 
     DATA_FILENAME = 'Donnees_informatives_*.xlsx'
@@ -144,9 +145,13 @@ class ExcelWebDataSource(WebDataSource):
 
         for filename in file_list:
 
-            res = ExcelParser.parse(filename, frequency)
+            res = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
 
             os.remove(filename)
+
+        # We compute yearly from daily data.
+        if frequency == Frequency.YEARLY:
+            res = FrequencyConverter.computeYearly(res)
 
         return res
 

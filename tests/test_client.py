@@ -1,6 +1,6 @@
 from pygazpar.enum import Frequency
 from pygazpar.client import Client
-from pygazpar.datasource import JsonWebDataSource, TestDataSource
+from pygazpar.datasource import JsonWebDataSource, TestDataSource, ExcelWebDataSource
 import os
 import pytest
 
@@ -54,33 +54,61 @@ class TestClient:
         assert (len(data) > 0)
 
     # @pytest.mark.skip(reason="Requires live data")
-    def test_daily_live(self):
+    def test_daily_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.DAILY)
 
         assert (len(data) > 0)
 
-    def test_weekly_live(self):
+    def test_weekly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.WEEKLY)
 
-        assert (len(data) == 52)
+        assert (len(data) >= 51 and len(data) <= 54)
 
-    def test_monthly_live(self):
+    def test_monthly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.MONTHLY)
 
-        assert (len(data) == 13)
+        assert (len(data) >= 12 and len(data) <= 13)
 
-    def test_yearly_live(self):
-        client = Client(JsonWebDataSource(self.__username, self.__password))
+    def test_yearly_jsonweb(self):
+        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
         data = client.loadSince(self.__pceIdentifier, 365, Frequency.YEARLY)
 
         assert (len(data) == 1)
+
+    def test_daily_excelweb(self):
+        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
+
+        data = client.loadSince(self.__pceIdentifier, 365, Frequency.DAILY)
+
+        assert (len(data) > 0)
+
+    def test_weekly_excelweb(self):
+        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
+
+        data = client.loadSince(self.__pceIdentifier, 365, Frequency.WEEKLY)
+
+        assert (len(data) >= 51 and len(data) <= 54)
+
+    def test_monthly_excelweb(self):
+        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
+
+        data = client.loadSince(self.__pceIdentifier, 365, Frequency.MONTHLY)
+
+        assert (len(data) >= 12 and len(data) <= 13)
+
+    def test_yearly_excelweb(self):
+        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
+
+        data = client.loadSince(self.__pceIdentifier, 365, Frequency.YEARLY)
+
+        assert (len(data) == 1)        
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())

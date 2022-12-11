@@ -152,12 +152,12 @@ class ExcelWebDataSource(WebDataSource):
                 Logger.warning(f"Not any data file has been found in '{self.__tmpDirectory}' directory")
 
             for filename in file_list:
-                res[frequency] = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
+                res[frequency.value] = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
                 os.remove(filename)
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
-                res[frequency] = FrequencyConverter.computeYearly(res[frequency])
+                res[frequency.value] = FrequencyConverter.computeYearly(res[frequency.value])
 
         return res
 
@@ -193,10 +193,10 @@ class ExcelFileDataSource(IDataSource):
 
         for frequency in frequencyList:
             if frequency != Frequency.YEARLY:
-                res[frequency] = ExcelParser.parse(self.__excelFile, frequency)
+                res[frequency.value] = ExcelParser.parse(self.__excelFile, frequency)
             else:
                 daily = ExcelParser.parse(self.__excelFile, Frequency.DAILY)
-                res[frequency] = FrequencyConverter.computeYearly(daily)
+                res[frequency.value] = FrequencyConverter.computeYearly(daily)
 
         return res
 
@@ -256,7 +256,7 @@ class JsonWebDataSource(WebDataSource):
             frequencyList = set(frequencies)
 
         for frequency in frequencyList:
-            res[frequency] = computeByFrequency[frequency](daily)
+            res[frequency.value] = computeByFrequency[frequency](daily)
 
         return res
 
@@ -293,7 +293,7 @@ class JsonFileDataSource(IDataSource):
             frequencyList = set(frequencies)
 
         for frequency in frequencyList:
-            res[frequency] = computeByFrequency[frequency](daily)
+            res[frequency.value] = computeByFrequency[frequency](daily)
 
         return res
 
@@ -328,7 +328,7 @@ class TestDataSource(IDataSource):
             dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[frequency]}"
 
             with open(dataSampleFilename) as jsonFile:
-                res[frequency] = cast(List[Dict[PropertyName, Any]], json.load(jsonFile))
+                res[frequency.value] = cast(List[Dict[PropertyName, Any]], json.load(jsonFile))
 
         return res
 

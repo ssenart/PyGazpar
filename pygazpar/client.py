@@ -2,7 +2,7 @@ import logging
 from datetime import date, timedelta
 from pygazpar.enum import Frequency, PropertyName
 from pygazpar.datasource import IDataSource
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 
 AUTH_NONCE_URL = "https://monespace.grdf.fr/client/particulier/accueil"
 LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
@@ -30,7 +30,7 @@ class Client:
         self.__dataSource = dataSource
 
     # ------------------------------------------------------
-    def loadSince(self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def loadSince(self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
         try:
             endDate = date.today()
@@ -44,7 +44,7 @@ class Client:
         return res
 
     # ------------------------------------------------------
-    def loadDateRange(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def loadDateRange(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
         Logger.debug("Start loading the data...")
 

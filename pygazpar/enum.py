@@ -34,15 +34,3 @@ class Frequency(Enum):
 
     def __repr__(self):
         return self.__str__()
-
-
-# ------------------------------------------------------------------------------------------------------------
-class JSONEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-
-        if isinstance(obj, PropertyName) or isinstance(obj, Frequency):
-            return str(obj)
-
-        # Call the default method for other types
-        return json.JSONEncoder.default(self, obj)

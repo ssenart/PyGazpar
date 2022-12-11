@@ -23,12 +23,18 @@ LOGIN_PAYLOAD = """{{
 
 Logger = logging.getLogger(__name__)
 
+MeterReading = Dict[str, Any]
+
+MeterReadings = List[MeterReading]
+
+MeterReadingsByFrequency = Dict[str, MeterReadings]
+
 
 # ------------------------------------------------------------------------------------------------------------
 class IDataSource(ABC):
 
     @abstractmethod
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
         pass
 
 
@@ -42,7 +48,7 @@ class WebDataSource(IDataSource):
         self.__password = password
 
     # ------------------------------------------------------
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         session = Session()
 
@@ -86,7 +92,7 @@ class WebDataSource(IDataSource):
             raise Exception(loginData["error"])
 
     @abstractmethod
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
         pass
 
 
@@ -115,7 +121,7 @@ class ExcelWebDataSource(WebDataSource):
         self.__tmpDirectory = tmpDirectory
 
     # ------------------------------------------------------
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -180,7 +186,7 @@ class ExcelFileDataSource(IDataSource):
 
         self.__excelFile = excelFile
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -216,7 +222,7 @@ class JsonWebDataSource(WebDataSource):
 
         super().__init__(username, password)
 
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -269,7 +275,7 @@ class JsonFileDataSource(IDataSource):
         self.__consumptionJsonFile = consumptionJsonFile
         self.__temperatureJsonFile = temperatureJsonFile
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -305,7 +311,7 @@ class TestDataSource(IDataSource):
 
         pass
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 

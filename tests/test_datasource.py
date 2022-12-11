@@ -55,13 +55,13 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate)
 
-        assert (len(data[Frequency.DAILY]) == 711)
+        assert (len(data[Frequency.DAILY.value]) == 711)
 
-        assert (len(data[Frequency.WEEKLY]) == 102)
+        assert (len(data[Frequency.WEEKLY.value]) == 102)
 
-        assert (len(data[Frequency.MONTHLY]) == 24)
+        assert (len(data[Frequency.MONTHLY.value]) == 24)
 
-        assert (len(data[Frequency.YEARLY]) == 2)
+        assert (len(data[Frequency.YEARLY.value]) == 2)
 
     # ------------------------------------------------------
     def test_jsonfile_sample(self):
@@ -73,13 +73,13 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
 
-        assert (len(data[Frequency.DAILY]) == 1096)
+        assert (len(data[Frequency.DAILY.value]) == 1096)
 
-        assert (len(data[Frequency.WEEKLY]) == 155)
+        assert (len(data[Frequency.WEEKLY.value]) == 155)
 
-        assert (len(data[Frequency.MONTHLY]) == 37)
+        assert (len(data[Frequency.MONTHLY.value]) == 37)
 
-        assert (len(data[Frequency.YEARLY]) == 3)
+        assert (len(data[Frequency.YEARLY.value]) == 3)
 
     # ------------------------------------------------------
     def test_daily_excelfile_sample(self):
@@ -91,7 +91,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY]) == 363)
+        assert (len(data[Frequency.DAILY.value]) == 363)
 
     # ------------------------------------------------------
     def test_weekly_excelfile_sample(self):
@@ -103,7 +103,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.WEEKLY])
 
-        assert (len(data[Frequency.WEEKLY]) == 53)
+        assert (len(data[Frequency.WEEKLY.value]) == 53)
 
     # ------------------------------------------------------
     def test_monthly_excelfile_sample(self):
@@ -115,7 +115,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY]) == 13)
+        assert (len(data[Frequency.MONTHLY.value]) == 13)
 
     # ------------------------------------------------------
     def test_yearly_excelfile_sample(self):
@@ -127,7 +127,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) == 1)
 
     # ------------------------------------------------------
     def test_jsonweb(self):
@@ -139,13 +139,13 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
 
-        assert (len(data[Frequency.DAILY]) > 0)
+        assert (len(data[Frequency.DAILY.value]) > 0)
 
-        assert (len(data[Frequency.WEEKLY]) >= 51 and len(data[Frequency.WEEKLY]) <= 54)
+        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
 
-        assert (len(data[Frequency.MONTHLY]) >= 12 and len(data[Frequency.MONTHLY]) <= 13)
+        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
 
-        assert (len(data[Frequency.YEARLY]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) == 1)
 
     # ------------------------------------------------------
     def test_excelweb(self):
@@ -157,10 +157,10 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
 
-        assert (len(data[Frequency.DAILY]) > 0)
+        assert (len(data[Frequency.DAILY.value]) > 0)
 
-        assert (len(data[Frequency.WEEKLY]) >= 51 and len(data[Frequency.WEEKLY]) <= 54)
+        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
 
-        assert (len(data[Frequency.MONTHLY]) >= 12 and len(data[Frequency.MONTHLY]) <= 13)
+        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
 
-        assert (len(data[Frequency.YEARLY]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) == 1)

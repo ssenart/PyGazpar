@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Dict, cast
 from requests import Session
 from datetime import date, timedelta
-from pygazpar.enum import Frequency
+from pygazpar.enum import Frequency, PropertyName
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
 
@@ -28,7 +28,7 @@ Logger = logging.getLogger(__name__)
 class IDataSource(ABC):
 
     @abstractmethod
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
         pass
 
 
@@ -42,7 +42,7 @@ class WebDataSource(IDataSource):
         self.__password = password
 
     # ------------------------------------------------------
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
         session = Session()
 
@@ -50,7 +50,7 @@ class WebDataSource(IDataSource):
 
         self._login(session, self.__username, self.__password)
 
-        res = self._loadFromSession(session, pceIdentifier, startDate, endDate, frequency)
+        res = self._loadFromSession(session, pceIdentifier, startDate, endDate, frequencies)
 
         Logger.debug("The data update terminates normally")
 
@@ -86,7 +86,7 @@ class WebDataSource(IDataSource):
             raise Exception(loginData["error"])
 
     @abstractmethod
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
         pass
 
 
@@ -115,9 +115,9 @@ class ExcelWebDataSource(WebDataSource):
         self.__tmpDirectory = tmpDirectory
 
     # ------------------------------------------------------
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
-        res = []
+        res = {}
 
         # XLSX is in the TMP directory
         data_file_path_pattern = self.__tmpDirectory + '/' + ExcelWebDataSource.DATA_FILENAME
@@ -128,30 +128,36 @@ class ExcelWebDataSource(WebDataSource):
             if os.path.isfile(filename):
                 os.remove(filename)
 
-        # Inject parameters.
-        downloadUrl = ExcelWebDataSource.DATA_URL.format(startDate.strftime(ExcelWebDataSource.DATE_FORMAT), endDate.strftime(ExcelWebDataSource.DATE_FORMAT), pceIdentifier, ExcelWebDataSource.FREQUENCY_VALUES[frequency])
+        if frequencies is None:
+            # Transform Enum in List.
+            frequencyList = [frequency for frequency in Frequency]
+        else:
+            # Get unique values.
+            frequencyList = set(frequencies)
 
-        session.get(downloadUrl)  # First request does not return anything : strange...
+        for frequency in frequencyList:
+            # Inject parameters.
+            downloadUrl = ExcelWebDataSource.DATA_URL.format(startDate.strftime(ExcelWebDataSource.DATE_FORMAT), endDate.strftime(ExcelWebDataSource.DATE_FORMAT), pceIdentifier, ExcelWebDataSource.FREQUENCY_VALUES[frequency])
 
-        Logger.debug(f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}")
+            session.get(downloadUrl)  # First request does not return anything : strange...
 
-        self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+            Logger.debug(f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}")
 
-        # Load the XLSX file into the data structure
-        file_list = glob.glob(data_file_path_pattern)
+            self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
 
-        if len(file_list) == 0:
-            Logger.warning(f"Not any data file has been found in '{self.__tmpDirectory}' directory")
+            # Load the XLSX file into the data structure
+            file_list = glob.glob(data_file_path_pattern)
 
-        for filename in file_list:
+            if len(file_list) == 0:
+                Logger.warning(f"Not any data file has been found in '{self.__tmpDirectory}' directory")
 
-            res = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
+            for filename in file_list:
+                res[frequency] = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
+                os.remove(filename)
 
-            os.remove(filename)
-
-        # We compute yearly from daily data.
-        if frequency == Frequency.YEARLY:
-            res = FrequencyConverter.computeYearly(res)
+            # We compute yearly from daily data.
+            if frequency == Frequency.YEARLY:
+                res[frequency] = FrequencyConverter.computeYearly(res[frequency])
 
         return res
 
@@ -174,9 +180,23 @@ class ExcelFileDataSource(IDataSource):
 
         self.__excelFile = excelFile
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
-        res = ExcelParser.parse(self.__excelFile, frequency)
+        res = {}
+
+        if frequencies is None:
+            # Transform Enum in List.
+            frequencyList = [frequency for frequency in Frequency]
+        else:
+            # Get unique values.
+            frequencyList = set(frequencies)
+
+        for frequency in frequencyList:
+            if frequency != Frequency.YEARLY:
+                res[frequency] = ExcelParser.parse(self.__excelFile, frequency)
+            else:
+                daily = ExcelParser.parse(self.__excelFile, Frequency.DAILY)
+                res[frequency] = FrequencyConverter.computeYearly(daily)
 
         return res
 
@@ -196,11 +216,9 @@ class JsonWebDataSource(WebDataSource):
 
         super().__init__(username, password)
 
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
-        # Shortcut to avoid useless daily data query.
-        if frequency == Frequency.HOURLY:
-            return []
+        res = {}
 
         computeByFrequency = {
             Frequency.HOURLY: FrequencyConverter.computeHourly,
@@ -230,7 +248,15 @@ class JsonWebDataSource(WebDataSource):
         # Transform all the data into the target structure.
         daily = JsonParser.parse(data, temperatures, pceIdentifier)
 
-        res = computeByFrequency[frequency](daily)
+        if frequencies is None:
+            # Transform Enum in List.
+            frequencyList = [frequency for frequency in Frequency]
+        else:
+            # Get unique values.
+            frequencyList = set(frequencies)
+
+        for frequency in frequencyList:
+            res[frequency] = computeByFrequency[frequency](daily)
 
         return res
 
@@ -243,11 +269,9 @@ class JsonFileDataSource(IDataSource):
         self.__consumptionJsonFile = consumptionJsonFile
         self.__temperatureJsonFile = temperatureJsonFile
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
-        # Shortcut to avoid useless daily data query.
-        if frequency == Frequency.HOURLY:
-            return []
+        res = {}
 
         with open(self.__consumptionJsonFile) as consumptionJsonFile:
             with open(self.__temperatureJsonFile) as temperatureJsonFile:
@@ -261,7 +285,15 @@ class JsonFileDataSource(IDataSource):
             Frequency.YEARLY: FrequencyConverter.computeYearly
         }
 
-        res = computeByFrequency[frequency](daily)
+        if frequencies is None:
+            # Transform Enum in List.
+            frequencyList = [frequency for frequency in Frequency]
+        else:
+            # Get unique values.
+            frequencyList = set(frequencies)
+
+        for frequency in frequencyList:
+            res[frequency] = computeByFrequency[frequency](daily)
 
         return res
 
@@ -273,9 +305,9 @@ class TestDataSource(IDataSource):
 
         pass
 
-    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequency: Frequency) -> List[Dict[str, Any]]:
+    def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
-        res = []
+        res = {}
 
         dataSampleFilenameByFrequency = {
             Frequency.HOURLY: "hourly_data_sample.json",
@@ -285,10 +317,18 @@ class TestDataSource(IDataSource):
             Frequency.YEARLY: "yearly_data_sample.json"
         }
 
-        dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[frequency]}"
+        if frequencies is None:
+            # Transform Enum in List.
+            frequencyList = [frequency for frequency in Frequency]
+        else:
+            # Get unique values.
+            frequencyList = set(frequencies)
 
-        with open(dataSampleFilename) as jsonFile:
-            res = cast(List[Dict[str, Any]], json.load(jsonFile))
+        for frequency in frequencyList:
+            dataSampleFilename = f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[frequency]}"
+
+            with open(dataSampleFilename) as jsonFile:
+                res[frequency] = cast(List[Dict[PropertyName, Any]], json.load(jsonFile))
 
         return res
 

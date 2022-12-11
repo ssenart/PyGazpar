@@ -1,6 +1,6 @@
 import logging
 from datetime import date, timedelta
-from pygazpar.enum import Frequency
+from pygazpar.enum import Frequency, PropertyName
 from pygazpar.datasource import IDataSource
 from typing import Any, List, Dict
 
@@ -16,7 +16,6 @@ DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/
 DATA_FILENAME = 'Donnees_informatives_*.xlsx'
 
 DEFAULT_TMP_DIRECTORY = '/tmp'
-DEFAULT_METER_READING_FREQUENCY = Frequency.DAILY
 DEFAULT_LAST_N_DAYS = 365
 
 
@@ -31,13 +30,13 @@ class Client:
         self.__dataSource = dataSource
 
     # ------------------------------------------------------
-    def loadSince(self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY) -> List[Dict[str, Any]]:
+    def loadSince(self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
         try:
             endDate = date.today()
             startDate = endDate + timedelta(days=-lastNDays)
 
-            res = self.loadDateRange(pceIdentifier, startDate, endDate, meterReadingFrequency)
+            res = self.loadDateRange(pceIdentifier, startDate, endDate, frequencies)
         except Exception:
             Logger.error("An unexpected error occured while loading the data", exc_info=True)
             raise
@@ -45,12 +44,12 @@ class Client:
         return res
 
     # ------------------------------------------------------
-    def loadDateRange(self, pceIdentifier: str, startDate: date, endDate: date, meterReadingFrequency: Frequency = DEFAULT_METER_READING_FREQUENCY) -> List[Dict[str, Any]]:
+    def loadDateRange(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: List[Frequency] | None = None) -> Dict[Frequency, List[Dict[PropertyName, Any]]]:
 
         Logger.debug("Start loading the data...")
 
         try:
-            res = self.__dataSource.load(pceIdentifier, startDate, endDate, meterReadingFrequency)
+            res = self.__dataSource.load(pceIdentifier, startDate, endDate, frequencies)
 
             Logger.debug("The data load terminates normally")
         except Exception:

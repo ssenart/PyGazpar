@@ -5,7 +5,7 @@ Their natural gas meter is called Gazpar. It is wireless and transmit the gas co
 
 All consumption data is available on the client account at GrDF Web Site (https://monespace.grdf.fr).
 
-PyGazpar automatically goes through the Web Site and download the consumption data Excel file, and make it available in a Python structure (list of dictionaries).
+PyGazpar automatically goes through the Web Site and download the consumption data, and make it available in a Python structure.
 
 ## Installation
 
@@ -42,178 +42,120 @@ python setup.py install
 
 #### Command line:
 
+1. Standard usage (using Json GrDF API).
+
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)'
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'json'
+```
+
+2. Alternate usage (using Excel GrDF document).
+
+```bash
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store Excel file (ex: /tmp)' --datasource 'excel'
+```
+
+3. Test usage (using local static data files, do not connect to GrDF site).
+
+```bash
+$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'test'
 ```
 
 #### Library:
+
+1. Standard usage (using Json GrDF API).
 
 ```python
 import pygazpar
 
 client = pygazpar.Client(pygazpar.JsonWebDataSource(
-                            username='your login',
-                            password='your password')
-                        )
+    username='your login',
+    password='your password')
+)
 
-data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.DAILY)
-
+data = client.loadSince(pceIdentifier='your PCE identifier',
+                        lastNDays=60,
+                        frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
+See [samples/jsonSample.py](samples/jsonSample.py) file for the full example.
 
-#### Output:
+2. Alternate usage (using Excel GrDF document).
 
-```json
-data =>
-[
-  {
-    "time_period": "16/04/2021",
-    "start_index_m3": 13685.0,
-    "end_index_m3": 13695.0,
-    "volume_m3": 9.9,
-    "energy_kwh": 111.0,
-    "converter_factor_kwh/m3": 11.268,
-    "temperature_degC": 8.0,
-    "type": "MES",
-    "timestamp": "2021-04-20T10:21:46.265119"
-  },
-  {
-    "time_period": "17/04/2021",
-    "start_index_m3": 13695.0,
-    "end_index_m3": 13702.0,
-    "volume_m3": 7.7,
-    "energy_kwh": 86.0,
-    "converter_factor_kwh/m3": 11.268,
-    "temperature_degC": 9.0,
-    "type": "MES",
-    "timestamp": "2021-04-20T10:21:46.265119"
-  },
-  {
-    "time_period": "18/04/2021",
-    "start_index_m3": 13702.0,
-    "end_index_m3": 13708.0,
-    "volume_m3": 6.2,
-    "energy_kwh": 69.0,
-    "converter_factor_kwh/m3": 11.268,
-    "temperature_degC": 10.0,
-    "type": "MES",
-    "timestamp": "2021-04-20T10:21:46.265119"
-  }
-]
-```
-
-## More features
-By default, PyGazpar queries for daily consumption data.
-
-However, it is also possible to get weekly or monthly consumption data :
-
-### Weekly (Not yet available in version 2.0.0)
-
-#### Command line:
-```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' -f WEEKLY
-```
-
-#### Library:
 ```python
 import pygazpar
 
-client = pygazpar.Client(pygazpar.JsonWebDataSource(
-                            username='your login',
-                            password='your password')
-                        )
+client = pygazpar.Client(pygazpar.ExcelWebDataSource(
+    username='your login',
+    password='your password')
+)
 
-data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.WEEKLY)
+data = client.loadSince(pceIdentifier='your PCE identifier',
+                        lastNDays=60,
+                        frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
+See [samples/excelSample.py](samples/jsonSample.py) file for the full example.
 
-#### Output:
+3. Test usage (using local static data files, do not connect to GrDF site).
 
-```json
-data =>
-[
-  {
-    "time_period": "Du 29/03/2021 au 04/04/2021",
-    "volume_m3": 21.4,
-    "energy_kwh": 240.0,
-    "timestamp": "2021-04-20T09:22:12.166500"
-  },
-  {
-    "time_period": "Du 05/04/2021 au 11/04/2021",
-    "volume_m3": 58.9,
-    "energy_kwh": 663.0,
-    "timestamp": "2021-04-20T09:22:12.166500"
-  },
-  {
-    "time_period": "Du 12/04/2021 au 18/04/2021",
-    "volume_m3": 57.1,
-    "energy_kwh": 643.0,
-    "timestamp": "2021-04-20T09:22:12.166500"
-  }
-]
-```
-
-### Monthly (Not yet available in version 2.0.0)
-
-#### Command line:
-```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' -f MONTHLY
-```
-
-#### Library:
-```python
-import pygazpar
-
-client = pygazpar.Client(pygazpar.JsonWebDataSource(
-                            username='your login',
-                            password='your password')
-                        )
-
-data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.MONTHLY)
-```
-
-#### Output:
-
-```json
-data =>
-[
-  {
-    "time_period": "F\u00e9vrier 2021",
-    "volume_m3": 317.6,
-    "energy_kwh": 3547.0,
-    "timestamp": "2021-04-20T09:34:31.728125"
-  },
-  {
-    "time_period": "Mars 2021",
-    "volume_m3": 261.1,
-    "energy_kwh": 2937.0,
-    "timestamp": "2021-04-20T09:34:31.728125"
-  },
-  {
-    "time_period": "Avril 2021",
-    "volume_m3": 130.7,
-    "energy_kwh": 1472.0,
-    "timestamp": "2021-04-20T09:34:31.728125"
-  }
-]
-```
-
-### Test mode
-
-In testing environment (unit test or debugging), it may be cumbersome to work with live data: slowness, values are always changing.
-
-There is a test mode that permits to work with static data. Those data are taken from internal resource files.
-
-#### Command line:
-```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store XSLX file (ex: /tmp)' --testMode
-```
-
-#### Library:
 ```python
 import pygazpar
 
 client = pygazpar.Client(pygazpar.TestDataSource())
 
-data = client.loadSince(pceIdentifier='your PCE identifier', lastNDays=10, meterReadingFrequency=pygazpar.Frequency.DAILY)
+data = client.loadSince(pceIdentifier='your PCE identifier',
+                        lastNDays=10,
+                        frequencies=[pygazpar.Frequency.DAILY, Frequency.MONTHLY])
+```
+See [samples/testSample.py](samples/jsonSample.py) file for the full example.
+
+#### Output:
+
+```json
+data =>
+{
+  "daily": [
+    {
+      "time_period": "13/10/2022",
+      "start_index_m3": 15724,
+      "end_index_m3": 15725,
+      "volume_m3": 2,
+      "energy_kwh": 17,
+      "converter_factor_kwh/m3": 11.16,
+      "temperature_degC": null,
+      "type": "Mesur\u00e9",
+      "timestamp": "2022-12-13T23:58:35.606763"
+    },
+    ...
+    {
+      "time_period": "11/12/2022",
+      "start_index_m3": 16081,
+      "end_index_m3": 16098,
+      "volume_m3": 18,
+      "energy_kwh": 201,
+      "converter_factor_kwh/m3": 11.27,
+      "temperature_degC": -1.47,
+      "type": "Mesur\u00e9",
+      "timestamp": "2022-12-13T23:58:35.606763"
+    }
+  ],
+  "monthly": [
+    {
+      "time_period": "Novembre 2022",
+      "start_index_m3": 15750,
+      "end_index_m3": 15950,
+      "volume_m3": 204,
+      "energy_kwh": 2227,
+      "timestamp": "2022-12-13T23:58:35.606763"
+    },
+    {
+      "time_period": "D\u00e9cembre 2022",
+      "start_index_m3": 15950,
+      "end_index_m3": 16098,
+      "volume_m3": 148,
+      "energy_kwh": 1664,
+      "timestamp": "2022-12-13T23:58:35.606763"
+    }
+  ]
+}
 ```
 
 ## Limitation

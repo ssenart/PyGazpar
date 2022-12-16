@@ -31,12 +31,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Firefox
-      run: |
-        sudo apt -y update
-        sudo apt -y install firefox
-        sudo apt -y --only-upgrade install firefox
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -88,4 +82,4 @@ jobs:
         python updateVersion.py --nextVersion ${{ github.event.release.tag_name }}
         python setup.py sdist bdist_wheel --python-tag ${{ steps.python-tag.outputs.replaced }}
         twine upload --skip-existing dist/*
-      if: github.repository == 'ssenart/PyGazpar'
+      if: ${{ github.repository == 'ssenart/PyGazpar' }}

@@ -30,17 +30,16 @@ def main():
                         required=False,
                         type=lambda frequency: pygazpar.Frequency[frequency], choices=list(pygazpar.Frequency),
                         default="DAILY",
-                        help="Meter reading frequency (DAILY, WEEKLY, MONTHLY)")
+                        help="Meter reading frequency (DAILY, WEEKLY, MONTHLY, YEARLY)")
     parser.add_argument("-d", "--lastNDays",
                         required=False,
                         type=int,
                         default=365,
                         help="Get only the last N days of records (default: 365 days)")
-    parser.add_argument("--testMode",
+    parser.add_argument("--datasource",
                         required=False,
-                        action='store_true',
-                        default=False,
-                        help="Run PyGazpar in test mode (Get static sample data)")
+                        default="json",
+                        help="Datasource: json | excel | test")
 
     args = parser.parse_args()
 
@@ -53,11 +52,6 @@ def main():
     if os.path.isfile(pygazparLogFile):
         os.remove(pygazparLogFile)
 
-    # We remove the geckodriver log file
-    geckodriverLogFile = f"{args.tmpdir}/pygazpar_geckodriver.log"
-    if os.path.isfile(geckodriverLogFile):
-        os.remove(geckodriverLogFile)
-
     # Setup logging.
     logging.basicConfig(filename=f"{pygazparLogFile}", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 
@@ -65,17 +59,24 @@ def main():
     logging.info(f"--tmpdir {args.tmpdir}")
     logging.info(f"--frequency {args.frequency}")
     logging.info(f"--lastNDays {args.lastNDays}")
-    logging.info(f"--testMode {bool(args.testMode)}")
+    logging.info(f"--datasource {bool(args.datasource)}")
 
-    client = pygazpar.Client(args.username, args.password, args.pce, args.frequency, int(args.lastNDays), args.tmpdir, bool(args.testMode))
+    if args.datasource == "json":
+        client = pygazpar.Client(pygazpar.JsonWebDataSource(args.username, args.password))
+    elif args.datasource == "excel":
+        client = pygazpar.Client(pygazpar.ExcelWebDataSource(args.username, args.password, args.tmpdir))
+    elif args.datasource == "test":
+        client = pygazpar.Client(pygazpar.TestDataSource())
+    else:
+        raise Exception("Invalid datasource: (json | excel | test) is expected")
 
     try:
-        client.update()
+        data = client.loadSince(args.pce, int(args.lastNDays), [args.frequency])
     except BaseException:
         print('An error occured while querying PyGazpar library : %s', traceback.format_exc())
         return 1
 
-    print(json.dumps(client.data(), indent=2))
+    print(json.dumps(data, indent=2))
 
 
 if __name__ == '__main__':

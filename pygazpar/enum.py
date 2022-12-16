@@ -13,13 +13,23 @@ class PropertyName(Enum):
     TYPE = "type"
     TIMESTAMP = "timestamp"
 
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.__str__()
+
 
 # ------------------------------------------------------------------------------------------------------------
 class Frequency(Enum):
-    HOURLY = 0
-    DAILY = 1
-    WEEKLY = 2
-    MONTHLY = 3
+    HOURLY = "hourly"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
 
     def __str__(self):
-        return self.name
+        return self.value
+
+    def __repr__(self):
+        return self.__str__()

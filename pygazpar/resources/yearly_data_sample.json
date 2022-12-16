@@ -1,0 +1,18 @@
+[
+    {
+        "time_period": "2021",
+        "start_index_m3": 12582.0,
+        "end_index_m3": 14661.0,
+        "volume_m3": 2099.0,
+        "energy_kwh": 23148.0,
+        "timestamp": "2022-12-10T12:05:11.466539"
+    },
+    {
+        "time_period": "2022",
+        "start_index_m3": 14661.0,
+        "end_index_m3": 15988.0,
+        "volume_m3": 1344.0,
+        "energy_kwh": 14887.0,
+        "timestamp": "2022-12-10T12:05:11.466539"
+    }
+]

@@ -18,7 +18,7 @@ With the new GrDF web site, it is possible to load the consumption data far easi
 ```bash
 $ cd /path/to/my_project_folder/
 
-$ python3 -m venv .venv
+$ python -m venv .venv
 ```
 
 ### PyGazpar installation

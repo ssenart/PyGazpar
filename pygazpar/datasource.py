@@ -111,7 +111,7 @@ class WebDataSource(IDataSource):
 # ------------------------------------------------------------------------------------------------------------
 class ExcelWebDataSource(WebDataSource):
 
-    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={0}&dateFin={1}&frequence={3}&pceList%5B%5D={2}"
+    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={0}&dateFin={1}&frequence={3}&pceList[]={2}"
 
     DATE_FORMAT = "%Y-%m-%d"
 
@@ -153,21 +153,35 @@ class ExcelWebDataSource(WebDataSource):
             # Get unique values.
             frequencyList = set(frequencies)
 
-        # Create a session.
-        session = Session()
-        session.headers.update({"domain": "grdf.fr"})
-        session.headers.update({"Cookie": f"auth_token={auth_token}"})
-        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-
         for frequency in frequencyList:
             # Inject parameters.
             downloadUrl = ExcelWebDataSource.DATA_URL.format(startDate.strftime(ExcelWebDataSource.DATE_FORMAT), endDate.strftime(ExcelWebDataSource.DATE_FORMAT), pceIdentifier, ExcelWebDataSource.FREQUENCY_VALUES[frequency])
 
-            session.get(downloadUrl)  # First request does not return anything : strange...
-
             Logger.debug(f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}")
 
-            self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+            # Retry mechanism.
+            retry = 10
+            while retry > 0:
+
+                # Create a session.
+                session = Session()
+                session.headers.update({"Host": "monespace.grdf.fr"})
+                session.headers.update({"Domain": "grdf.fr"})
+                session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+                session.headers.update({"Accept": "application/json"})
+                session.cookies.set("auth_token", auth_token, domain="monespace.grdf.fr")
+
+                try:
+                    self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+                    break
+                except Exception as e:
+
+                    if retry == 1:
+                        raise e
+
+                    Logger.error("An error occurred while loading data. Retry in 3 seconds.")
+                    time.sleep(3)
+                    retry -= 1
 
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)
@@ -177,7 +191,11 @@ class ExcelWebDataSource(WebDataSource):
 
             for filename in file_list:
                 res[frequency.value] = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
-                os.remove(filename)
+                try:
+                    # openpyxl does not close the file properly.
+                    os.remove(filename)
+                except Exception:
+                    pass
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
@@ -189,6 +207,12 @@ class ExcelWebDataSource(WebDataSource):
     def __downloadFile(self, session: Session, url: str, path: str):
 
         response = session.get(url)
+
+        if "text/html" in response.headers.get("Content-Type"):
+            raise Exception("An error occurred while loading data. Please check your credentials.")
+
+        if response.status_code != 200:
+            raise Exception(f"An error occurred while loading data. Status code: {response.status_code} - {response.text}")
 
         response.raise_for_status()
 

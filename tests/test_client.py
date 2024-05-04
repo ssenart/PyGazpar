@@ -75,7 +75,7 @@ class TestClient:
         assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
 
     def test_yearly_jsonweb(self):
-        client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
+        client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 

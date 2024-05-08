@@ -2,7 +2,9 @@ import logging
 import glob
 import os
 import json
+import time
 import pandas as pd
+import http.cookiejar
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict, cast, Optional
 from requests import Session
@@ -11,15 +13,22 @@ from pygazpar.enum import Frequency, PropertyName
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
 
-AUTH_NONCE_URL = "https://monespace.grdf.fr/client/particulier/accueil"
-LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
-LOGIN_HEADER = {"domain": "grdf.fr"}
-LOGIN_PAYLOAD = """{{
-    "email": "{0}",
+SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
+SESSION_TOKEN_PAYLOAD = """{{
+    "username": "{0}",
     "password": "{1}",
-    "capp": "meg",
-    "goto": "https://sofa-connexion.grdf.fr:443/openam/oauth2/externeGrdf/authorize?response_type=code&scope=openid%20profile%20email%20infotravaux%20%2Fv1%2Faccreditation%20%2Fv1%2Faccreditations%20%2Fdigiconso%2Fv1%20%2Fdigiconso%2Fv1%2Fconsommations%20new_meg&client_id=prod_espaceclient&state=0&redirect_uri=https%3A%2F%2Fmonespace.grdf.fr%2F_codexch&nonce={2}&by_pass_okta=1&capp=meg"}}"""
+    "options": {{
+        "multiOptionalFactorEnroll": "false",
+        "warnBeforePasswordExpired": "false"
+    }}
+}}"""
 
+AUTH_TOKEN_URL = "https://connexion.grdf.fr/login/sessionCookieRedirect"
+AUTH_TOKEN_PARAMS = """{{
+    "checkAccountSetupComplete": "true",
+    "token": "{0}",
+    "redirectUrl": "https://monespace.grdf.fr"
+}}"""
 
 Logger = logging.getLogger(__name__)
 
@@ -50,56 +59,59 @@ class WebDataSource(IDataSource):
     # ------------------------------------------------------
     def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
-        session = Session()
+        auth_token = self._login(self.__username, self.__password)
 
-        session.headers.update(LOGIN_HEADER)
-
-        self._login(session, self.__username, self.__password)
-
-        res = self._loadFromSession(session, pceIdentifier, startDate, endDate, frequencies)
+        res = self._loadFromSession(auth_token, pceIdentifier, startDate, endDate, frequencies)
 
         Logger.debug("The data update terminates normally")
 
         return res
 
     # ------------------------------------------------------
-    def _login(self, session: Session, username: str, password: str):
+    def _login(self, username: str, password: str) -> str:
 
-        # Get auth_nonce token.
-        session.get(AUTH_NONCE_URL)
-        if "auth_nonce" not in session.cookies:
-            raise Exception("Login error: Cannot get auth_nonce token")
-        auth_nonce = session.cookies.get("auth_nonce")
+        session = Session()
+        session.headers.update({"domain": "grdf.fr"})
+        session.headers.update({"Content-Type": "application/json"})
+        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
 
-        # Build the login payload as a json string.
-        payload = LOGIN_PAYLOAD.format(username, password, auth_nonce)
+        payload = SESSION_TOKEN_PAYLOAD.format(username, password)
 
-        # Build the login payload as a python object.
-        data = json.loads(payload)
+        response = session.post(SESSION_TOKEN_URL, data=payload)
 
-        # Send the login command.
-        response = session.post(LOGIN_URL, data=data)
+        if response.status_code != 200:
+            raise Exception(f"An error occurred while logging in. Status code: {response.status_code} - {response.text}")
 
-        # Check login result.
-        loginData = response.json()
+        session_token = response.json().get("sessionToken")
 
-        response.raise_for_status()
+        Logger.debug("Session token: %s", session_token)
 
-        if "status" in loginData and "error" in loginData and loginData["status"] >= 400:
-            raise Exception(f"{loginData['error']} ({loginData['status']})")
+        jar = http.cookiejar.CookieJar()
 
-        if "state" in loginData and loginData["state"] != "SUCCESS":
-            raise Exception(loginData["error"])
+        session = Session()
+        session.headers.update({"Content-Type": "application/json"})
+        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+
+        params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
+
+        response = session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)
+
+        if response.status_code != 200:
+            raise Exception(f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}")
+
+        auth_token = session.cookies.get("auth_token", domain="monespace.grdf.fr")
+
+        return auth_token
 
     @abstractmethod
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
         pass
 
 
 # ------------------------------------------------------------------------------------------------------------
 class ExcelWebDataSource(WebDataSource):
 
-    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={0}&dateFin={1}&frequence={3}&pceList%5B%5D={2}"
+    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={0}&dateFin={1}&frequence={3}&pceList[]={2}"
 
     DATE_FORMAT = "%Y-%m-%d"
 
@@ -121,7 +133,7 @@ class ExcelWebDataSource(WebDataSource):
         self.__tmpDirectory = tmpDirectory
 
     # ------------------------------------------------------
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -132,7 +144,10 @@ class ExcelWebDataSource(WebDataSource):
         file_list = glob.glob(data_file_path_pattern)
         for filename in file_list:
             if os.path.isfile(filename):
-                os.remove(filename)
+                try:
+                    os.remove(filename)
+                except PermissionError:
+                    pass
 
         if frequencies is None:
             # Transform Enum in List.
@@ -145,11 +160,31 @@ class ExcelWebDataSource(WebDataSource):
             # Inject parameters.
             downloadUrl = ExcelWebDataSource.DATA_URL.format(startDate.strftime(ExcelWebDataSource.DATE_FORMAT), endDate.strftime(ExcelWebDataSource.DATE_FORMAT), pceIdentifier, ExcelWebDataSource.FREQUENCY_VALUES[frequency])
 
-            session.get(downloadUrl)  # First request does not return anything : strange...
-
             Logger.debug(f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}")
 
-            self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+            # Retry mechanism.
+            retry = 10
+            while retry > 0:
+
+                # Create a session.
+                session = Session()
+                session.headers.update({"Host": "monespace.grdf.fr"})
+                session.headers.update({"Domain": "grdf.fr"})
+                session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+                session.headers.update({"Accept": "application/json"})
+                session.cookies.set("auth_token", auth_token, domain="monespace.grdf.fr")
+
+                try:
+                    self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+                    break
+                except Exception as e:
+
+                    if retry == 1:
+                        raise e
+
+                    Logger.error("An error occurred while loading data. Retry in 3 seconds.")
+                    time.sleep(3)
+                    retry -= 1
 
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)
@@ -159,7 +194,11 @@ class ExcelWebDataSource(WebDataSource):
 
             for filename in file_list:
                 res[frequency.value] = ExcelParser.parse(filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY)
-                os.remove(filename)
+                try:
+                    # openpyxl does not close the file properly.
+                    os.remove(filename)
+                except PermissionError:
+                    pass
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
@@ -171,6 +210,12 @@ class ExcelWebDataSource(WebDataSource):
     def __downloadFile(self, session: Session, url: str, path: str):
 
         response = session.get(url)
+
+        if "text/html" in response.headers.get("Content-Type"):
+            raise Exception("An error occurred while loading data. Please check your credentials.")
+
+        if response.status_code != 200:
+            raise Exception(f"An error occurred while loading data. Status code: {response.status_code} - {response.text}")
 
         response.raise_for_status()
 
@@ -210,7 +255,7 @@ class ExcelFileDataSource(IDataSource):
 # ------------------------------------------------------------------------------------------------------------
 class JsonWebDataSource(WebDataSource):
 
-    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut={0}&dateFin={1}&pceList%5B%5D={2}"
+    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut={0}&dateFin={1}&pceList[]={2}"
 
     TEMPERATURES_URL = "https://monespace.grdf.fr/api/e-conso/pce/{0}/meteo?dateFinPeriode={1}&nbJours={2}"
 
@@ -222,7 +267,7 @@ class JsonWebDataSource(WebDataSource):
 
         super().__init__(username, password)
 
-    def _loadFromSession(self, session: Session, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -237,11 +282,38 @@ class JsonWebDataSource(WebDataSource):
         # Data URL: Inject parameters.
         downloadUrl = JsonWebDataSource.DATA_URL.format(startDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), pceIdentifier)
 
-        # First request never returns data.
-        session.get(downloadUrl)
+        # Retry mechanism.
+        retry = 10
+        while retry > 0:
 
-        # Get consumption data.
-        data = session.get(downloadUrl).text
+            # Create a session.
+            session = Session()
+            session.headers.update({"Host": "monespace.grdf.fr"})
+            session.headers.update({"Domain": "grdf.fr"})
+            session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+            session.headers.update({"Accept": "application/json"})
+            session.cookies.set("auth_token", auth_token, domain="monespace.grdf.fr")
+
+            try:
+                response = session.get(downloadUrl)
+
+                if "text/html" in response.headers.get("Content-Type"):
+                    raise Exception("An error occurred while loading data. Please check your credentials.")
+
+                if response.status_code != 200:
+                    raise Exception(f"An error occurred while loading data. Status code: {response.status_code} - {response.text}")
+
+                break
+            except Exception as e:
+
+                if retry == 1:
+                    raise e
+
+                Logger.error("An error occurred while loading data. Retry in 3 seconds.")
+                time.sleep(3)
+                retry -= 1
+
+        data = response.text
 
         # Temperatures URL: Inject parameters.
         endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
@@ -394,7 +466,7 @@ class FrequencyConverter:
         df = df.sort_values(by=['first_day_of_week'])
 
         # Select rows where we have a full week (7 days) except for the current week.
-        df = pd.concat([df[(df["count"] == 7)], df.tail(1)])
+        df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df["count"] < 7]])
 
         # Select target columns.
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
@@ -422,7 +494,7 @@ class FrequencyConverter:
         df = df.sort_values(by=['first_day_of_month'])
 
         # Select rows where we have a full month (more than 27 days) except for the current month.
-        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)])
+        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)[df["count"] < 28]])
 
         # Rename columns for their target names.
         df = df.rename(columns={"month_year": "time_period"})
@@ -452,8 +524,8 @@ class FrequencyConverter:
         # Sort rows by month ascending.
         df = df.sort_values(by=['year'])
 
-        # Select rows where we have almost a full year (more than 360) except for the current month.
-        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)])
+        # Select rows where we have almost a full year (more than 360) except for the current year.
+        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)[df["count"] < 360]])
 
         # Rename columns for their target names.
         df = df.rename(columns={"year": "time_period"})

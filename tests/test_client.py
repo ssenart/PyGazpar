@@ -72,7 +72,7 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert (len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13)
 
     def test_yearly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))

@@ -144,7 +144,10 @@ class ExcelWebDataSource(WebDataSource):
         file_list = glob.glob(data_file_path_pattern)
         for filename in file_list:
             if os.path.isfile(filename):
-                os.remove(filename)
+                try:
+                    os.remove(filename)
+                except PermissionError:
+                    pass
 
         if frequencies is None:
             # Transform Enum in List.
@@ -194,7 +197,7 @@ class ExcelWebDataSource(WebDataSource):
                 try:
                     # openpyxl does not close the file properly.
                     os.remove(filename)
-                except Exception:
+                except PermissionError:
                     pass
 
             # We compute yearly from daily data.

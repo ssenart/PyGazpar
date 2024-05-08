@@ -1,6 +1,8 @@
 # PyGazpar
 
-## $\text{\color{red}{!!! This library is broken since CAPTCHA is mandatory on GrDF site !!!}}$
+## <span style="color:green">!!! This library is working again. CAPTCHA has been removed !!!</span>
+
+## <span style="color:red">~~!!! This library is broken since CAPTCHA is mandatory on GrDF site !!!~~</span>
 
 PyGazpar is a Python library for getting natural gas consumption from GrDF French provider.
 

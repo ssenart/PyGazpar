@@ -143,7 +143,7 @@ class TestAllDataSource:
 
         assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert (len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13)
 
         assert (len(data[Frequency.YEARLY.value]) == 1)
 

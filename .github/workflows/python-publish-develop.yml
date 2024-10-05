@@ -19,7 +19,7 @@ jobs:
         - "3.9"
         - "3.10"
         - "3.11"
-        
+        - "3.12"
     steps:
 
     - name: Checkout
@@ -105,7 +105,7 @@ jobs:
         pytest tests --doctest-modules --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov=pygazpar --cov-report=xml --cov-report=html --log-cli-level=DEBUG --log-cli-format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
 
     - name: Upload pytest test results
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-results-${{ matrix.python-version }}
         path: |

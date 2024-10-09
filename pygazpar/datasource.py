@@ -94,14 +94,14 @@ class WebDataSource(IDataSource):
 
         params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
 
-        response = session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)
+        response = session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
 
         if response.status_code != 200:
             raise Exception(f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}")
 
         auth_token = session.cookies.get("auth_token", domain="monespace.grdf.fr")
 
-        return auth_token
+        return auth_token  # type: ignore
 
     @abstractmethod
     def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
@@ -211,7 +211,7 @@ class ExcelWebDataSource(WebDataSource):
 
         response = session.get(url)
 
-        if "text/html" in response.headers.get("Content-Type"):
+        if "text/html" in response.headers.get("Content-Type"):  # type: ignore
             raise Exception("An error occurred while loading data. Please check your credentials.")
 
         if response.status_code != 200:
@@ -297,7 +297,7 @@ class JsonWebDataSource(WebDataSource):
             try:
                 response = session.get(downloadUrl)
 
-                if "text/html" in response.headers.get("Content-Type"):
+                if "text/html" in response.headers.get("Content-Type"):  # type: ignore
                     raise Exception("An error occurred while loading data. Please check your credentials.")
 
                 if response.status_code != 200:
@@ -466,7 +466,7 @@ class FrequencyConverter:
         df = df.sort_values(by=['first_day_of_week'])
 
         # Select rows where we have a full week (7 days) except for the current week.
-        df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df["count"] < 7]])
+        df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df.tail(1)["count"] < 7]])
 
         # Select target columns.
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
@@ -494,7 +494,7 @@ class FrequencyConverter:
         df = df.sort_values(by=['first_day_of_month'])
 
         # Select rows where we have a full month (more than 27 days) except for the current month.
-        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)[df["count"] < 28]])
+        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)[df.tail(1)["count"] < 28]])
 
         # Rename columns for their target names.
         df = df.rename(columns={"month_year": "time_period"})
@@ -525,7 +525,7 @@ class FrequencyConverter:
         df = df.sort_values(by=['year'])
 
         # Select rows where we have almost a full year (more than 360) except for the current year.
-        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)[df["count"] < 360]])
+        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)[df.tail(1)["count"] < 360]])
 
         # Rename columns for their target names.
         df = df.rename(columns={"year": "time_period"})

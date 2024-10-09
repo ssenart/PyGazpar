@@ -33,7 +33,7 @@ class ExcelParser:
 
         worksheet = workbook.active
 
-        res = parseByFrequency[dataReadingFrequency](worksheet)
+        res = parseByFrequency[dataReadingFrequency](worksheet)  # type: ignore
 
         workbook.close()
 

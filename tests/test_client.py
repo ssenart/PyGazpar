@@ -52,6 +52,20 @@ class TestClient:
 
         assert (len(data[Frequency.HOURLY.value]) == 0)
 
+    def test_one_day_jsonweb(self):
+        client = Client(JsonWebDataSource(self.__username, self.__password))
+
+        data = client.loadSince(self.__pceIdentifier, 1, [Frequency.DAILY])
+
+        assert (len(data[Frequency.DAILY.value]) <= 1)
+
+    def test_two_days_jsonweb(self):
+        client = Client(JsonWebDataSource(self.__username, self.__password))
+
+        data = client.loadSince(self.__pceIdentifier, 2, [Frequency.DAILY])
+
+        assert (len(data[Frequency.DAILY.value]) <= 2)
+
     # @pytest.mark.skip(reason="Requires live data")
     def test_daily_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))

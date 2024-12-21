@@ -29,7 +29,7 @@ class JsonParser:
 
         for releve in data[pceIdentifier]['releves']:
             temperature = releve['temperature']
-            if temperature is None:
+            if temperature is None and temperatures is not None and len(temperatures) > 0:
                 temperature = temperatures.get(releve['journeeGaziere'])
 
             item = {}

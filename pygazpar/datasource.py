@@ -59,9 +59,9 @@ class WebDataSource(IDataSource):
     # ------------------------------------------------------
     def load(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
-        auth_token = self._login(self.__username, self.__password)
+        self._login(self.__username, self.__password)  # We ignore the return value.
 
-        res = self._loadFromSession(auth_token, pceIdentifier, startDate, endDate, frequencies)
+        res = self._loadFromSession(pceIdentifier, startDate, endDate, frequencies)
 
         Logger.debug("The data update terminates normally")
 
@@ -88,23 +88,23 @@ class WebDataSource(IDataSource):
 
         jar = http.cookiejar.CookieJar()
 
-        session = Session()
-        session.headers.update({"Content-Type": "application/json"})
-        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        self._session = Session()
+        self._session.headers.update({"Content-Type": "application/json"})
+        self._session.headers.update({"X-Requested-With": "XMLHttpRequest"})
 
         params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
 
-        response = session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
+        response = self._session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
 
         if response.status_code != 200:
             raise Exception(f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}")
 
-        auth_token = session.cookies.get("auth_token", domain="monespace.grdf.fr")
+        auth_token = self._session.cookies.get("auth_token", domain="monespace.grdf.fr")
 
         return auth_token  # type: ignore
 
     @abstractmethod
-    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
         pass
 
 
@@ -133,7 +133,7 @@ class ExcelWebDataSource(WebDataSource):
         self.__tmpDirectory = tmpDirectory
 
     # ------------------------------------------------------
-    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -166,16 +166,8 @@ class ExcelWebDataSource(WebDataSource):
             retry = 10
             while retry > 0:
 
-                # Create a session.
-                session = Session()
-                session.headers.update({"Host": "monespace.grdf.fr"})
-                session.headers.update({"Domain": "grdf.fr"})
-                session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-                session.headers.update({"Accept": "application/json"})
-                session.cookies.set("auth_token", auth_token, domain="monespace.grdf.fr")
-
                 try:
-                    self.__downloadFile(session, downloadUrl, self.__tmpDirectory)
+                    self.__downloadFile(self._session, downloadUrl, self.__tmpDirectory)
                     break
                 except Exception as e:
 
@@ -267,7 +259,7 @@ class JsonWebDataSource(WebDataSource):
 
         super().__init__(username, password)
 
-    def _loadFromSession(self, auth_token: str, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
+    def _loadFromSession(self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None) -> MeterReadingsByFrequency:
 
         res = {}
 
@@ -286,16 +278,8 @@ class JsonWebDataSource(WebDataSource):
         retry = 10
         while retry > 0:
 
-            # Create a session.
-            session = Session()
-            session.headers.update({"Host": "monespace.grdf.fr"})
-            session.headers.update({"Domain": "grdf.fr"})
-            session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-            session.headers.update({"Accept": "application/json"})
-            session.cookies.set("auth_token", auth_token, domain="monespace.grdf.fr")
-
             try:
-                response = session.get(downloadUrl)
+                response = self._session.get(downloadUrl)
 
                 if "text/html" in response.headers.get("Content-Type"):  # type: ignore
                     raise Exception("An error occurred while loading data. Please check your credentials.")
@@ -321,7 +305,7 @@ class JsonWebDataSource(WebDataSource):
         temperaturesUrl = JsonWebDataSource.TEMPERATURES_URL.format(pceIdentifier, endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), days)
 
         # Get weather data.
-        temperatures = session.get(temperaturesUrl).text
+        temperatures = self._session.get(temperaturesUrl).text
 
         # Transform all the data into the target structure.
         daily = JsonParser.parse(data, temperatures, pceIdentifier)

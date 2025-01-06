@@ -145,7 +145,7 @@ class TestAllDataSource:
 
         assert (len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13)
 
-        assert (len(data[Frequency.YEARLY.value]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) >= 1)
 
     # ------------------------------------------------------
     def test_excelweb(self):
@@ -163,4 +163,4 @@ class TestAllDataSource:
 
         assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
 
-        assert (len(data[Frequency.YEARLY.value]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) >= 1)

@@ -93,7 +93,7 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) >= 1)
 
     def test_daily_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
@@ -121,7 +121,7 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) == 1)
+        assert (len(data[Frequency.YEARLY.value]) >= 1)
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())

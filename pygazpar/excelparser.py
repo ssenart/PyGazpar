@@ -37,6 +37,8 @@ class ExcelParser:
 
         workbook.close()
 
+        Logger.debug("Processed Excel %s data: %s", dataReadingFrequency, res)
+
         return res
 
     # ------------------------------------------------------

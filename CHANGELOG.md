@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8](https://github.com/ssenart/PyGazpar/compare/1.2.8...1.2.7) - 2025-01-11
+
+### Added
+- [#81](https://github.com/ssenart/PyGazpar/issues/81): Add meter/temperature debug log messages to help investigation in case of errors.
+
 ## [1.2.7](https://github.com/ssenart/PyGazpar/compare/1.2.7...1.2.6) - 2025-01-06
 
 ### Fixed

@@ -299,6 +299,8 @@ class JsonWebDataSource(WebDataSource):
 
         data = response.text
 
+        Logger.debug("Json meter data: %s", data)
+
         # Temperatures URL: Inject parameters.
         endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
         days = min((endDate - startDate).days, 730)
@@ -307,8 +309,12 @@ class JsonWebDataSource(WebDataSource):
         # Get weather data.
         temperatures = self._session.get(temperaturesUrl).text
 
+        Logger.debug("Json temperature data: %s", temperatures)
+
         # Transform all the data into the target structure.
         daily = JsonParser.parse(data, temperatures, pceIdentifier)
+
+        Logger.debug("Processed daily data: %s", daily)
 
         if frequencies is None:
             # Transform Enum in List.

@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime
-from pygazpar.enum import Frequency
-from pygazpar.enum import PropertyName
-from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.cell.cell import Cell
-from openpyxl import load_workbook
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
+from openpyxl import load_workbook
+from openpyxl.cell.cell import Cell
+from openpyxl.worksheet.worksheet import Worksheet
+
+from pygazpar.enum import Frequency, PropertyName
 
 FIRST_DATA_LINE_NUMBER = 10
 
@@ -14,7 +14,7 @@ Logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------------------------------------------------
-class ExcelParser:
+class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
@@ -24,7 +24,7 @@ class ExcelParser:
             Frequency.HOURLY: ExcelParser.__parseHourly,
             Frequency.DAILY: ExcelParser.__parseDaily,
             Frequency.WEEKLY: ExcelParser.__parseWeekly,
-            Frequency.MONTHLY: ExcelParser.__parseMonthly
+            Frequency.MONTHLY: ExcelParser.__parseMonthly,
         }
 
         Logger.debug(f"Loading Excel data file '{dataFilename}'...")
@@ -49,7 +49,7 @@ class ExcelParser:
             if isNumber:
                 if type(cell.value) is str:
                     if len(cell.value.strip()) > 0:
-                        row[propertyName] = float(cell.value.replace(',', '.'))
+                        row[propertyName] = float(cell.value.replace(",", "."))
                 else:
                     row[propertyName] = cell.value
             else:
@@ -57,7 +57,7 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> List[Dict[str, Any]]:
+    def __parseHourly(worksheet: Worksheet) -> List[Dict[str, Any]]:  # pylint: disable=unused-argument
         return []
 
     # ------------------------------------------------------
@@ -70,9 +70,9 @@ class ExcelParser:
         data_timestamp = datetime.now().isoformat()
 
         minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet['B'])
+        maxRowNum = len(worksheet["B"])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = {}
+            row = dict[str, Any]()
             if worksheet.cell(column=2, row=rownum).value is not None:
                 ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
                 ExcelParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
@@ -99,9 +99,9 @@ class ExcelParser:
         data_timestamp = datetime.now().isoformat()
 
         minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet['B'])
+        maxRowNum = len(worksheet["B"])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = {}
+            row = dict[str, Any]()
             if worksheet.cell(column=2, row=rownum).value is not None:
                 ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
                 ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
@@ -123,9 +123,9 @@ class ExcelParser:
         data_timestamp = datetime.now().isoformat()
 
         minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet['B'])
+        maxRowNum = len(worksheet["B"])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = {}
+            row = dict[str, Any]()
             if worksheet.cell(column=2, row=rownum).value is not None:
                 ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
                 ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore

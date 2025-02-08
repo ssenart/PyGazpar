@@ -1,0 +1,19 @@
+# Python package version (PEP440): https://peps.python.org/pep-0440/
+
+assembly-file-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
+assembly-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
+assembly-informational-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
+
+branches:
+  develop:
+    regex: ^develop$
+    label: 'a'
+  main:
+    regex: ^main$
+    label: ''
+  release:
+    regex: ^release/(?<BranchName>.+) 
+    label: 'b'
+  feature:
+    regex: ^feature/(?<BranchName>.+)
+    label: '.dev'

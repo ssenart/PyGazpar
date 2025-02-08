@@ -102,9 +102,14 @@ jobs:
       #  Check-out repo
       - name: Check out repository
         uses: actions/checkout@v4
+
       #----------------------------------------------
       # Testing the code
       - name: Test
         uses: ./.github/workflows/python-test
         with:
           python-version: ${{ matrix.python-version }}
+        env:
+          GRDF_USERNAME: ${{ secrets.GRDF_USERNAME }}
+          GRDF_PASSWORD: ${{ secrets.GRDF_PASSWORD }}
+          PCE_IDENTIFIER: ${{ secrets.PCE_IDENTIFIER }}               

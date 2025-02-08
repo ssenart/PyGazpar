@@ -8,12 +8,7 @@ on:
         required: false
         default: ""
         type: string
-      is_final:
-        description: "It is a final release (not a pre-release)"
-        required: false
-        default: true
-        type: boolean
-
+        
 permissions:
   contents: write # Allow to commit and push.
 

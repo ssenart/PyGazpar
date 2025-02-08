@@ -1,7 +1,9 @@
-from pygazpar.api_client import APIClient, ConsumptionType, Frequency
 import os
 from datetime import date
+
 import pytest
+
+from pygazpar.api_client import APIClient, ConsumptionType, Frequency
 
 
 class TestAPIClient:
@@ -16,7 +18,7 @@ class TestAPIClient:
         cls._password = os.environ["GRDF_PASSWORD"]
         cls._pceIdentifier = os.environ["PCE_IDENTIFIER"]
 
-        cls._client = APIClient(cls._username, cls._password)
+        cls._client = APIClient(cls._username, cls._password, 3)
         cls._client.login()
 
     # ------------------------------------------------------
@@ -74,30 +76,42 @@ class TestAPIClient:
     # ------------------------------------------------------
     def test_get_pce_consumption(self):
 
-        start_date = date.today()
-        end_date = date.today()
+        start_date = date(2025, 1, 1)
+        end_date = date(2025, 1, 7)
 
-        pce_consumption_informative = TestAPIClient._client.get_pce_consumption(ConsumptionType.INFORMATIVE, start_date, end_date, [TestAPIClient._pceIdentifier])
+        pce_consumption_informative = TestAPIClient._client.get_pce_consumption(
+            ConsumptionType.INFORMATIVE, start_date, end_date, [TestAPIClient._pceIdentifier]
+        )
 
         assert len(pce_consumption_informative) > 0
 
-        pce_consumption_published = TestAPIClient._client.get_pce_consumption(ConsumptionType.PUBLISHED, start_date, end_date, [TestAPIClient._pceIdentifier])
+        pce_consumption_published = TestAPIClient._client.get_pce_consumption(
+            ConsumptionType.PUBLISHED, start_date, end_date, [TestAPIClient._pceIdentifier]
+        )
 
         assert len(pce_consumption_published) > 0
 
-        with pytest.raises(ValueError, match="An error occurred while loading data."):
-            TestAPIClient._client.get_pce_consumption(ConsumptionType.INFORMATIVE, date(2010, 1, 1), date(2010, 1, 2), [TestAPIClient._pceIdentifier])
+        no_result = TestAPIClient._client.get_pce_consumption(
+            ConsumptionType.INFORMATIVE, date(2010, 1, 1), date(2010, 1, 7), [TestAPIClient._pceIdentifier]
+        )
 
-        with pytest.raises(ValueError, match="An error occurred while loading data."):
-            TestAPIClient._client.get_pce_consumption(ConsumptionType.INFORMATIVE, start_date, end_date, ["InvalidPceIdentifier"])
+        assert len(no_result) == 0
+
+        no_result = TestAPIClient._client.get_pce_consumption(
+            ConsumptionType.INFORMATIVE, start_date, end_date, ["InvalidPceIdentifier"]
+        )
+
+        assert len(no_result) == 0
 
     # ------------------------------------------------------
     def test_get_pce_consumption_excelsheet(self):
 
-        start_date = date.today()
-        end_date = date.today()
+        start_date = date(2025, 1, 1)
+        end_date = date(2025, 1, 7)
 
-        pce_consumption_informative = TestAPIClient._client.get_pce_consumption_excelsheet(ConsumptionType.INFORMATIVE, start_date, end_date, Frequency.DAILY, [TestAPIClient._pceIdentifier])
+        pce_consumption_informative = TestAPIClient._client.get_pce_consumption_excelsheet(
+            ConsumptionType.INFORMATIVE, start_date, end_date, Frequency.DAILY, [TestAPIClient._pceIdentifier]
+        )
 
         assert len(pce_consumption_informative) > 0
 
@@ -110,9 +124,9 @@ class TestAPIClient:
 
         assert len(pce_meteo) > 0
 
-        pce_meteo_no_result = TestAPIClient._client.get_pce_meteo(date(2010, 1, 2), 2, TestAPIClient._pceIdentifier)
+        pce_meteo_no_result = TestAPIClient._client.get_pce_meteo(date(2010, 1, 2), 7, TestAPIClient._pceIdentifier)
 
         assert len(pce_meteo_no_result) == 0
 
         with pytest.raises(ValueError, match="Le pce InvalidPceIdentifier n'existe pas !"):
-            TestAPIClient._client.get_pce_meteo(end_date, 2, "InvalidPceIdentifier")
+            TestAPIClient._client.get_pce_meteo(end_date, 7, "InvalidPceIdentifier")

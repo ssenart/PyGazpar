@@ -1,10 +1,13 @@
-from requests import Session, Response
-from typing import Any
 import http.cookiejar
 import json
+import logging
+import time
+import traceback
 from datetime import date
 from enum import Enum
-import time
+from typing import Any
+
+from requests import Response, Session
 
 SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
 SESSION_TOKEN_PAYLOAD = """{{
@@ -27,6 +30,8 @@ API_BASE_URL = "https://monespace.grdf.fr/api"
 
 DATE_FORMAT = "%Y-%m-%d"
 
+Logger = logging.getLogger(__name__)
+
 
 # ------------------------------------------------------
 class ConsumptionType(str, Enum):
@@ -36,11 +41,11 @@ class ConsumptionType(str, Enum):
 
 # ------------------------------------------------------
 class Frequency(str, Enum):
-    HOURLY = 'Horaire'
-    DAILY = 'Journalier'
-    WEEKLY = 'Hebdomadaire'
-    MONTHLY = 'Mensuel'
-    YEARLY = 'Annuel'
+    HOURLY = "Horaire"
+    DAILY = "Journalier"
+    WEEKLY = "Hebdomadaire"
+    MONTHLY = "Mensuel"
+    YEARLY = "Annuel"
 
 
 # ------------------------------------------------------
@@ -114,7 +119,9 @@ class APIClient:
                 response = self._session.get(f"{API_BASE_URL}{endpoint}", params=params)
 
                 if "text/html" in response.headers.get("Content-Type"):  # type: ignore
-                    raise ValueError(f"An error occurred while loading data. Please check your query parameters: {params}")
+                    raise ValueError(
+                        f"An error occurred while loading data. Please check your query parameters: {params}"
+                    )
 
                 if response.status_code != 200:
                     raise ValueError(
@@ -124,7 +131,9 @@ class APIClient:
                 break
             except Exception as e:  # pylint: disable=broad-exception-caught
                 if retry == 1:
+                    Logger.error(f"An error occurred while loading data. Retry limit reached: {traceback.format_exc()}")
                     raise e
+                Logger.warning("An error occurred while loading data. Retry in 3 seconds...")
                 time.sleep(3)
                 retry -= 1
 
@@ -141,14 +150,16 @@ class APIClient:
         return res
 
     # ------------------------------------------------------
-    def get_pce_consumption(self, consumption_type: ConsumptionType, start_date: date, end_date: date, pce_list: list[str]) -> dict[str, Any]:
+    def get_pce_consumption(
+        self, consumption_type: ConsumptionType, start_date: date, end_date: date, pce_list: list[str]
+    ) -> dict[str, Any]:
 
         start = start_date.strftime(DATE_FORMAT)
         end = end_date.strftime(DATE_FORMAT)
 
         res = self.get(
             f"/e-conso/pce/consommation/{consumption_type.value}",
-            {"dateDebut": start, "dateFin": end, "pceList[]": ",".join(pce_list)}
+            {"dateDebut": start, "dateFin": end, "pceList[]": ",".join(pce_list)},
         ).json()
 
         if type(res) is list and len(res) == 0:
@@ -160,14 +171,21 @@ class APIClient:
         return res
 
     # ------------------------------------------------------
-    def get_pce_consumption_excelsheet(self, consumption_type: ConsumptionType, start_date: date, end_date: date, frequency: Frequency, pce_list: list[str]) -> dict[str, Any]:
+    def get_pce_consumption_excelsheet(
+        self,
+        consumption_type: ConsumptionType,
+        start_date: date,
+        end_date: date,
+        frequency: Frequency,
+        pce_list: list[str],
+    ) -> dict[str, Any]:
 
         start = start_date.strftime(DATE_FORMAT)
         end = end_date.strftime(DATE_FORMAT)
 
         response = self.get(
             f"/e-conso/pce/consommation/{consumption_type.value}/telecharger",
-            {"dateDebut": start, "dateFin": end, "frequence": frequency.value, "pceList[]": ",".join(pce_list)}
+            {"dateDebut": start, "dateFin": end, "frequence": frequency.value, "pceList[]": ",".join(pce_list)},
         )
 
         filename = response.headers["Content-Disposition"].split("filename=")[1]
@@ -181,10 +199,7 @@ class APIClient:
 
         end = end_date.strftime(DATE_FORMAT)
 
-        res = self.get(
-            f"/e-conso/pce/{pce}/meteo",
-            {"dateFinPeriode": end, "nbJours": days}
-        ).json()
+        res = self.get(f"/e-conso/pce/{pce}/meteo", {"dateFinPeriode": end, "nbJours": days}).json()
 
         if type(res) is list and len(res) == 0:
             return dict[str, Any]()

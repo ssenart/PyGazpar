@@ -1,37 +1,18 @@
 import glob
-import http.cookiejar
 import json
 import logging
 import os
-import time
 from abc import ABC, abstractmethod
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, cast
 
 import pandas as pd
-from requests import Session
 
+from pygazpar.api_client import APIClient, ConsumptionType
+from pygazpar.api_client import Frequency as APIClientFrequency
 from pygazpar.enum import Frequency, PropertyName
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
-from pygazpar.api_client import APIClient, ConsumptionType, Frequency as APIClientFrequency
-
-SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
-SESSION_TOKEN_PAYLOAD = """{{
-    "username": "{0}",
-    "password": "{1}",
-    "options": {{
-        "multiOptionalFactorEnroll": "false",
-        "warnBeforePasswordExpired": "false"
-    }}
-}}"""
-
-AUTH_TOKEN_URL = "https://connexion.grdf.fr/login/sessionCookieRedirect"
-AUTH_TOKEN_PARAMS = """{{
-    "checkAccountSetupComplete": "true",
-    "token": "{0}",
-    "redirectUrl": "https://monespace.grdf.fr"
-}}"""
 
 Logger = logging.getLogger(__name__)
 
@@ -75,46 +56,6 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
         return res
 
-    # ------------------------------------------------------
-    def _login(self, username: str, password: str) -> str:
-
-        session = Session()
-        session.headers.update({"domain": "grdf.fr"})
-        session.headers.update({"Content-Type": "application/json"})
-        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-
-        payload = SESSION_TOKEN_PAYLOAD.format(username, password)
-
-        response = session.post(SESSION_TOKEN_URL, data=payload)
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"An error occurred while logging in. Status code: {response.status_code} - {response.text}"
-            )
-
-        session_token = response.json().get("sessionToken")
-
-        Logger.debug("Session token: %s", session_token)
-
-        jar = http.cookiejar.CookieJar()
-
-        self._session = Session()  # pylint: disable=attribute-defined-outside-init
-        self._session.headers.update({"Content-Type": "application/json"})
-        self._session.headers.update({"X-Requested-With": "XMLHttpRequest"})
-
-        params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
-
-        response = self._session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}"
-            )
-
-        auth_token = self._session.cookies.get("auth_token", domain="monespace.grdf.fr")
-
-        return auth_token  # type: ignore
-
     @abstractmethod
     def _loadFromSession(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
@@ -124,8 +65,6 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
 # ------------------------------------------------------------------------------------------------------------
 class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-methods
-
-    DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={0}&dateFin={1}&frequence={3}&pceList[]={2}"
 
     DATE_FORMAT = "%Y-%m-%d"
 
@@ -173,19 +112,18 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
             frequencyList = list(set(frequencies))
 
         for frequency in frequencyList:
-            # Inject parameters.
-            downloadUrl = ExcelWebDataSource.DATA_URL.format(
-                startDate.strftime(ExcelWebDataSource.DATE_FORMAT),
-                endDate.strftime(ExcelWebDataSource.DATE_FORMAT),
-                pceIdentifier,
-                ExcelWebDataSource.FREQUENCY_VALUES[frequency],
-            )
 
             Logger.debug(
                 f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}"
             )
 
-            response = self._api_client.get_pce_consumption_excelsheet(ConsumptionType.INFORMATIVE, startDate, endDate, APIClientFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]), [pceIdentifier])
+            response = self._api_client.get_pce_consumption_excelsheet(
+                ConsumptionType.INFORMATIVE,
+                startDate,
+                endDate,
+                APIClientFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]),
+                [pceIdentifier],
+            )
 
             filename = response["filename"]
             content = response["content"]
@@ -248,12 +186,6 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
 
 # ------------------------------------------------------------------------------------------------------------
 class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-methods
-
-    DATA_URL = (
-        "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives?dateDebut={0}&dateFin={1}&pceList[]={2}"
-    )
-
-    TEMPERATURES_URL = "https://monespace.grdf.fr/api/e-conso/pce/{0}/meteo?dateFinPeriode={1}&nbJours={2}"
 
     INPUT_DATE_FORMAT = "%Y-%m-%d"
 

@@ -14,6 +14,7 @@ from requests import Session
 from pygazpar.enum import Frequency, PropertyName
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
+from pygazpar.api_client import APIClient, ConsumptionType, Frequency as APIClientFrequency
 
 SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
 SESSION_TOKEN_PAYLOAD = """{{
@@ -57,15 +58,16 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------
     def __init__(self, username: str, password: str):
 
-        self.__username = username
-        self.__password = password
+        self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
     def load(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
-        self._login(self.__username, self.__password)  # We ignore the return value.
+        # self._login(self.__username, self.__password)  # We ignore the return value.
+
+        self._api_client.login()
 
         res = self._loadFromSession(pceIdentifier, startDate, endDate, frequencies)
 
@@ -183,21 +185,13 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
                 f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}"
             )
 
-            # Retry mechanism.
-            retry = 10
-            while retry > 0:
+            response = self._api_client.get_pce_consumption_excelsheet(ConsumptionType.INFORMATIVE, startDate, endDate, APIClientFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]), [pceIdentifier])
 
-                try:
-                    self.__downloadFile(self._session, downloadUrl, self.__tmpDirectory)
-                    break
-                except Exception as e:  # pylint: disable=broad-exception-caught
+            filename = response["filename"]
+            content = response["content"]
 
-                    if retry == 1:
-                        raise e
-
-                    Logger.error("An error occurred while loading data. Retry in 3 seconds.")
-                    time.sleep(3)
-                    retry -= 1
+            with open(f"{self.__tmpDirectory}/{filename}", "wb") as file:
+                file.write(content)
 
             # Load the XLSX file into the data structure
             file_list = glob.glob(data_file_path_pattern)
@@ -220,26 +214,6 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
                 res[frequency.value] = FrequencyConverter.computeYearly(res[frequency.value])
 
         return res
-
-    # ------------------------------------------------------
-    def __downloadFile(self, session: Session, url: str, path: str):
-
-        response = session.get(url)
-
-        if "text/html" in response.headers.get("Content-Type"):  # type: ignore
-            raise ValueError("An error occurred while loading data. Please check your credentials.")
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"An error occurred while loading data. Status code: {response.status_code} - {response.text}"
-            )
-
-        response.raise_for_status()
-
-        filename = response.headers["Content-Disposition"].split("filename=")[1]
-
-        with open(f"{path}/{filename}", "wb") as file:
-            file.write(response.content)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -289,7 +263,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
-        res = {}
+        res = dict[str, Any]()
 
         computeByFrequency = {
             Frequency.HOURLY: FrequencyConverter.computeHourly,
@@ -299,56 +273,28 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
             Frequency.YEARLY: FrequencyConverter.computeYearly,
         }
 
-        # Data URL: Inject parameters.
-        downloadUrl = JsonWebDataSource.DATA_URL.format(
-            startDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT),
-            endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT),
-            pceIdentifier,
-        )
-
-        # Retry mechanism.
-        retry = 10
-        while retry > 0:
-
-            try:
-                response = self._session.get(downloadUrl)
-
-                if "text/html" in response.headers.get("Content-Type"):  # type: ignore
-                    raise ValueError("An error occurred while loading data. Please check your credentials.")
-
-                if response.status_code != 200:
-                    raise ValueError(
-                        f"An error occurred while loading data. Status code: {response.status_code} - {response.text}"
-                    )
-
-                break
-            except Exception as e:  # pylint: disable=broad-exception-caught
-
-                if retry == 1:
-                    raise e
-
-                Logger.error("An error occurred while loading data. Retry in 3 seconds.")
-                time.sleep(3)
-                retry -= 1
-
-        data = response.text
+        data = self._api_client.get_pce_consumption(ConsumptionType.INFORMATIVE, startDate, endDate, [pceIdentifier])
 
         Logger.debug("Json meter data: %s", data)
 
         # Temperatures URL: Inject parameters.
         endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
         days = min((endDate - startDate).days, 730)
-        temperaturesUrl = JsonWebDataSource.TEMPERATURES_URL.format(
-            pceIdentifier, endDate.strftime(JsonWebDataSource.INPUT_DATE_FORMAT), days
-        )
 
         # Get weather data.
-        temperatures = self._session.get(temperaturesUrl).text
+        try:
+            temperatures = self._api_client.get_pce_meteo(endDate, days, pceIdentifier)
+        except Exception:  # pylint: disable=broad-except
+            # Not a blocking error.
+            temperatures = None
 
         Logger.debug("Json temperature data: %s", temperatures)
 
         # Transform all the data into the target structure.
-        daily = JsonParser.parse(data, temperatures, pceIdentifier)
+        if data is None or len(data) == 0:
+            return res
+
+        daily = JsonParser.parse(json.dumps(data), json.dumps(temperatures), pceIdentifier)
 
         Logger.debug("Processed daily data: %s", daily)
 

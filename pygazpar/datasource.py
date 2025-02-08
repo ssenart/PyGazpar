@@ -407,6 +407,8 @@ class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 # ------------------------------------------------------------------------------------------------------------
 class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
+    __test__ = False  # Will not be discovered as a test
+
     def __init__(self):
 
         pass

@@ -1,6 +1,0 @@
-flake8
-pytest
-openpyxl
-requests
-python-dotenv
-pandas

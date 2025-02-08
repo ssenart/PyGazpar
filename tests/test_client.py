@@ -1,26 +1,28 @@
-from pygazpar.enum import Frequency
-from pygazpar.client import Client
-from pygazpar.datasource import JsonWebDataSource, TestDataSource, ExcelWebDataSource
 import os
+
 import pytest
 
+from pygazpar.client import Client
+from pygazpar.datasource import ExcelWebDataSource, JsonWebDataSource, TestDataSource
+from pygazpar.enum import Frequency
 
-class TestClient:
+
+class TestClient:  # pylint: disable=too-many-public-methods
 
     @classmethod
     def setup_class(cls):
-        """ setup any state specific to the execution of the given class (which
+        """setup any state specific to the execution of the given class (which
         usually contains tests).
         """
 
     @classmethod
     def teardown_class(cls):
-        """ teardown any state that was previously setup with a call to
+        """teardown any state that was previously setup with a call to
         setup_class.
         """
 
     def setup_method(self):
-        """ setup any state tied to the execution of the given method in a
+        """setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
         tmpdir = os.path.normpath(f"{os.getcwd()}/tmp")
@@ -29,13 +31,13 @@ class TestClient:
         if not os.path.exists(tmpdir):
             os.mkdir(tmpdir)
 
-        self.__username = os.environ["GRDF_USERNAME"]
-        self.__password = os.environ["GRDF_PASSWORD"]
-        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]
-        self.__tmp_directory = tmpdir
+        self.__username = os.environ["GRDF_USERNAME"]  # pylint: disable=attribute-defined-outside-init
+        self.__password = os.environ["GRDF_PASSWORD"]  # pylint: disable=attribute-defined-outside-init
+        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]  # pylint: disable=attribute-defined-outside-init
+        self.__tmp_directory = tmpdir  # pylint: disable=attribute-defined-outside-init
 
     def teardown_method(self):
-        """ teardown any state that was previously setup with a setup_method
+        """teardown any state that was previously setup with a setup_method
         call.
         """
 
@@ -50,21 +52,21 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.HOURLY])
 
-        assert (len(data[Frequency.HOURLY.value]) == 0)
+        assert len(data[Frequency.HOURLY.value]) == 0
 
     def test_one_day_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 1, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) <= 1)
+        assert len(data[Frequency.DAILY.value]) <= 1
 
     def test_two_days_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 2, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) <= 2)
+        assert len(data[Frequency.DAILY.value]) <= 2
 
     # @pytest.mark.skip(reason="Requires live data")
     def test_daily_jsonweb(self):
@@ -72,88 +74,88 @@ class TestClient:
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) > 0)
+        assert len(data[Frequency.DAILY.value]) > 0
 
     def test_weekly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
-        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
+        assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
     def test_monthly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13
 
     def test_yearly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) >= 1)
+        assert len(data[Frequency.YEARLY.value]) >= 1
 
     def test_daily_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) > 0)
+        assert len(data[Frequency.DAILY.value]) > 0
 
     def test_weekly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
-        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
+        assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
     def test_monthly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13
 
     def test_yearly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) >= 1)
+        assert len(data[Frequency.YEARLY.value]) >= 1
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.HOURLY])
 
-        assert (len(data[Frequency.HOURLY.value]) == 0)
+        assert len(data[Frequency.HOURLY.value]) == 0
 
     def test_daily_sample(self):
         client = Client(TestDataSource())
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) == 711)
+        assert len(data[Frequency.DAILY.value]) == 711
 
     def test_weekly_sample(self):
         client = Client(TestDataSource())
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
-        assert (len(data[Frequency.WEEKLY.value]) > 0)
+        assert len(data[Frequency.WEEKLY.value]) > 0
 
     def test_monthly_sample(self):
         client = Client(TestDataSource())
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY.value]) > 0)
+        assert len(data[Frequency.MONTHLY.value]) > 0
 
     def test_yearly_sample(self):
         client = Client(TestDataSource())
 
         data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) == 2)
+        assert len(data[Frequency.YEARLY.value]) == 2

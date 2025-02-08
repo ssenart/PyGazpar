@@ -17,20 +17,20 @@ PyGazpar does not require Selenium and corresponding geckodriver to work.
 
 With the new GrDF web site, it is possible to load the consumption data far easily than before.
 
+PyGazpar uses [Poetry](https://python-poetry.org/) for dependency and package management.
+
 ### Create your virtual environment
+
 ```bash
 $ cd /path/to/my_project_folder/
 
-$ python -m venv .venv
+$ poetry install
 ```
 
 ### PyGazpar installation
-Activate your virtual environment.
-```bash
-source .venv/bin/activate
-```
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install PyGazpar.
+
 ```bash
 pip install pygazpar
 ```
@@ -38,7 +38,8 @@ pip install pygazpar
 You can also download the source code and install it manually.
 ```bash
 cd /path/to/pygazpar/
-python setup.py install
+
+$ poetry install
 ```
 
 ## Usage

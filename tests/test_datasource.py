@@ -1,8 +1,16 @@
 import os
-from pygazpar.datasource import TestDataSource, JsonFileDataSource, ExcelFileDataSource, JsonWebDataSource, ExcelWebDataSource
-from pygazpar.enum import Frequency
 from datetime import date, timedelta
+
 from dotenv import load_dotenv
+
+from pygazpar.datasource import (
+    ExcelFileDataSource,
+    ExcelWebDataSource,
+    JsonFileDataSource,
+    JsonWebDataSource,
+    TestDataSource,
+)
+from pygazpar.enum import Frequency
 
 
 class TestAllDataSource:
@@ -10,20 +18,20 @@ class TestAllDataSource:
     # ------------------------------------------------------
     @classmethod
     def setup_class(cls):
-        """ setup any state specific to the execution of the given class (which
+        """setup any state specific to the execution of the given class (which
         usually contains tests).
         """
 
     # ------------------------------------------------------
     @classmethod
     def teardown_class(cls):
-        """ teardown any state that was previously setup with a call to
+        """teardown any state that was previously setup with a call to
         setup_class.
         """
 
     # ------------------------------------------------------
     def setup_method(self):
-        """ setup any state tied to the execution of the given method in a
+        """setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
         tmpdir = os.path.normpath(f"{os.getcwd()}/tmp")
@@ -34,14 +42,14 @@ class TestAllDataSource:
 
         load_dotenv()
 
-        self.__username = os.environ["GRDF_USERNAME"]
-        self.__password = os.environ["GRDF_PASSWORD"]
-        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]
-        self.__tmp_directory = tmpdir
+        self.__username = os.environ["GRDF_USERNAME"]  # pylint: disable=attribute-defined-outside-init
+        self.__password = os.environ["GRDF_PASSWORD"]  # pylint: disable=attribute-defined-outside-init
+        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]  # pylint: disable=attribute-defined-outside-init
+        self.__tmp_directory = tmpdir  # pylint: disable=attribute-defined-outside-init
 
     # ------------------------------------------------------
     def teardown_method(self):
-        """ teardown any state that was previously setup with a setup_method
+        """teardown any state that was previously setup with a setup_method
         call.
         """
 
@@ -55,31 +63,38 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate)
 
-        assert (len(data[Frequency.DAILY.value]) == 711)
+        assert len(data[Frequency.DAILY.value]) == 711
 
-        assert (len(data[Frequency.WEEKLY.value]) == 102)
+        assert len(data[Frequency.WEEKLY.value]) == 102
 
-        assert (len(data[Frequency.MONTHLY.value]) == 24)
+        assert len(data[Frequency.MONTHLY.value]) == 24
 
-        assert (len(data[Frequency.YEARLY.value]) == 2)
+        assert len(data[Frequency.YEARLY.value]) == 2
 
     # ------------------------------------------------------
     def test_jsonfile_sample(self):
 
-        dataSource = JsonFileDataSource("tests/resources/donnees_informatives.json", "tests/resources/temperatures.json")
+        dataSource = JsonFileDataSource(
+            "tests/resources/donnees_informatives.json", "tests/resources/temperatures.json"
+        )
 
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
 
-        data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
+        data = dataSource.load(
+            self.__pceIdentifier,
+            startDate,
+            endDate,
+            [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY],
+        )
 
-        assert (len(data[Frequency.DAILY.value]) == 1096)
+        assert len(data[Frequency.DAILY.value]) == 1096
 
-        assert (len(data[Frequency.WEEKLY.value]) == 155)
+        assert len(data[Frequency.WEEKLY.value]) == 155
 
-        assert (len(data[Frequency.MONTHLY.value]) == 36)
+        assert len(data[Frequency.MONTHLY.value]) == 36
 
-        assert (len(data[Frequency.YEARLY.value]) == 3)
+        assert len(data[Frequency.YEARLY.value]) == 3
 
     # ------------------------------------------------------
     def test_daily_excelfile_sample(self):
@@ -91,7 +106,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY])
 
-        assert (len(data[Frequency.DAILY.value]) == 363)
+        assert len(data[Frequency.DAILY.value]) == 363
 
     # ------------------------------------------------------
     def test_weekly_excelfile_sample(self):
@@ -103,7 +118,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.WEEKLY])
 
-        assert (len(data[Frequency.WEEKLY.value]) == 53)
+        assert len(data[Frequency.WEEKLY.value]) == 53
 
     # ------------------------------------------------------
     def test_monthly_excelfile_sample(self):
@@ -115,7 +130,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.MONTHLY])
 
-        assert (len(data[Frequency.MONTHLY.value]) == 13)
+        assert len(data[Frequency.MONTHLY.value]) == 13
 
     # ------------------------------------------------------
     def test_yearly_excelfile_sample(self):
@@ -127,7 +142,7 @@ class TestAllDataSource:
 
         data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.YEARLY])
 
-        assert (len(data[Frequency.YEARLY.value]) == 1)
+        assert len(data[Frequency.YEARLY.value]) == 1
 
     # ------------------------------------------------------
     def test_jsonweb(self):
@@ -137,15 +152,20 @@ class TestAllDataSource:
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
 
-        data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
+        data = dataSource.load(
+            self.__pceIdentifier,
+            startDate,
+            endDate,
+            [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY],
+        )
 
-        assert (len(data[Frequency.DAILY.value]) > 0)
+        assert len(data[Frequency.DAILY.value]) > 0
 
-        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
+        assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13
 
-        assert (len(data[Frequency.YEARLY.value]) >= 1)
+        assert len(data[Frequency.YEARLY.value]) >= 1
 
     # ------------------------------------------------------
     def test_excelweb(self):
@@ -155,12 +175,17 @@ class TestAllDataSource:
         endDate = date.today()
         startDate = endDate + timedelta(days=-365)
 
-        data = dataSource.load(self.__pceIdentifier, startDate, endDate, [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY])
+        data = dataSource.load(
+            self.__pceIdentifier,
+            startDate,
+            endDate,
+            [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY],
+        )
 
-        assert (len(data[Frequency.DAILY.value]) > 0)
+        assert len(data[Frequency.DAILY.value]) > 0
 
-        assert (len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54)
+        assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
-        assert (len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13)
+        assert len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13
 
-        assert (len(data[Frequency.YEARLY.value]) >= 1)
+        assert len(data[Frequency.YEARLY.value]) >= 1

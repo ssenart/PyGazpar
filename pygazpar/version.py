@@ -1,1 +1,3 @@
-__version__ = "0.0.0-initial"
+import importlib.metadata
+
+__version__ = importlib.metadata.version("pygazpar")

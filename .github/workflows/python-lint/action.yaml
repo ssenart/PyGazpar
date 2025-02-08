@@ -1,0 +1,92 @@
+name: 'python-lint'
+description: 'Python linting workflow'
+
+inputs:
+  python-version:
+    description: 'Python version'
+    required: true
+    default: '3.13'
+
+runs:
+  using: "composite"
+  steps:
+    #----------------------------------------------
+    #  Set-up python
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}    
+
+    #----------------------------------------------
+    # Install poetry
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    #----------------------------------------------
+    # Load cached venv if cache exists
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    #----------------------------------------------
+    # Install dependencies if cache does not exist
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      shell: bash
+      run: poetry install --no-interaction --no-root
+
+    #----------------------------------------------
+    # Install root project, if required
+    #----------------------------------------------
+    - name: Install project
+      shell: bash
+      run: poetry install --no-interaction
+
+    #----------------------------------------------
+    #  Load pip cache if cache exists
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+        restore-keys: ${{ runner.os }}-pip
+
+    #----------------------------------------------
+    #  Run Pylint    
+    - name: Pylint
+      shell: bash
+      run: poetry run pylint .
+
+    #----------------------------------------------
+    #  Run Flake8
+    - name: Flake8
+      shell: bash
+      run: poetry run flake8 .
+
+    #----------------------------------------------
+    #  Run Black
+    - name: Black
+      shell: bash
+      run: poetry run black . --check
+
+    #----------------------------------------------
+    #  Run Isort
+    - name: Isort
+      shell: bash
+      run: poetry run isort . --check-only
+
+    #----------------------------------------------
+    #  Run Mypy
+    - name: Mypy
+      shell: bash
+      run: poetry run mypy . --install-types --non-interactive
+
+    #----------------------------------------------
+    #  Run Ruff
+    - name: Ruff
+      shell: bash
+      run: poetry run ruff check .

@@ -133,9 +133,9 @@ class APIClient:
                 if retry == 1:
                     Logger.error(f"{e}. Retry limit reached: {traceback.format_exc()}")
                     raise e
-                Logger.warning(f"{e}. Retry in 3 seconds...")
-                time.sleep(3)
                 retry -= 1
+                Logger.warning(f"{e}. Retry in 3 seconds ({retry} retries left)...")
+                time.sleep(3)      
 
         return response
 

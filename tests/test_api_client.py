@@ -18,7 +18,7 @@ class TestAPIClient:
         cls._password = os.environ["GRDF_PASSWORD"]
         cls._pceIdentifier = os.environ["PCE_IDENTIFIER"]
 
-        cls._client = APIClient(cls._username, cls._password, 3)
+        cls._client = APIClient(cls._username, cls._password)
         cls._client.login()
 
     # ------------------------------------------------------

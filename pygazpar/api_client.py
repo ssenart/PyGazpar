@@ -135,7 +135,7 @@ class APIClient:
                     raise e
                 retry -= 1
                 Logger.warning(f"{e}. Retry in 3 seconds ({retry} retries left)...")
-                time.sleep(3)      
+                time.sleep(3)
 
         return response
 

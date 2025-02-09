@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-[#84](https://github.com/ssenart/PyGazpar/issues/84) : Add a function to retrieve list of PCE ids and labels from account.
+[#84](https://github.com/ssenart/PyGazpar/issues/84) : Add a function to retrieve list of PCE ids.
 
 ### Changed
 

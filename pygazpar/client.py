@@ -53,14 +53,10 @@ class Client:
         self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
-        try:
-            end_date = date.today()
-            start_date = end_date + timedelta(days=-last_n_days)
+        end_date = date.today()
+        start_date = end_date + timedelta(days=-last_n_days)
 
-            res = self.load_date_range(pce_identifier, start_date, end_date, frequencies)
-        except Exception:
-            Logger.error("An unexpected error occured while loading the data", exc_info=True)
-            raise
+        res = self.load_date_range(pce_identifier, start_date, end_date, frequencies)
 
         return res
 

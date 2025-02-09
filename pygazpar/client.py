@@ -1,22 +1,11 @@
 import logging
+import warnings
 from datetime import date, timedelta
-from typing import List, Optional
+from typing import Optional
 
 from pygazpar.datasource import IDataSource, MeterReadingsByFrequency
 from pygazpar.enum import Frequency
 
-AUTH_NONCE_URL = "https://monespace.grdf.fr/client/particulier/accueil"
-LOGIN_URL = "https://login.monespace.grdf.fr/sofit-account-api/api/v1/auth"
-LOGIN_HEADER = {"domain": "grdf.fr"}
-LOGIN_PAYLOAD = """{{
-    "email": "{0}",
-    "password": "{1}",
-    "capp": "meg",
-    "goto": "https://sofa-connexion.grdf.fr:443/openam/oauth2/externeGrdf/authorize?response_type=code&scope=openid%20profile%20email%20infotravaux%20%2Fv1%2Faccreditation%20%2Fv1%2Faccreditations%20%2Fdigiconso%2Fv1%20%2Fdigiconso%2Fv1%2Fconsommations%20new_meg&client_id=prod_espaceclient&state=0&redirect_uri=https%3A%2F%2Fmonespace.grdf.fr%2F_codexch&nonce={2}&by_pass_okta=1&capp=meg"}}"""
-DATA_URL = "https://monespace.grdf.fr/api/e-conso/pce/consommation/informatives/telecharger?dateDebut={1}&dateFin={2}&frequence={0}&pceList%5B%5D={3}"
-DATA_FILENAME = "Donnees_informatives_*.xlsx"
-
-DEFAULT_TMP_DIRECTORY = "/tmp"
 DEFAULT_LAST_N_DAYS = 365
 
 
@@ -31,15 +20,44 @@ class Client:
         self.__dataSource = dataSource
 
     # ------------------------------------------------------
-    def loadSince(
-        self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[List[Frequency]] = None
+    def login(self):
+
+        try:
+            self.__dataSource.login()
+        except Exception:
+            Logger.error("An unexpected error occured while login", exc_info=True)
+            raise
+
+    # ------------------------------------------------------
+    def logout(self):
+
+        try:
+            self.__dataSource.logout()
+        except Exception:
+            Logger.error("An unexpected error occured while logout", exc_info=True)
+            raise
+
+    # ------------------------------------------------------
+    def get_pce_identifiers(self) -> list[str]:
+
+        try:
+            res = self.__dataSource.get_pce_identifiers()
+        except Exception:
+            Logger.error("An unexpected error occured while getting the PCE identifiers", exc_info=True)
+            raise
+
+        return res
+
+    # ------------------------------------------------------
+    def load_since(
+        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         try:
-            endDate = date.today()
-            startDate = endDate + timedelta(days=-lastNDays)
+            end_date = date.today()
+            start_date = end_date + timedelta(days=-last_n_days)
 
-            res = self.loadDateRange(pceIdentifier, startDate, endDate, frequencies)
+            res = self.load_date_range(pce_identifier, start_date, end_date, frequencies)
         except Exception:
             Logger.error("An unexpected error occured while loading the data", exc_info=True)
             raise
@@ -47,14 +65,14 @@ class Client:
         return res
 
     # ------------------------------------------------------
-    def loadDateRange(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+    def load_date_range(
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         Logger.debug("Start loading the data...")
 
         try:
-            res = self.__dataSource.load(pceIdentifier, startDate, endDate, frequencies)
+            res = self.__dataSource.load(pce_identifier, start_date, end_date, frequencies)
 
             Logger.debug("The data load terminates normally")
         except Exception:
@@ -62,3 +80,23 @@ class Client:
             raise
 
         return res
+
+    # ------------------------------------------------------
+    def loadSince(
+        self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
+    ) -> MeterReadingsByFrequency:
+        warnings.warn(
+            "Client.loadSince() method will be removed in 2026-01-01. Please migrate to Client.load_since() method",
+            DeprecationWarning,
+        )
+        return self.load_since(pceIdentifier, lastNDays, frequencies)
+
+    # ------------------------------------------------------
+    def loadDateRange(
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+    ) -> MeterReadingsByFrequency:
+        warnings.warn(
+            "Client.loadDateRange() method will be removed in 2026-01-01. Please migrate to Client.load_date_range() method",
+            DeprecationWarning,
+        )
+        return self.load_date_range(pceIdentifier, startDate, endDate, frequencies)

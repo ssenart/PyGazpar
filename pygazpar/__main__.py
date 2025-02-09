@@ -67,7 +67,7 @@ def main():
         raise ValueError("Invalid datasource: (json | excel | test) is expected")
 
     try:
-        data = client.loadSince(args.pce, int(args.lastNDays), [args.frequency])
+        data = client.load_since(args.pce, int(args.lastNDays), [args.frequency])
     except BaseException:  # pylint: disable=broad-except
         print("An error occured while querying PyGazpar library : %s", traceback.format_exc())
         return 1

@@ -76,8 +76,12 @@ client = pygazpar.Client(pygazpar.JsonWebDataSource(
     password='your password')
 )
 
-data = client.loadSince(pceIdentifier='your PCE identifier',
-                        lastNDays=60,
+# Returns the list of your PCE identifiers attached to your account.
+pce_identifiers = client.get_pce_identifiers()
+
+# Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
+data = client.load_since(pce_identifier='your PCE identifier',
+                        last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
 See [samples/jsonSample.py](samples/jsonSample.py) file for the full example.
@@ -92,8 +96,12 @@ client = pygazpar.Client(pygazpar.ExcelWebDataSource(
     password='your password')
 )
 
-data = client.loadSince(pceIdentifier='your PCE identifier',
-                        lastNDays=60,
+# Returns the list of your PCE identifiers attached to your account.
+pce_identifiers = client.get_pce_identifiers()
+
+# Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
+data = client.load_since(pce_identifier='your PCE identifier',
+                        last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
 See [samples/excelSample.py](samples/jsonSample.py) file for the full example.
@@ -105,8 +113,8 @@ import pygazpar
 
 client = pygazpar.Client(pygazpar.TestDataSource())
 
-data = client.loadSince(pceIdentifier='your PCE identifier',
-                        lastNDays=10,
+data = client.load_since(pce_identifier='your PCE identifier',
+                        last_n_days=10,
                         frequencies=[pygazpar.Frequency.DAILY, Frequency.MONTHLY])
 ```
 See [samples/testSample.py](samples/jsonSample.py) file for the full example.

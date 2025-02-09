@@ -49,6 +49,21 @@ class Frequency(str, Enum):
 
 
 # ------------------------------------------------------
+class ServerError(SystemError):
+
+    def __init__(self, message: str, status_code: int):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+# ------------------------------------------------------
+class InternalServerError(ServerError):
+
+    def __init__(self, message: str):
+        super().__init__(message, 500)
+
+
+# ------------------------------------------------------
 class APIClient:
 
     # ------------------------------------------------------
@@ -73,8 +88,9 @@ class APIClient:
         response = session.post(SESSION_TOKEN_URL, data=payload)
 
         if response.status_code != 200:
-            raise ValueError(
-                f"An error occurred while logging in. Status code: {response.status_code} - {response.text}"
+            raise ServerError(
+                f"An error occurred while logging in. Status code: {response.status_code} - {response.text}",
+                response.status_code,
             )
 
         session_token = response.json().get("sessionToken")
@@ -90,8 +106,9 @@ class APIClient:
         response = self._session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
 
         if response.status_code != 200:
-            raise ValueError(
-                f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}"
+            raise ServerError(
+                f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}",
+                response.status_code,
             )
 
     # ------------------------------------------------------
@@ -110,7 +127,7 @@ class APIClient:
     def get(self, endpoint: str, params: dict[str, Any]) -> Response:
 
         if self._session is None:
-            raise ValueError("You must login first.")
+            raise ConnectionError("You must login first")
 
         retry = self._retry_count
         while retry > 0:
@@ -119,22 +136,23 @@ class APIClient:
                 response = self._session.get(f"{API_BASE_URL}{endpoint}", params=params)
 
                 if "text/html" in response.headers.get("Content-Type"):  # type: ignore
-                    raise ValueError(
+                    raise InternalServerError(
                         f"An unknown error occurred. Please check your query parameters (endpoint: {endpoint}): {params}"
                     )
 
                 if response.status_code != 200:
-                    raise ValueError(
-                        f"HTTP error on enpoint '{endpoint}': Status code: {response.status_code} - {response.text}. Query parameters: {params}"
+                    raise ServerError(
+                        f"HTTP error on enpoint '{endpoint}': Status code: {response.status_code} - {response.text}. Query parameters: {params}",
+                        response.status_code,
                     )
 
                 break
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            except InternalServerError as internalServerError:  # pylint: disable=broad-exception-caught
                 if retry == 1:
-                    Logger.error(f"{e}. Retry limit reached: {traceback.format_exc()}")
-                    raise e
+                    Logger.error(f"{internalServerError}. Retry limit reached: {traceback.format_exc()}")
+                    raise internalServerError
                 retry -= 1
-                Logger.warning(f"{e}. Retry in 3 seconds ({retry} retries left)...")
+                Logger.warning(f"{internalServerError}. Retry in 3 seconds ({retry} retries left)...")
                 time.sleep(3)
 
         return response

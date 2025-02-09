@@ -3,7 +3,7 @@ from datetime import date
 
 import pytest
 
-from pygazpar.api_client import APIClient, ConsumptionType, Frequency
+from pygazpar.api_client import APIClient, ConsumptionType, Frequency, ServerError
 
 
 class TestAPIClient:
@@ -59,7 +59,7 @@ class TestAPIClient:
 
         client = APIClient("WrongUsername", "WrongPassword")
 
-        with pytest.raises(ValueError, match="Authentication failed"):
+        with pytest.raises(ServerError, match="Authentication failed"):
             client.login()
 
     # ------------------------------------------------------
@@ -128,5 +128,5 @@ class TestAPIClient:
 
         assert len(pce_meteo_no_result) == 0
 
-        with pytest.raises(ValueError, match="Le pce InvalidPceIdentifier n'existe pas !"):
+        with pytest.raises(ServerError, match="Le pce InvalidPceIdentifier n'existe pas !"):
             TestAPIClient._client.get_pce_meteo(end_date, 7, "InvalidPceIdentifier")

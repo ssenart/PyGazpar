@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from datetime import date, timedelta
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 
 import pandas as pd
 
@@ -16,19 +16,23 @@ from pygazpar.jsonparser import JsonParser
 
 Logger = logging.getLogger(__name__)
 
-MeterReading = Dict[str, Any]
+MeterReading = dict[str, Any]
 
-MeterReadings = List[MeterReading]
+MeterReadings = list[MeterReading]
 
-MeterReadingsByFrequency = Dict[str, MeterReadings]
+MeterReadingsByFrequency = dict[str, MeterReadings]
 
 
 # ------------------------------------------------------------------------------------------------------------
 class IDataSource(ABC):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
+    def get_pce_identifiers(self) -> list[str]:
+        pass
+
+    @abstractmethod
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
         pass
 
@@ -42,11 +46,21 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
-    def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    def get_pce_identifiers(self) -> list[str]:
 
-        # self._login(self.__username, self.__password)  # We ignore the return value.
+        self._api_client.login()
+
+        pce_list = self._api_client.get_pce_list()
+
+        if pce_list is None:
+            return []
+
+        return [pce["idObject"] for pce in pce_list]
+
+    # ------------------------------------------------------
+    def load(
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+    ) -> MeterReadingsByFrequency:
 
         self._api_client.login()
 
@@ -58,7 +72,7 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
         pass
 
@@ -87,7 +101,7 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
 
     # ------------------------------------------------------
     def _loadFromSession(  # pylint: disable=too-many-branches
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:  # pylint: disable=too-many-branches
 
         res = {}
@@ -161,8 +175,14 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
 
         self.__excelFile = excelFile
 
+    # ------------------------------------------------------
+    def get_pce_identifiers(self) -> list[str]:
+
+        raise NotImplementedError("This method is not implemented")
+
+    # ------------------------------------------------------
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         res = {}
@@ -191,8 +211,9 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 
     OUTPUT_DATE_FORMAT = "%d/%m/%Y"
 
+    # ------------------------------------------------------
     def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         res = dict[str, Any]()
@@ -211,7 +232,9 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 
         # Temperatures URL: Inject parameters.
         endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
-        days = min((endDate - startDate).days, 730)
+        days = max(
+            min((endDate - startDate).days, 730), 10
+        )  # At least 10 days, at most 730 days, to avoid HTTP 500 error.
 
         # Get weather data.
         try:
@@ -246,13 +269,20 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 # ------------------------------------------------------------------------------------------------------------
 class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
+    # ------------------------------------------------------
     def __init__(self, consumptionJsonFile: str, temperatureJsonFile):
 
         self.__consumptionJsonFile = consumptionJsonFile
         self.__temperatureJsonFile = temperatureJsonFile
 
+    # ------------------------------------------------------
+    def get_pce_identifiers(self) -> list[str]:
+
+        return ["0123456789"]
+
+    # ------------------------------------------------------
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         res = {}
@@ -287,12 +317,19 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     __test__ = False  # Will not be discovered as a test
 
+    # ------------------------------------------------------
     def __init__(self):
 
         pass
 
+    # ------------------------------------------------------
+    def get_pce_identifiers(self) -> list[str]:
+
+        return ["0123456789"]
+
+    # ------------------------------------------------------
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[List[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
         res = dict[str, Any]()
@@ -318,7 +355,7 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
             )
 
             with open(dataSampleFilename, mode="r", encoding="utf-8") as jsonFile:
-                res[frequency.value] = cast(List[Dict[PropertyName, Any]], json.load(jsonFile))
+                res[frequency.value] = cast(list[dict[PropertyName, Any]], json.load(jsonFile))
 
         return res
 
@@ -343,19 +380,19 @@ class FrequencyConverter:
 
     # ------------------------------------------------------
     @staticmethod
-    def computeHourly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:  # pylint: disable=unused-argument
+    def computeHourly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:  # pylint: disable=unused-argument
 
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def computeDaily(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def computeDaily(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         return daily
 
     # ------------------------------------------------------
     @staticmethod
-    def computeWeekly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def computeWeekly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         df = pd.DataFrame(daily)
 
@@ -411,13 +448,13 @@ class FrequencyConverter:
         # Select target columns.
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
 
-        res = cast(List[Dict[str, Any]], df.to_dict("records"))
+        res = cast(list[dict[str, Any]], df.to_dict("records"))
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def computeMonthly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def computeMonthly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         df = pd.DataFrame(daily)
 
@@ -459,13 +496,13 @@ class FrequencyConverter:
         # Select target columns.
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
 
-        res = cast(List[Dict[str, Any]], df.to_dict("records"))
+        res = cast(list[dict[str, Any]], df.to_dict("records"))
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def computeYearly(daily: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def computeYearly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         df = pd.DataFrame(daily)
 
@@ -502,6 +539,6 @@ class FrequencyConverter:
         # Select target columns.
         df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
 
-        res = cast(List[Dict[str, Any]], df.to_dict("records"))
+        res = cast(list[dict[str, Any]], df.to_dict("records"))
 
         return res

@@ -45,26 +45,26 @@ class TestClient:  # pylint: disable=too-many-public-methods
         client = Client(JsonWebDataSource("WrongUsername", "WrongPassword"))
 
         with pytest.raises(Exception):
-            client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
+            client.load_since(self.__pceIdentifier, 365, [Frequency.DAILY])
 
     def test_hourly_live(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.HOURLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.HOURLY])
 
         assert len(data[Frequency.HOURLY.value]) == 0
 
     def test_one_day_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 1, [Frequency.DAILY])
+        data = client.load_since(self.__pceIdentifier, 1, [Frequency.DAILY])
 
         assert len(data[Frequency.DAILY.value]) <= 1
 
     def test_two_days_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 2, [Frequency.DAILY])
+        data = client.load_since(self.__pceIdentifier, 2, [Frequency.DAILY])
 
         assert len(data[Frequency.DAILY.value]) <= 2
 
@@ -72,90 +72,90 @@ class TestClient:  # pylint: disable=too-many-public-methods
     def test_daily_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.DAILY])
 
         assert len(data[Frequency.DAILY.value]) > 0
 
     def test_weekly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
         assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
     def test_monthly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
         assert len(data[Frequency.MONTHLY.value]) >= 11 and len(data[Frequency.MONTHLY.value]) <= 13
 
     def test_yearly_jsonweb(self):
         client = Client(JsonWebDataSource(self.__username, self.__password))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
         assert len(data[Frequency.YEARLY.value]) >= 1
 
     def test_daily_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.DAILY])
 
         assert len(data[Frequency.DAILY.value]) > 0
 
     def test_weekly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
         assert len(data[Frequency.WEEKLY.value]) >= 51 and len(data[Frequency.WEEKLY.value]) <= 54
 
     def test_monthly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
         assert len(data[Frequency.MONTHLY.value]) >= 12 and len(data[Frequency.MONTHLY.value]) <= 13
 
     def test_yearly_excelweb(self):
         client = Client(ExcelWebDataSource(self.__username, self.__password, self.__tmp_directory))
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
         assert len(data[Frequency.YEARLY.value]) >= 1
 
     def test_hourly_sample(self):
         client = Client(TestDataSource())
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.HOURLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.HOURLY])
 
         assert len(data[Frequency.HOURLY.value]) == 0
 
     def test_daily_sample(self):
         client = Client(TestDataSource())
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.DAILY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.DAILY])
 
         assert len(data[Frequency.DAILY.value]) == 711
 
     def test_weekly_sample(self):
         client = Client(TestDataSource())
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.WEEKLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.WEEKLY])
 
         assert len(data[Frequency.WEEKLY.value]) > 0
 
     def test_monthly_sample(self):
         client = Client(TestDataSource())
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.MONTHLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.MONTHLY])
 
         assert len(data[Frequency.MONTHLY.value]) > 0
 
     def test_yearly_sample(self):
         client = Client(TestDataSource())
 
-        data = client.loadSince(self.__pceIdentifier, 365, [Frequency.YEARLY])
+        data = client.load_since(self.__pceIdentifier, 365, [Frequency.YEARLY])
 
         assert len(data[Frequency.YEARLY.value]) == 2

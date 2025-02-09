@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
@@ -18,7 +18,7 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> List[Dict[str, Any]]:
+    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> list[dict[str, Any]]:
 
         parseByFrequency = {
             Frequency.HOURLY: ExcelParser.__parseHourly,
@@ -43,7 +43,7 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __fillRow(row: Dict, propertyName: str, cell: Cell, isNumber: bool):
+    def __fillRow(row: dict, propertyName: str, cell: Cell, isNumber: bool):
 
         if cell.value is not None:
             if isNumber:
@@ -57,12 +57,12 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> List[Dict[str, Any]]:  # pylint: disable=unused-argument
+    def __parseHourly(worksheet: Worksheet) -> list[dict[str, Any]]:  # pylint: disable=unused-argument
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet) -> List[Dict[str, Any]]:
+    def __parseDaily(worksheet: Worksheet) -> list[dict[str, Any]]:
 
         res = []
 
@@ -91,7 +91,7 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet) -> List[Dict[str, Any]]:
+    def __parseWeekly(worksheet: Worksheet) -> list[dict[str, Any]]:
 
         res = []
 
@@ -115,7 +115,7 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet) -> List[Dict[str, Any]]:
+    def __parseMonthly(worksheet: Worksheet) -> list[dict[str, Any]]:
 
         res = []
 

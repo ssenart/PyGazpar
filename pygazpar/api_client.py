@@ -120,20 +120,20 @@ class APIClient:
 
                 if "text/html" in response.headers.get("Content-Type"):  # type: ignore
                     raise ValueError(
-                        f"An error occurred while loading data. Please check your query parameters: {params}"
+                        f"An unknown error occurred. Please check your query parameters (endpoint: {endpoint}): {params}"
                     )
 
                 if response.status_code != 200:
                     raise ValueError(
-                        f"An error occurred while loading data. Status code: {response.status_code} - {response.text}. Query parameters: {params}"
+                        f"HTTP error on enpoint '{endpoint}': Status code: {response.status_code} - {response.text}. Query parameters: {params}"
                     )
 
                 break
             except Exception as e:  # pylint: disable=broad-exception-caught
                 if retry == 1:
-                    Logger.error(f"An error occurred while loading data. Retry limit reached: {traceback.format_exc()}")
+                    Logger.error(f"{e}. Retry limit reached: {traceback.format_exc()}")
                     raise e
-                Logger.warning("An error occurred while loading data. Retry in 3 seconds...")
+                Logger.warning(f"{e}. Retry in 3 seconds...")
                 time.sleep(3)
                 retry -= 1
 

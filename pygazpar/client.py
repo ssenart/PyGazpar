@@ -20,6 +20,24 @@ class Client:
         self.__dataSource = dataSource
 
     # ------------------------------------------------------
+    def login(self):
+
+        try:
+            self.__dataSource.login()
+        except Exception:
+            Logger.error("An unexpected error occured while login", exc_info=True)
+            raise
+
+    # ------------------------------------------------------
+    def logout(self):
+
+        try:
+            self.__dataSource.logout()
+        except Exception:
+            Logger.error("An unexpected error occured while logout", exc_info=True)
+            raise
+
+    # ------------------------------------------------------
     def get_pce_identifiers(self) -> list[str]:
 
         try:

@@ -27,6 +27,14 @@ MeterReadingsByFrequency = dict[str, MeterReadings]
 class IDataSource(ABC):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
+    def login(self):
+        pass
+
+    @abstractmethod
+    def logout(self):
+        pass
+
+    @abstractmethod
     def get_pce_identifiers(self) -> list[str]:
         pass
 
@@ -46,9 +54,22 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
+    def login(self):
+
+        if not self._api_client.is_logged_in():
+            self._api_client.login()
+
+    # ------------------------------------------------------
+    def logout(self):
+
+        if self._api_client.is_logged_in():
+            self._api_client.logout()
+
+    # ------------------------------------------------------
     def get_pce_identifiers(self) -> list[str]:
 
-        self._api_client.login()
+        if not self._api_client.is_logged_in():
+            self._api_client.login()
 
         pce_list = self._api_client.get_pce_list()
 
@@ -62,7 +83,8 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
 
-        self._api_client.login()
+        if not self._api_client.is_logged_in():
+            self._api_client.login()
 
         res = self._loadFromSession(pceIdentifier, startDate, endDate, frequencies)
 
@@ -176,9 +198,17 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
         self.__excelFile = excelFile
 
     # ------------------------------------------------------
+    def login(self):
+        pass
+
+    # ------------------------------------------------------
+    def logout(self):
+        pass
+
+    # ------------------------------------------------------
     def get_pce_identifiers(self) -> list[str]:
 
-        raise NotImplementedError("This method is not implemented")
+        return ["0123456789"]
 
     # ------------------------------------------------------
     def load(
@@ -276,6 +306,14 @@ class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         self.__temperatureJsonFile = temperatureJsonFile
 
     # ------------------------------------------------------
+    def login(self):
+        pass
+
+    # ------------------------------------------------------
+    def logout(self):
+        pass
+
+    # ------------------------------------------------------
     def get_pce_identifiers(self) -> list[str]:
 
         return ["0123456789"]
@@ -320,6 +358,14 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------
     def __init__(self):
 
+        pass
+
+    # ------------------------------------------------------
+    def login(self):
+        pass
+
+    # ------------------------------------------------------
+    def logout(self):
         pass
 
     # ------------------------------------------------------

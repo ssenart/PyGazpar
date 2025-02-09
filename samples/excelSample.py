@@ -19,7 +19,9 @@ def main():
     client = pygazpar.Client(pygazpar.ExcelWebDataSource(username=username, password=password, tmpDirectory="tmp"))
 
     data = client.load_since(
-        pce_identifier=pce_identifier, last_n_days=60, frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY]
+        pce_identifier=pce_identifier,
+        last_n_days=60,
+        frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY],
     )
 
     print(json.dumps(data, indent=2))

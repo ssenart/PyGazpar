@@ -76,6 +76,10 @@ client = pygazpar.Client(pygazpar.JsonWebDataSource(
     password='your password')
 )
 
+# Returns the list of your PCE identifiers attached to your account.
+pce_identifiers = client.get_pce_identifiers()
+
+# Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
 data = client.load_since(pce_identifier='your PCE identifier',
                         last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
@@ -92,6 +96,10 @@ client = pygazpar.Client(pygazpar.ExcelWebDataSource(
     password='your password')
 )
 
+# Returns the list of your PCE identifiers attached to your account.
+pce_identifiers = client.get_pce_identifiers()
+
+# Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
 data = client.load_since(pce_identifier='your PCE identifier',
                         last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])

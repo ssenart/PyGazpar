@@ -13,7 +13,7 @@ permissions:
   contents: write # Allow to commit and push.
 
 env:
-  DEFAULT_PYTHON_VERSION: "3.12"
+  DEFAULT_PYTHON_VERSION: "3.13"
 
 jobs:
   #----------------------------------------------
@@ -77,16 +77,10 @@ jobs:
           fetch-tags: true
 
       #----------------------------------------------
-      # Set the package version
-      - name: Set package version
-        run: echo "PACKAGE_VERSION=${{ needs.prepare.outputs.package-version }}" >> $GITHUB_ENV
-
-      #----------------------------------------------
       # Install & configure poetry  -----
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 2.0.0
           virtualenvs-create: true
           virtualenvs-in-project: true
           virtualenvs-path: .venv
@@ -94,10 +88,6 @@ jobs:
       #----------------------------------------------
       - name: Bump version to ${{ needs.prepare.outputs.package-version }}
         run: poetry version ${{ needs.prepare.outputs.package-version }}
-
-      #----------------------------------------------
-      - name: Build package
-        run: poetry build        
 
       #----------------------------------------------
       # Commit the changes
@@ -123,6 +113,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
+
+      #----------------------------------------------
+      - name: Build package
+        run: poetry build       
 
       #----------------------------------------------
       - name: Upload package

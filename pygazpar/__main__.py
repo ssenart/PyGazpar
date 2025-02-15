@@ -7,6 +7,8 @@ import traceback
 
 import pygazpar
 
+Logger = logging.getLogger(__name__)
+
 
 def main():
     """Main function"""
@@ -37,6 +39,9 @@ def main():
 
     args = parser.parse_args()
 
+    print(f"PyGazpar version: {pygazpar.__version__}")
+    print(f"Running on Python version: {sys.version}")
+
     # We create the tmp directory if not already exists.
     if not os.path.exists(args.tmpdir):
         os.mkdir(args.tmpdir)
@@ -51,11 +56,12 @@ def main():
         filename=f"{pygazparLogFile}", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
     )
 
-    logging.info(f"PyGazpar {pygazpar.__version__}")
-    logging.info(f"--tmpdir {args.tmpdir}")
-    logging.info(f"--frequency {args.frequency}")
-    logging.info(f"--lastNDays {args.lastNDays}")
-    logging.info(f"--datasource {bool(args.datasource)}")
+    Logger.info(f"PyGazpar version: {pygazpar.__version__}")
+    Logger.info(f"Running on Python version: {sys.version}")
+    Logger.info(f"--tmpdir {args.tmpdir}")
+    Logger.info(f"--frequency {args.frequency}")
+    Logger.info(f"--lastNDays {args.lastNDays}")
+    Logger.info(f"--datasource {bool(args.datasource)}")
 
     if args.datasource == "json":
         client = pygazpar.Client(pygazpar.JsonWebDataSource(args.username, args.password))
@@ -72,6 +78,8 @@ def main():
         print("An error occured while querying PyGazpar library : %s", traceback.format_exc())
         return 1
 
+    Logger.info(f"Data loaded: {len(data)} records")
+    Logger.debug(f"Data: {data}")
     print(json.dumps(data, indent=2))
 
     return 0

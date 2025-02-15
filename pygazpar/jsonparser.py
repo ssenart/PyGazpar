@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from pygazpar.enum import PropertyName
 
@@ -17,7 +17,7 @@ class JsonParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def parse(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> List[Dict[str, Any]]:
+    def parse(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[dict[str, Any]]:
 
         res = []
 

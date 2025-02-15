@@ -1,8 +1,8 @@
 # Python package version (PEP440): https://peps.python.org/pep-0440/
 
-assembly-file-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
-assembly-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
-assembly-informational-format: '{MajorMinorPatch}{PreReleaseLabel}{env:GITHUB_RUN_NUMBER  ?? 0}'
+assembly-file-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{CommitsSinceVersionSource}'
+assembly-versioning-format: '{MajorMinorPatch}{PreReleaseLabel}{CommitsSinceVersionSource}'
+assembly-informational-format: '{MajorMinorPatch}{PreReleaseLabel}{CommitsSinceVersionSource}'
 
 branches:
   develop:
@@ -14,6 +14,7 @@ branches:
   release:
     regex: ^release/(?<BranchName>.+) 
     label: 'b'
+    increment: None
   feature:
     regex: ^feature/(?<BranchName>.+)
     label: '.dev'

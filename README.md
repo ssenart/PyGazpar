@@ -1,7 +1,5 @@
 # PyGazpar
 
-## $\text{\color{green}{!!! This library is working again. CAPTCHA has been removed !!!}}$
-
 PyGazpar is a Python library for getting natural gas consumption from GrDF French provider.
 
 Their natural gas meter is called Gazpar. It is wireless and transmit the gas consumption once per day.

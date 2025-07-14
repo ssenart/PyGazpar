@@ -1,5 +1,3 @@
-import http.cookiejar
-import json
 import logging
 import time
 import traceback
@@ -9,21 +7,34 @@ from typing import Any
 
 from requests import Response, Session
 
-SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
-SESSION_TOKEN_PAYLOAD = """{{
-    "username": "{0}",
-    "password": "{1}",
-    "options": {{
-        "multiOptionalFactorEnroll": "false",
-        "warnBeforePasswordExpired": "false"
-    }}
+import secrets
+import hashlib
+import base64
+import re
+import os
+
+def create_pkce_pair():
+    code_verifier = base64.urlsafe_b64encode(os.urandom(40)).rstrip(b'=').decode('utf-8')
+    challenge = hashlib.sha256(code_verifier.encode('utf-8')).digest()
+    code_challenge = base64.urlsafe_b64encode(challenge).rstrip(b'=').decode('utf-8')
+    return code_verifier, code_challenge
+
+MAIL_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/identify"
+PASSWORD_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/challenge/answer"
+CLIENT_ID_URL = "https://connexion.grdf.fr/assets/apps/enduser-v2.enduser/0.0.1-2445-g3242879/static/js/main.js"
+AUTHORIZE_URL = "https://connexion.grdf.fr/oauth2/v1/authorize" 
+TOKEN_URL = "https://connexion.grdf.fr/oauth2/v1/token"
+
+MAIL_SESSION_TOKEN_PAYLOAD = """{{
+    "identifier": "{0}",
+    "stateHandle": "{1}"
 }}"""
 
-AUTH_TOKEN_URL = "https://connexion.grdf.fr/login/sessionCookieRedirect"
-AUTH_TOKEN_PARAMS = """{{
-    "checkAccountSetupComplete": "true",
-    "token": "{0}",
-    "redirectUrl": "https://monespace.grdf.fr"
+PASSWORD_SESSION_TOKEN_PAYLOAD = """{{
+    "credentials": {{
+        "passcode": "{0}"
+    }},
+    "stateHandle": "{1}"
 }}"""
 
 API_BASE_URL = "https://monespace.grdf.fr/api"
@@ -78,37 +89,99 @@ class APIClient:
         if self._session is not None:
             return
 
-        session = Session()
-        session.headers.update({"domain": "grdf.fr"})
-        session.headers.update({"Content-Type": "application/json"})
-        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        code_verifier, code_challenge = create_pkce_pair()
 
-        payload = SESSION_TOKEN_PAYLOAD.format(self._username, self._password)
+        self._session = Session()
+        self._session.headers.update({"Content-Type": "application/ion+json"})
+        self._session.headers.update({"Accept": "application/ion+json; okta-version=1.0.0"})
+        self._session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Referer": "https://connexion.grdf.fr/",
+            "Accept-Language": "fr-FR,fr;q=0.9"
+        })
 
-        response = session.post(SESSION_TOKEN_URL, data=payload)
-
-        if response.status_code != 200:
+        url_client_id_response = self._session.get(CLIENT_ID_URL)
+        if url_client_id_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while logging in. Status code: {response.status_code} - {response.text}",
-                response.status_code,
+                f"An error occurred while logging in start. Status code: {url_client_id_response.status_code} - {url_client_id_response.url}",
+                url_client_id_response.status_code,
+            )
+        client_id = "okta." + url_client_id_response.text.split(",Kt=\"okta.")[1].split("\"")[0]
+
+        params = {
+            "client_id": client_id,
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+            "nonce": secrets.token_urlsafe(48),
+            "redirect_uri": "https://connexion.grdf.fr/enduser/callback",
+            "response_type": "code",
+            "state": secrets.token_urlsafe(48),
+            "scope": "openid profile email okta.users.read.self okta.users.manage.self okta.internal.enduser.read okta.internal.enduser.manage okta.enduser.dashboard.read okta.enduser.dashboard.manage okta.myAccount.sessions.manage"
+        }
+
+        start_response = self._session.get(AUTHORIZE_URL, params=params)
+        if start_response.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in start. Status code: {start_response.status_code} - {start_response.url}",
+                start_response.status_code,
             )
 
-        session_token = response.json().get("sessionToken")
+        pattern = r'"stateToken"\s*:\s*"([^"]+)"'
+        match = re.search(pattern, start_response.text)
+        if match:
+            state_token_html = match.group(1)
+            state_token = state_token_html.replace("\\x2D", "-")
+        else:
+            raise ValueError("Impossible de trouver le stateToken dans la réponse HTML")
 
-        jar = http.cookiejar.CookieJar()
+        payload = MAIL_SESSION_TOKEN_PAYLOAD.format(self._username, state_token)
+        self._session.cookies.set("ln", self._username)
 
-        self._session = Session()  # pylint: disable=attribute-defined-outside-init
-        self._session.headers.update({"Content-Type": "application/json"})
-        self._session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        mail_response = self._session.post(MAIL_SESSION_TOKEN_URL, data=payload)
 
-        params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
-
-        response = self._session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
-
-        if response.status_code != 200:
+        if mail_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}",
-                response.status_code,
+                f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {mail_response.text}",
+                mail_response.status_code,
+            )
+
+        stateHandle = mail_response.json().get("stateHandle")
+        payload = PASSWORD_SESSION_TOKEN_PAYLOAD.format(self._password, stateHandle)
+
+        password_response = self._session.post(PASSWORD_SESSION_TOKEN_URL, data=payload)
+
+        if password_response.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in password. Status code: {password_response.status_code} - {password_response.text}",
+                password_response.status_code,
+            )
+
+        success_url = password_response.json()['success']['href']
+
+        response_redirect = self._session.get(success_url)
+
+        if response_redirect.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in response_redirect. Status code: {response_redirect.status_code} - {response_redirect.url}",
+                response_redirect.status_code,
+            )
+
+        code = response_redirect.url.split("code=")[1].split("&")[0]
+
+        params = {
+            "client_id": client_id,
+            "redirect_uri": "https://connexion.grdf.fr/enduser/callback",
+            "grant_type": "authorization_code",
+            "code" : code,
+            "code_verifier" : code_verifier
+        }
+        self._session.headers.update({"Content-Type": "application/x-www-form-urlencoded"})
+        self._session.headers.update({"Accept": "application/json"})
+        token_response = self._session.post(TOKEN_URL, params=params)
+        if token_response.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in token_response. Status code: {token_response.status_code} - {token_response.url} - {token_response.text}",
+                token_response.status_code,
             )
 
     # ------------------------------------------------------

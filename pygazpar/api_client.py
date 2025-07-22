@@ -1,6 +1,5 @@
-import http.cookiejar
-import json
 import logging
+import re
 import time
 import traceback
 from datetime import date
@@ -9,21 +8,20 @@ from typing import Any
 
 from requests import Response, Session
 
-SESSION_TOKEN_URL = "https://connexion.grdf.fr/api/v1/authn"
-SESSION_TOKEN_PAYLOAD = """{{
-    "username": "{0}",
-    "password": "{1}",
-    "options": {{
-        "multiOptionalFactorEnroll": "false",
-        "warnBeforePasswordExpired": "false"
-    }}
+START_URL = "https://monespace.grdf.fr/"
+
+MAIL_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/identify"
+MAIL_SESSION_TOKEN_PAYLOAD = """{{
+    "identifier": "{0}",
+    "stateHandle": "{1}"
 }}"""
 
-AUTH_TOKEN_URL = "https://connexion.grdf.fr/login/sessionCookieRedirect"
-AUTH_TOKEN_PARAMS = """{{
-    "checkAccountSetupComplete": "true",
-    "token": "{0}",
-    "redirectUrl": "https://monespace.grdf.fr"
+PASSWORD_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/challenge/answer"
+PASSWORD_SESSION_TOKEN_PAYLOAD = """{{
+    "credentials": {{
+        "passcode": "{0}"
+    }},
+    "stateHandle": "{1}"
 }}"""
 
 API_BASE_URL = "https://monespace.grdf.fr/api"
@@ -71,7 +69,7 @@ class APIClient:
         self._username = username
         self._password = password
         self._retry_count = retry_count
-        self._session = None
+        self._session: Session | None = None
 
     # ------------------------------------------------------
     def login(self):
@@ -79,37 +77,65 @@ class APIClient:
             return
 
         session = Session()
-        session.headers.update({"domain": "grdf.fr"})
-        session.headers.update({"Content-Type": "application/json"})
-        session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-        payload = SESSION_TOKEN_PAYLOAD.format(self._username, self._password)
-
-        response = session.post(SESSION_TOKEN_URL, data=payload)
-
-        if response.status_code != 200:
+        start_response = session.get(START_URL)
+        if start_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while logging in. Status code: {response.status_code} - {response.text}",
-                response.status_code,
+                f"An error occurred while logging in start. Status code: {start_response.status_code} - {start_response.url}",
+                start_response.status_code,
             )
 
-        session_token = response.json().get("sessionToken")
+        pattern = r'"stateToken"\s*:\s*"([^"]+)"'
+        match = re.search(pattern, start_response.text)
+        if match:
+            state_token_html = match.group(1)
+            state_token = state_token_html.replace("\\x2D", "-")
+        else:
+            raise ValueError("Cannot retrieve stateToken inside HTML response")
 
-        jar = http.cookiejar.CookieJar()
+        payload = MAIL_SESSION_TOKEN_PAYLOAD.format(self._username, state_token)
+        session.cookies.set("ln", self._username)
 
-        self._session = Session()  # pylint: disable=attribute-defined-outside-init
-        self._session.headers.update({"Content-Type": "application/json"})
-        self._session.headers.update({"X-Requested-With": "XMLHttpRequest"})
+        mail_response = session.post(
+            MAIL_SESSION_TOKEN_URL,
+            data=payload,
+            headers={"Accept": "application/json; okta-version=1.0.0", "Content-Type": "application/json"},
+        )
 
-        params = json.loads(AUTH_TOKEN_PARAMS.format(session_token))
-
-        response = self._session.get(AUTH_TOKEN_URL, params=params, allow_redirects=True, cookies=jar)  # type: ignore
-
-        if response.status_code != 200:
+        if mail_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while getting the auth token. Status code: {response.status_code} - {response.text}",
-                response.status_code,
+                f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {mail_response.text}",
+                mail_response.status_code,
             )
+
+        state_handle = mail_response.json().get("stateHandle")
+
+        payload = PASSWORD_SESSION_TOKEN_PAYLOAD.format(self._password, state_handle)
+
+        password_response = session.post(
+            PASSWORD_SESSION_TOKEN_URL,
+            data=payload,
+            headers={"Accept": "application/json; okta-version=1.0.0", "Content-Type": "application/json"},
+        )
+
+        if password_response.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in password. Status code: {password_response.status_code} - {password_response.text}",
+                password_response.status_code,
+            )
+
+        success_url = password_response.json()["success"]["href"]
+
+        response_redirect = session.get(success_url)
+
+        if response_redirect.status_code != 200:
+            raise ServerError(
+                f"An error occurred while logging in response_redirect. Status code: {response_redirect.status_code} - {response_redirect.url}",
+                response_redirect.status_code,
+            )
+
+        self._session = session
 
     # ------------------------------------------------------
     def is_logged_in(self) -> bool:

@@ -1,3 +1,4 @@
+from pygazpar.api_client import ConsumptionType  # noqa: F401
 from pygazpar.client import Client  # noqa: F401
 from pygazpar.datasource import (  # noqa: F401
     ExcelFileDataSource,

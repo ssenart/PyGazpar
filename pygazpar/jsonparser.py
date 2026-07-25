@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from pygazpar.enum import PropertyName
@@ -29,13 +29,21 @@ class JsonParser:  # pylint: disable=too-few-public-methods
         data_timestamp = datetime.now().isoformat()
 
         for releve in data[pceIdentifier]["releves"]:
+            reading_date = releve["journeeGaziere"]
+            if reading_date is None:
+                end_date = releve.get("dateFinReleve")
+                if end_date is None:
+                    Logger.warning("Reading ignored because it has no end date")
+                    continue
+                reading_date = (datetime.fromisoformat(end_date) - timedelta(days=1)).strftime(INPUT_DATE_FORMAT)
+
             temperature = releve["temperature"]
             if temperature is None and temperatures is not None and len(temperatures) > 0:
-                temperature = temperatures.get(releve["journeeGaziere"])
+                temperature = temperatures.get(reading_date)
 
             item = {}
             item[PropertyName.TIME_PERIOD.value] = datetime.strftime(
-                datetime.strptime(releve["journeeGaziere"], INPUT_DATE_FORMAT), OUTPUT_DATE_FORMAT
+                datetime.strptime(reading_date, INPUT_DATE_FORMAT), OUTPUT_DATE_FORMAT
             )
             item[PropertyName.START_INDEX.value] = releve["indexDebut"]
             item[PropertyName.END_INDEX.value] = releve["indexFin"]

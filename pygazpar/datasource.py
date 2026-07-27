@@ -242,6 +242,16 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
     OUTPUT_DATE_FORMAT = "%d/%m/%Y"
 
     # ------------------------------------------------------
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
+    ):
+        super().__init__(username, password)
+        self.__consumption_type = consumption_type
+
+    # ------------------------------------------------------
     def _loadFromSession(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
@@ -256,7 +266,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
             Frequency.YEARLY: FrequencyConverter.computeYearly,
         }
 
-        data = self._api_client.get_pce_consumption(ConsumptionType.INFORMATIVE, startDate, endDate, [pceIdentifier])
+        data = self._api_client.get_pce_consumption(self.__consumption_type, startDate, endDate, [pceIdentifier])
 
         Logger.debug("Json meter data: %s", data)
 

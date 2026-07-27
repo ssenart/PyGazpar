@@ -67,7 +67,7 @@ class TestJsonParser:
         assert readings == []
 
 
-class TestJsonWebDataSource:
+class TestJsonWebDataSource:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     def test_requested_consumption_type_is_forwarded_to_api(self):

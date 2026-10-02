@@ -84,6 +84,20 @@ data = client.load_since(pce_identifier='your PCE identifier',
 ```
 See [samples/jsonSample.py](samples/jsonSample.py) file for the full example.
 
+By default, `JsonWebDataSource` requests GrDF's **informative** consumption readings. Some PCE identifiers do not expose any (or only the latest) history through that endpoint, while a longer history remains available as **published** consumption on the GrDF customer portal. In that case, pass `consumption_type=pygazpar.ConsumptionType.PUBLISHED` to read from the published readings instead:
+
+```python
+import pygazpar
+
+client = pygazpar.Client(pygazpar.JsonWebDataSource(
+    username='your login',
+    password='your password',
+    consumption_type=pygazpar.ConsumptionType.PUBLISHED)
+)
+```
+
+Note that a published reading can cover more than one day; its full consumption is attributed to the last day of the covered period rather than being split across days.
+
 2. Alternate usage (using Excel GrDF document).
 
 ```python

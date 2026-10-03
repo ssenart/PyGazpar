@@ -3,7 +3,11 @@ import warnings
 from datetime import date, timedelta
 from typing import Optional
 
-from pygazpar.datasource import IDataSource, MeterReadingsByFrequency, ReadingsByFrequency
+from pygazpar.datasource import (
+    IDataSource,
+    MeterReadingsByFrequency,
+    ReadingsByFrequency,
+)
 from pygazpar.model import Frequency
 
 DEFAULT_LAST_N_DAYS = 365

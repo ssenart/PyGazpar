@@ -8,7 +8,13 @@ from openpyxl.cell.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
 from pydantic import ValidationError
 
-from pygazpar.model import DailyReading, Frequency, PeriodReading, parse_period_label, PropertyName
+from pygazpar.model import (
+    DailyReading,
+    Frequency,
+    PeriodReading,
+    PropertyName,
+    parse_period_label,
+)
 
 FIRST_DATA_LINE_NUMBER = 10
 

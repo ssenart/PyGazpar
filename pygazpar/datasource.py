@@ -11,8 +11,8 @@ from pygazpar.api_client import APIClient, ConsumptionType
 from pygazpar.api_client import Frequency as APIClientFrequency
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
+from pygazpar.model import MONTHS as MONTH_NAMES
 from pygazpar.model import (
-    MONTHS as MONTH_NAMES,
     DailyReading,
     Frequency,
     PeriodReading,

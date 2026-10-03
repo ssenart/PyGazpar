@@ -11,7 +11,6 @@ from typing import Final
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
 
-
 # The names of the keys of the dict form. PropertyName and the model fields both use them.
 TIME_PERIOD_KEY: Final = "time_period"
 FREQUENCY_KEY: Final = "frequency"

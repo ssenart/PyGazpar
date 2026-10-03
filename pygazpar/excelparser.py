@@ -1,10 +1,11 @@
 import logging
 from collections.abc import Sequence
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from openpyxl import load_workbook
-from openpyxl.cell.cell import Cell
+from openpyxl.cell.cell import Cell, MergedCell
 from openpyxl.worksheet.worksheet import Worksheet
 from pydantic import ValidationError
 
@@ -51,21 +52,29 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __number(cell: Cell) -> int | float | None:
+    def __number(cell: Cell | MergedCell) -> int | float | None:
         """Returns the number of a cell, written with a comma or with a point, or None when the cell is empty."""
 
-        if cell.value is None:
+        value = cell.value
+        if value is None:
             return None
-        if isinstance(cell.value, str):
-            return float(cell.value.replace(",", ".")) if len(cell.value.strip()) > 0 else None
-        return cell.value
+        if isinstance(value, str):
+            return float(value.replace(",", ".")) if len(value.strip()) > 0 else None
+        if isinstance(value, bool) or not isinstance(value, (int, float, Decimal)):
+            raise ValueError(f"not a number: {value!r}")
+
+        return float(value) if isinstance(value, Decimal) else value
 
     # ------------------------------------------------------
     @staticmethod
-    def __text(cell: Cell) -> Any:
+    def __text(cell: Cell | MergedCell) -> str | None:
         """Returns the text of a cell, without surrounding spaces, or None when the cell is empty."""
 
-        return cell.value.strip() if isinstance(cell.value, str) else cell.value
+        value = cell.value
+        if value is None:
+            return None
+
+        return value.strip() if isinstance(value, str) else str(value)
 
     # ------------------------------------------------------
     @staticmethod

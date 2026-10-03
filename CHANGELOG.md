@@ -6,9 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0a2] - 2026-10-03
+
 ### Added
 
-- Support explicitly requesting published GRDF consumption readings.
 - CLI reads `GRDF_USERNAME`, `GRDF_PASSWORD` and `PCE_IDENTIFIER` from the environment or a `.env` file when the credentials are not given on the command line. `python-dotenv` is now a runtime dependency.
 - CLI `--consumption-type` option (`INFORMATIVE` or `PUBLISHED`) for the `json` and `raw-consumption` datasources.
 - CLI `raw-consumption` and `raw-temperature` datasources printing the GrDF API responses without post processing.
@@ -38,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 
-Compared with the last release, 1.3.1:
+Compared with 1.3.1:
 
 - Rows carry the full set of keys, with `null` for the values a source does not give. The Excel and test datasource rows now have `temperature_degC`, `converter_factor_kwh/m3` and `type` keys, and the period rows have the index keys. Code that tests whether a key is present must change.
 - Output rows gain `frequency`, `start_date` and `end_date`. Code that checks the exact set of keys must accept them. The order of the keys changed.
@@ -52,6 +53,16 @@ Compared with the last release, 1.3.1:
 - A custom `IDataSource` implements `readings()`, which returns models, instead of `load()`. `load()` is now the dict form, provided by the base class.
 - The CLI refuses an unknown `--datasource` with a usage error (exit code 2), where it used to raise a `ValueError`.
 - Loading readings for a PCE that is not in the account raises `UnknownPceError`, a `ServerError`, where it used to return no data. The identifier is checked against the PCE list of the account, so a PCE of the account with no data still returns no readings. The raw sources and `APIClient` are unchanged.
+
+## [1.4.0a1] - 2026-07-27
+
+### Added
+
+- Support explicitly requesting published GRDF consumption readings.
+
+### Fixed
+
+- Parse published readings whose `journeeGaziere` field is empty by using the last day of their reporting period.
 
 ## [1.3.1] - 2025-07-22
 

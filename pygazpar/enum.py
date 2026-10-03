@@ -1,35 +1,5 @@
-from enum import Enum
+"""Compatibility module: Frequency and PropertyName are defined in pygazpar.model, the single source of the data model."""
 
+from pygazpar.model import Frequency, PropertyName
 
-# ------------------------------------------------------------------------------------------------------------
-class PropertyName(Enum):
-    TIME_PERIOD = "time_period"
-    START_INDEX = "start_index_m3"
-    END_INDEX = "end_index_m3"
-    VOLUME = "volume_m3"
-    ENERGY = "energy_kwh"
-    CONVERTER_FACTOR = "converter_factor_kwh/m3"
-    TEMPERATURE = "temperature_degC"
-    TYPE = "type"
-    TIMESTAMP = "timestamp"
-
-    def __str__(self):
-        return self.value
-
-    def __repr__(self):
-        return self.__str__()
-
-
-# ------------------------------------------------------------------------------------------------------------
-class Frequency(Enum):
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
-
-    def __str__(self):
-        return self.value
-
-    def __repr__(self):
-        return self.__str__()
+__all__ = ["Frequency", "PropertyName"]

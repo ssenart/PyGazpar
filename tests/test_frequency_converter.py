@@ -1,27 +1,30 @@
 from datetime import date, timedelta
 
 from pygazpar.datasource import FrequencyConverter
-from pygazpar.enum import PropertyName
+from pygazpar.model import DailyReading, Frequency
 
 
-def daily_rows(first_day: date, days: int, volume: int = 1, energy: int = 11) -> list[dict]:
-    rows = []
-    for index in range(days):
-        day = first_day + timedelta(days=index)
-        rows.append(
+def daily_readings(first_day: date, days: int) -> list[DailyReading]:
+    """Returns one day of consumption per day, with a volume of 1 m3 and an energy of 11 kWh."""
+
+    return [
+        DailyReading.model_validate(
             {
-                PropertyName.TIME_PERIOD.value: day.strftime("%d/%m/%Y"),
-                PropertyName.START_INDEX.value: index,
-                PropertyName.END_INDEX.value: index + volume,
-                PropertyName.VOLUME.value: volume,
-                PropertyName.ENERGY.value: energy,
-                PropertyName.CONVERTER_FACTOR.value: 11.0,
-                PropertyName.TEMPERATURE.value: None,
-                PropertyName.TYPE.value: "Calculé",
-                PropertyName.TIMESTAMP.value: "2026-01-01T00:00:00",
+                "start_date": first_day + timedelta(days=index),
+                "end_date": first_day + timedelta(days=index + 1),
+                "frequency": Frequency.DAILY,
+                "start_index_m3": index,
+                "end_index_m3": index + 1,
+                "volume_m3": 1,
+                "energy_kwh": 11,
+                "converter_factor_kwh/m3": 11.0,
+                "temperature_degC": None,
+                "type": "Calculé",
+                "timestamp": "2026-01-01T00:00:00",
             }
         )
-    return rows
+        for index in range(days)
+    ]
 
 
 class TestFrequencyConverter:  # pylint: disable=too-few-public-methods
@@ -29,10 +32,17 @@ class TestFrequencyConverter:  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------
     def test_incomplete_first_month_is_dropped_and_last_month_is_kept(self):
 
-        rows = daily_rows(date(2026, 1, 20), 27)
+        monthly = FrequencyConverter.computeMonthly(daily_readings(date(2026, 1, 20), 27))
 
-        monthly = FrequencyConverter.computeMonthly(rows)
+        assert [(reading.time_period, reading.volume_m3) for reading in monthly] == [("Février 2026", 15)]
 
-        assert [(r[PropertyName.TIME_PERIOD.value], r[PropertyName.VOLUME.value]) for r in monthly] == [
-            ("Février 2026", 15),
+    # ------------------------------------------------------
+    def test_weeks_follow_the_calendar_across_the_year_boundary(self):
+
+        weekly = FrequencyConverter.computeWeekly(daily_readings(date(2019, 12, 30), 14))
+
+        assert [reading.time_period for reading in weekly] == [
+            "Du 30/12/2019 au 05/01/2020",
+            "Du 06/01/2020 au 12/01/2020",
         ]
+        assert [reading.volume_m3 for reading in weekly] == [7, 7]

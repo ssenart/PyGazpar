@@ -9,5 +9,5 @@ from pygazpar.datasource import (  # noqa: F401
     RawTemperatureWebDataSource,
     TestDataSource,
 )
-from pygazpar.enum import Frequency, PropertyName  # noqa: F401
+from pygazpar.model import Frequency, PropertyName  # noqa: F401
 from pygazpar.version import __version__  # noqa: F401

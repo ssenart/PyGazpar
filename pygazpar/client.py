@@ -3,8 +3,8 @@ import warnings
 from datetime import date, timedelta
 from typing import Optional
 
-from pygazpar.datasource import IDataSource, MeterReadingsByFrequency
-from pygazpar.enum import Frequency
+from pygazpar.datasource import IDataSource, MeterReadingsByFrequency, ReadingsByFrequency
+from pygazpar.model import Frequency
 
 DEFAULT_LAST_N_DAYS = 365
 
@@ -73,6 +73,35 @@ class Client:
             Logger.debug("The data load terminates normally")
         except Exception:
             Logger.error("An unexpected error occured while loading the data", exc_info=True)
+            raise
+
+        return res
+
+    # ------------------------------------------------------
+    def load_readings_since(
+        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
+    ) -> ReadingsByFrequency:
+        """Returns the readings of the last N days as models: the typed form of load_since()."""
+
+        end_date = date.today()
+        start_date = end_date + timedelta(days=-last_n_days)
+
+        return self.load_readings_date_range(pce_identifier, start_date, end_date, frequencies)
+
+    # ------------------------------------------------------
+    def load_readings_date_range(
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: Optional[list[Frequency]] = None
+    ) -> ReadingsByFrequency:
+        """Returns the readings of a date range as models: the typed form of load_date_range()."""
+
+        Logger.debug("Start loading the readings...")
+
+        try:
+            res = self.__dataSource.readings(pce_identifier, start_date, end_date, frequencies)
+
+            Logger.debug("The readings load terminates normally")
+        except Exception:
+            Logger.error("An unexpected error occured while loading the readings", exc_info=True)
             raise
 
         return res

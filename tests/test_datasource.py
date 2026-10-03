@@ -10,7 +10,7 @@ from pygazpar.datasource import (
     JsonWebDataSource,
     TestDataSource,
 )
-from pygazpar.enum import Frequency
+from pygazpar.model import Frequency
 
 PCE_IDENTIFIER = "12345678901234"
 
@@ -92,7 +92,8 @@ class TestAllDataSource:
 
         assert len(data[Frequency.DAILY.value]) == 1096
 
-        assert len(data[Frequency.WEEKLY.value]) == 155
+        # 156 weeks: the week of 30 December 2019 to 5 January 2020 is its own week.
+        assert len(data[Frequency.WEEKLY.value]) == 156
 
         assert len(data[Frequency.MONTHLY.value]) == 36
 

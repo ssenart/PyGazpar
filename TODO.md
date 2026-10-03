@@ -14,9 +14,14 @@ Published readings cover a period (`dateDebutReleve` to `dateFinReleve`). The fi
 
 ## Sibling projects
 
+- [ ] `home-assistant-gazpar` (`util.py`) reads the daily rows with `PropertyName` from `pygazpar.enum`. Keep that re-export, or update the integration before `PropertyName` is removed from the public API.
 - [ ] Check `gazpar2haws`, `home-assistant-gazpar`, `gazpar2mqtt` and `lovelace-gazpar-card` against the changes: the `Calculé` type, the published readings split by day, the CLI options and datasources, and the new `python-dotenv` runtime dependency.
 - [ ] `gazpar2haws` pins pygazpar 1.3.1 from PyPI. Decide when it moves to this version.
 
 ## Naming
 
 - [ ] Rename the legacy camelCase identifiers to snake_case. Public parameter names such as `pceIdentifier` need a deprecation path, because callers may pass them by keyword.
+
+## Release
+
+- [ ] Decide the version for the breaking changes listed in the changelog. The package is 1.4.0a1, and the library changes break 1.3.1 users.

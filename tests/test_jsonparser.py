@@ -8,8 +8,8 @@ from unittest.mock import Mock
 
 from pygazpar.api_client import ConsumptionType
 from pygazpar.datasource import JsonWebDataSource
-from pygazpar.enum import PropertyName
 from pygazpar.jsonparser import CALCULATED_TYPE, JsonParser
+from pygazpar.model import PropertyName
 
 PCE_IDENTIFIER = "12345678901234"
 

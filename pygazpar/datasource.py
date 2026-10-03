@@ -3,16 +3,23 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from datetime import date, timedelta
-from typing import Any, Optional, cast
-
-import pandas as pd
+from typing import Any, Callable, Optional, cast
 
 from pygazpar.api_client import APIClient, ConsumptionType
 from pygazpar.api_client import Frequency as APIClientFrequency
-from pygazpar.enum import Frequency, PropertyName
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
+from pygazpar.model import (
+    MONTHS as MONTH_NAMES,
+    DailyReading,
+    Frequency,
+    PeriodReading,
+    PropertyName,
+    next_month_start,
+    parse_period_label,
+)
 
 Logger = logging.getLogger(__name__)
 
@@ -21,6 +28,35 @@ MeterReading = dict[str, Any]
 MeterReadings = list[MeterReading]
 
 MeterReadingsByFrequency = dict[str, MeterReadings]
+
+ReadingsByFrequency = dict[str, Sequence[PeriodReading]]
+
+
+def as_dicts(readings: Sequence[PeriodReading]) -> MeterReadings:
+    """Returns the readings as dicts, the form the datasources give to their users."""
+
+    return [reading.model_dump(by_alias=True) for reading in readings]
+
+
+def readings_from_samples(frequency: Frequency, rows: list[dict[str, Any]]) -> list[PeriodReading]:
+    """Returns the readings of a sample file. The dates of each reading come from its label."""
+
+    model = DailyReading if frequency == Frequency.DAILY else PeriodReading
+    res: list[PeriodReading] = []
+    for row in rows:
+        start_date, end_date = parse_period_label(frequency, row[PropertyName.TIME_PERIOD.value])
+        res.append(
+            model.model_validate(
+                {
+                    **row,
+                    PropertyName.START_DATE.value: start_date,
+                    PropertyName.END_DATE.value: end_date,
+                    PropertyName.FREQUENCY.value: frequency,
+                }
+            )
+        )
+
+    return res
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -52,10 +88,20 @@ class IDataSource(ABC):  # pylint: disable=too-few-public-methods
         pass
 
     @abstractmethod
+    def readings(
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+    ) -> ReadingsByFrequency:
+        pass
+
+    # ------------------------------------------------------
     def load(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
     ) -> MeterReadingsByFrequency:
-        pass
+        """Returns the readings as dicts, the form the datasources give to their users."""
+
+        return {
+            key: as_dicts(value) for key, value in self.readings(pceIdentifier, startDate, endDate, frequencies).items()
+        }
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -89,12 +135,12 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         if pce_list is None:
             return []
 
-        return [pce["idObject"] for pce in pce_list]
+        return [pce.idObject for pce in pce_list]
 
     # ------------------------------------------------------
-    def load(
+    def readings(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
 
         if not self._api_client.is_logged_in():
             self._api_client.login()
@@ -108,7 +154,7 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
     @abstractmethod
     def _loadFromSession(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
         pass
 
 
@@ -137,7 +183,7 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
     # ------------------------------------------------------
     def _loadFromSession(  # pylint: disable=too-many-branches
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:  # pylint: disable=too-many-branches
+    ) -> ReadingsByFrequency:  # pylint: disable=too-many-branches
 
         res = {}
 
@@ -174,8 +220,8 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
                 [pceIdentifier],
             )
 
-            filename = response["filename"]
-            content = response["content"]
+            filename = response.filename
+            content = response.content
 
             with open(f"{self.__tmpDirectory}/{filename}", "wb") as file:
                 file.write(content)
@@ -224,9 +270,9 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
         return ["0123456789"]
 
     # ------------------------------------------------------
-    def load(
+    def readings(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
 
         res = {}
 
@@ -267,7 +313,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
     # ------------------------------------------------------
     def _loadFromSession(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
 
@@ -298,7 +344,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
         if data is None or len(data) == 0:
             return res
 
-        daily = JsonParser.parse(json.dumps(data), json.dumps(temperatures), pceIdentifier)
+        daily = JsonParser.readings(data, temperatures, pceIdentifier)
 
         Logger.debug("Processed daily data: %s", daily)
 
@@ -338,7 +384,9 @@ class RawConsumptionWebDataSource:  # pylint: disable=too-few-public-methods
         if not self.__api_client.is_logged_in():
             self.__api_client.login()
 
-        return self.__api_client.get_pce_consumption(self.__consumption_type, start_date, end_date, [pce_identifier])
+        return self.__api_client.get_pce_consumption_raw(
+            self.__consumption_type, start_date, end_date, [pce_identifier]
+        )
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -361,7 +409,7 @@ class RawTemperatureWebDataSource:  # pylint: disable=too-few-public-methods
 
         meteo_end_date, meteo_days = meteo_window(start_date, end_date)
 
-        return self.__api_client.get_pce_meteo(meteo_end_date, meteo_days, pce_identifier)
+        return self.__api_client.get_pce_meteo_raw(meteo_end_date, meteo_days, pce_identifier)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -387,15 +435,17 @@ class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         return ["0123456789"]
 
     # ------------------------------------------------------
-    def load(
+    def readings(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
 
-        res = {}
+        res: ReadingsByFrequency = {}
 
         with open(self.__consumptionJsonFile, mode="r", encoding="utf-8") as consumptionJsonFile:
             with open(self.__temperatureJsonFile, mode="r", encoding="utf-8") as temperatureJsonFile:
-                daily = JsonParser.parse(consumptionJsonFile.read(), temperatureJsonFile.read(), pceIdentifier)
+                daily = JsonParser.readings_from_json(
+                    consumptionJsonFile.read(), temperatureJsonFile.read(), pceIdentifier
+                )
 
         computeByFrequency = {
             Frequency.HOURLY: FrequencyConverter.computeHourly,
@@ -442,9 +492,9 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
         return ["0123456789"]
 
     # ------------------------------------------------------
-    def load(
+    def readings(
         self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> MeterReadingsByFrequency:
+    ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
 
@@ -469,7 +519,8 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
             )
 
             with open(dataSampleFilename, mode="r", encoding="utf-8") as jsonFile:
-                res[frequency.value] = cast(list[dict[PropertyName, Any]], json.load(jsonFile))
+                rows = cast(list[dict[str, Any]], json.load(jsonFile))
+                res[frequency.value] = [] if frequency == Frequency.HOURLY else readings_from_samples(frequency, rows)
 
         return res
 
@@ -477,182 +528,91 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 # ------------------------------------------------------------------------------------------------------------
 class FrequencyConverter:
 
-    MONTHS = [
-        "Janvier",
-        "Février",
-        "Mars",
-        "Avril",
-        "Mai",
-        "Juin",
-        "Juillet",
-        "Août",
-        "Septembre",
-        "Octobre",
-        "Novembre",
-        "Décembre",
-    ]
+    MONTHS = MONTH_NAMES
 
     # ------------------------------------------------------
     @staticmethod
-    def computeHourly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:  # pylint: disable=unused-argument
+    def computeHourly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:  # pylint: disable=unused-argument
 
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def computeDaily(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def computeDaily(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
-        return daily
+        return list(daily)
 
     # ------------------------------------------------------
     @staticmethod
-    def computeWeekly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def computeWeekly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
-        df = pd.DataFrame(daily)
-
-        # Trimming head and trailing spaces and convert to datetime.
-        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
-
-        # Get the first day of week.
-        df["first_day_of_week"] = pd.to_datetime(df["date_time"].dt.strftime("%W %Y 1"), format="%W %Y %w")
-
-        # Get the last day of week.
-        df["last_day_of_week"] = pd.to_datetime(df["date_time"].dt.strftime("%W %Y 0"), format="%W %Y %w")
-
-        # Reformat the time period.
-        df["time_period"] = (
-            "Du "
-            + df["first_day_of_week"].dt.strftime(JsonWebDataSource.OUTPUT_DATE_FORMAT).astype(str)
-            + " au "
-            + df["last_day_of_week"].dt.strftime(JsonWebDataSource.OUTPUT_DATE_FORMAT).astype(str)
+        return FrequencyConverter.__aggregate(
+            daily, Frequency.WEEKLY, lambda day: day - timedelta(days=day.weekday()), minimum_days=7
         )
 
-        # Aggregate rows by month_year.
-        df = (
-            df[
-                [
-                    "first_day_of_week",
-                    "time_period",
-                    "start_index_m3",
-                    "end_index_m3",
-                    "volume_m3",
-                    "energy_kwh",
-                    "timestamp",
-                ]
-            ]
-            .groupby("time_period")
-            .agg(
-                first_day_of_week=("first_day_of_week", "min"),
-                start_index_m3=("start_index_m3", "min"),
-                end_index_m3=("end_index_m3", "max"),
-                volume_m3=("volume_m3", "sum"),
-                energy_kwh=("energy_kwh", "sum"),
-                timestamp=("timestamp", "min"),
-                count=("energy_kwh", "count"),
+    # ------------------------------------------------------
+    @staticmethod
+    def computeMonthly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+
+        return FrequencyConverter.__aggregate(daily, Frequency.MONTHLY, lambda day: day.replace(day=1), minimum_days=28)
+
+    # ------------------------------------------------------
+    @staticmethod
+    def computeYearly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+
+        return FrequencyConverter.__aggregate(
+            daily, Frequency.YEARLY, lambda day: day.replace(month=1, day=1), minimum_days=360
+        )
+
+    # ------------------------------------------------------
+    @staticmethod
+    def __aggregate(
+        daily: Sequence[PeriodReading],
+        frequency: Frequency,
+        bucket_start: Callable[[date], date],
+        minimum_days: int,
+    ) -> list[PeriodReading]:
+        """Groups the days into the periods of a frequency, whole periods from the calendar.
+
+        A period is kept when it has at least minimum_days days with consumption. The last period is always kept, even
+        when it is partial.
+        """
+
+        buckets: dict[date, list[PeriodReading]] = {}
+        for day in daily:
+            buckets.setdefault(bucket_start(day.start_date), []).append(day)
+
+        starts = sorted(buckets)
+        res: list[PeriodReading] = []
+        for index, start in enumerate(starts):
+            rows = buckets[start]
+            days_with_consumption = sum(1 for row in rows if row.energy_kwh is not None)
+            if days_with_consumption < minimum_days and index != len(starts) - 1:
+                continue
+
+            res.append(
+                PeriodReading(
+                    start_date=start,
+                    end_date=FrequencyConverter.__period_end(frequency, start),
+                    frequency=frequency,
+                    start_index_m3=min((r.start_index_m3 for r in rows if r.start_index_m3 is not None), default=None),
+                    end_index_m3=max((r.end_index_m3 for r in rows if r.end_index_m3 is not None), default=None),
+                    volume_m3=sum((r.volume_m3 for r in rows if r.volume_m3 is not None), 0),
+                    energy_kwh=sum((r.energy_kwh for r in rows if r.energy_kwh is not None), 0),
+                    timestamp=min(r.timestamp for r in rows),
+                )
             )
-            .reset_index()
-        )
-
-        # Sort rows by week ascending.
-        df = df.sort_values(by=["first_day_of_week"])
-
-        # Select rows where we have a full week (7 days) except for the current week.
-        df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df.tail(1)["count"] < 7]])
-
-        # Select target columns.
-        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
-
-        res = cast(list[dict[str, Any]], df.to_dict("records"))
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def computeMonthly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def __period_end(frequency: Frequency, start: date) -> date:
+        """Returns the day after the last day of a period that starts on start."""
 
-        df = pd.DataFrame(daily)
+        if frequency == Frequency.WEEKLY:
+            return start + timedelta(days=7)
+        if frequency == Frequency.MONTHLY:
+            return next_month_start(start)
 
-        # Trimming head and trailing spaces and convert to datetime.
-        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
-
-        # Get the corresponding month-year.
-        df["month_year"] = (
-            df["date_time"].apply(lambda x: FrequencyConverter.MONTHS[x.month - 1]).astype(str)
-            + " "
-            + df["date_time"].dt.strftime("%Y").astype(str)
-        )
-
-        # Aggregate rows by month_year.
-        df = (
-            df[["date_time", "month_year", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
-            .groupby("month_year")
-            .agg(
-                first_day_of_month=("date_time", "min"),
-                start_index_m3=("start_index_m3", "min"),
-                end_index_m3=("end_index_m3", "max"),
-                volume_m3=("volume_m3", "sum"),
-                energy_kwh=("energy_kwh", "sum"),
-                timestamp=("timestamp", "min"),
-                count=("energy_kwh", "count"),
-            )
-            .reset_index()
-        )
-
-        # Sort rows by month ascending.
-        df = df.sort_values(by=["first_day_of_month"])
-
-        # Select rows where we have a full month (more than 27 days) except for the current month.
-        df = pd.concat([df[(df["count"] >= 28)], df.tail(1)[df.tail(1)["count"] < 28]])
-
-        # Rename columns for their target names.
-        df = df.rename(columns={"month_year": "time_period"})
-
-        # Select target columns.
-        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
-
-        res = cast(list[dict[str, Any]], df.to_dict("records"))
-
-        return res
-
-    # ------------------------------------------------------
-    @staticmethod
-    def computeYearly(daily: list[dict[str, Any]]) -> list[dict[str, Any]]:
-
-        df = pd.DataFrame(daily)
-
-        # Trimming head and trailing spaces and convert to datetime.
-        df["date_time"] = pd.to_datetime(df["time_period"].str.strip(), format=JsonWebDataSource.OUTPUT_DATE_FORMAT)
-
-        # Get the corresponding year.
-        df["year"] = df["date_time"].dt.strftime("%Y")
-
-        # Aggregate rows by month_year.
-        df = (
-            df[["year", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
-            .groupby("year")
-            .agg(
-                start_index_m3=("start_index_m3", "min"),
-                end_index_m3=("end_index_m3", "max"),
-                volume_m3=("volume_m3", "sum"),
-                energy_kwh=("energy_kwh", "sum"),
-                timestamp=("timestamp", "min"),
-                count=("energy_kwh", "count"),
-            )
-            .reset_index()
-        )
-
-        # Sort rows by year ascending.
-        df = df.sort_values(by=["year"])
-
-        # Select rows where we have almost a full year (more than 360) except for the current year.
-        df = pd.concat([df[(df["count"] >= 360)], df.tail(1)[df.tail(1)["count"] < 360]])
-
-        # Rename columns for their target names.
-        df = df.rename(columns={"year": "time_period"})
-
-        # Select target columns.
-        df = df[["time_period", "start_index_m3", "end_index_m3", "volume_m3", "energy_kwh", "timestamp"]]
-
-        res = cast(list[dict[str, Any]], df.to_dict("records"))
-
-        return res
+        return date(start.year + 1, 1, 1)

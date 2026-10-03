@@ -13,14 +13,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI `--consumption-type` option (`INFORMATIVE` or `PUBLISHED`) for the `json` and `raw-consumption` datasources.
 - CLI `raw-consumption` and `raw-temperature` datasources printing the GrDF API responses without post processing.
 - `RawConsumptionWebDataSource` and `RawTemperatureWebDataSource` in the library, returning the GrDF API responses as received.
-- Log a warning when published periods do not chain, that is when a period does not start where the previous one ended.
+- Log a warning when published periods do not chain, and rebuild the gap from the meter indexes.
+- Gaps between published periods are rebuilt from the meter indexes: the volume is the index difference, and the energy uses the average coefficient of the neighbouring periods. The rows have the type `Calculé`.
+- Informative days without data are rebuilt from the meter indexes when the indexes on both sides are known.
+- Every reading shows its `frequency`, `start_date` and `end_date`.
+- Data model in `pygazpar.model` (`PeriodReading`, `DailyReading`, `Frequency`, `PropertyName`) and GrDF records and responses in `pygazpar.grdf`, validated as they are read.
+- `Client.load_readings_since` and `Client.load_readings_date_range` return the readings as models. `load_since` and `load_date_range` keep the dict form.
 
 ### Changed
 
 - Published readings are split into one row per day instead of one row on the last day of their period. Volume is spread evenly across the days and energy follows it in proportion, keeping the published totals exact. Indexes are interpolated, and the rows have the type `Calculé`.
-- Gaps between published periods are rebuilt from the meter indexes: the volume is the index difference, and the energy uses the average coefficient of the neighbouring periods. The rows have the type `Calculé`.
-- Informative records and published periods share one parsing path: each record is a period. Informative days without data are rebuilt from the meter indexes when the indexes on both sides are known.
+- Informative records and published periods share one parsing path: each record is a period.
+- Weekly, monthly and yearly rows, and the Excel and test datasources, are built from the same models as the daily rows.
+- Excel rows are read into the models: a period without data gets empty values, and the dates come from the labels.
+- The API client validates each response as it arrives, and returns models: the PCE list, the consumption of each PCE, the temperatures and the Excel sheet. The raw sources use the `*_raw` methods, which return the response as received.
 - `--datasource` only accepts the listed datasources. Any other value is a usage error.
+- `pygazpar.enum` re-exports `Frequency` and `PropertyName`, which are now defined in `pygazpar.model`.
+
+### Fixed
+
+- Weekly rows follow the calendar: the week of 30 December 2019 to 5 January 2020 is its own week. Before, its first days were merged into the following week's label and totals.
+- Empty buckets give `null` values instead of `NaN`, which is not valid JSON.
+
+### Breaking changes
+
+Compared with the last release, 1.3.1:
+
+- Rows carry the full set of keys, with `null` for the values a source does not give. The Excel and test datasource rows now have `temperature_degC`, `converter_factor_kwh/m3` and `type` keys, and the period rows have the index keys. Code that tests whether a key is present must change.
+- Output rows gain `frequency`, `start_date` and `end_date`. Code that checks the exact set of keys must accept them. The order of the keys changed.
+- Weekly values change around the new year, because of the fix above. The sample has 156 weekly rows instead of 155.
+- Published readings are returned one row per day, with the type `Calculé`, instead of one row per period. Row counts for published data change.
+- `APIClient` methods return models instead of dicts and lists: `get_pce_list` returns `GrdfPce` objects, `get_pce_consumption` returns `GrdfPceConsumption` objects keyed by PCE identifier, `get_pce_meteo` returns a dict keyed by date, and `get_pce_consumption_excelsheet` returns a `GrdfExcelSheet`.
+- A malformed API response raises a pydantic `ValidationError`, where it used to raise `TypeError`.
+- `FrequencyConverter` functions and `ExcelParser.parse` take and return models instead of dicts.
+- An invalid GrDF record is skipped with a warning.
+- `pydantic` is a new runtime dependency, and `typing-extensions` is bumped to 4.16.0.
+- A custom `IDataSource` implements `readings()`, which returns models, instead of `load()`. `load()` is now the dict form, provided by the base class.
+- The CLI refuses an unknown `--datasource` with a usage error (exit code 2), where it used to raise a `ValueError`.
 
 ## [1.3.1] - 2025-07-22
 

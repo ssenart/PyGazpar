@@ -4,7 +4,7 @@ import pytest
 
 from pygazpar.client import Client
 from pygazpar.datasource import ExcelWebDataSource, JsonWebDataSource, TestDataSource
-from pygazpar.enum import Frequency
+from pygazpar.model import Frequency
 
 
 class TestClient:  # pylint: disable=too-many-public-methods

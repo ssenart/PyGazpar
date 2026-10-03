@@ -3,10 +3,20 @@ import re
 import time
 import traceback
 from datetime import date
+from decimal import Decimal
 from enum import Enum
 from typing import Any
 
 from requests import Response, Session
+
+from pygazpar.grdf import (
+    GrdfConsumptionResponse,
+    GrdfExcelSheet,
+    GrdfMeteoResponse,
+    GrdfPce,
+    GrdfPceConsumption,
+    GrdfPceList,
+)
 
 START_URL = "https://monespace.grdf.fr/"
 
@@ -184,35 +194,58 @@ class APIClient:
         return response
 
     # ------------------------------------------------------
-    def get_pce_list(self, details: bool = False) -> list[Any]:
+    def get_pce_list(self, details: bool = False) -> list[GrdfPce]:
+        """Returns the PCE list of the account."""
 
-        res = self.get("/e-conso/pce", {"details": details}).json()
+        res = self.get("/e-conso/pce", {"details": details}).json(parse_float=Decimal)
 
-        if type(res) is not list:
-            raise TypeError(f"Invalid response type: {type(res)} (list expected)")
+        return GrdfPceList.model_validate(res).root
+
+    # ------------------------------------------------------
+    def __consumption_json(
+        self,
+        consumption_type: ConsumptionType,
+        start_date: date,
+        end_date: date,
+        pce_list: list[str],
+        parse_float: Any,
+    ) -> Any:
+
+        start = start_date.strftime(DATE_FORMAT)
+        end = end_date.strftime(DATE_FORMAT)
+
+        return self.get(
+            f"/e-conso/pce/consommation/{consumption_type.value}",
+            {"dateDebut": start, "dateFin": end, "pceList[]": ",".join(pce_list)},
+        ).json(parse_float=parse_float)
+
+    # ------------------------------------------------------
+    def get_pce_consumption_raw(
+        self, consumption_type: ConsumptionType, start_date: date, end_date: date, pce_list: list[str]
+    ) -> dict[str, Any]:
+        """Returns the consumption response as the API sent it, once checked against its shape."""
+
+        res = self.__consumption_json(consumption_type, start_date, end_date, pce_list, None)
+
+        if type(res) is list and len(res) == 0:
+            return dict[str, Any]()
+
+        GrdfConsumptionResponse.model_validate(res)
 
         return res
 
     # ------------------------------------------------------
     def get_pce_consumption(
         self, consumption_type: ConsumptionType, start_date: date, end_date: date, pce_list: list[str]
-    ) -> dict[str, Any]:
+    ) -> dict[str, GrdfPceConsumption]:
+        """Returns the consumption of each PCE, keyed by PCE identifier. Its records are validated by the parser."""
 
-        start = start_date.strftime(DATE_FORMAT)
-        end = end_date.strftime(DATE_FORMAT)
-
-        res = self.get(
-            f"/e-conso/pce/consommation/{consumption_type.value}",
-            {"dateDebut": start, "dateFin": end, "pceList[]": ",".join(pce_list)},
-        ).json()
+        res = self.__consumption_json(consumption_type, start_date, end_date, pce_list, Decimal)
 
         if type(res) is list and len(res) == 0:
-            return dict[str, Any]()
+            return {}
 
-        if type(res) is not dict:
-            raise TypeError(f"Invalid response type: {type(res)} (dict expected)")
-
-        return res
+        return GrdfConsumptionResponse.model_validate(res).root
 
     # ------------------------------------------------------
     def get_pce_consumption_excelsheet(
@@ -222,7 +255,7 @@ class APIClient:
         end_date: date,
         frequency: Frequency,
         pce_list: list[str],
-    ) -> dict[str, Any]:
+    ) -> GrdfExcelSheet:
 
         start = start_date.strftime(DATE_FORMAT)
         end = end_date.strftime(DATE_FORMAT)
@@ -234,21 +267,35 @@ class APIClient:
 
         filename = response.headers["Content-Disposition"].split("filename=")[1]
 
-        res = {"filename": filename, "content": response.content}
-
-        return res
+        return GrdfExcelSheet(filename=filename, content=response.content)
 
     # ------------------------------------------------------
-    def get_pce_meteo(self, end_date: date, days: int, pce: str) -> dict[str, Any]:
+    def __meteo_json(self, end_date: date, days: int, pce: str) -> Any:
 
         end = end_date.strftime(DATE_FORMAT)
 
-        res = self.get(f"/e-conso/pce/{pce}/meteo", {"dateFinPeriode": end, "nbJours": days}).json()
+        return self.get(f"/e-conso/pce/{pce}/meteo", {"dateFinPeriode": end, "nbJours": days}).json()
+
+    # ------------------------------------------------------
+    def get_pce_meteo_raw(self, end_date: date, days: int, pce: str) -> dict[str, Any]:
+        """Returns the meteo response as the API sent it, once checked against its shape."""
+
+        res = self.__meteo_json(end_date, days, pce)
 
         if type(res) is list and len(res) == 0:
             return dict[str, Any]()
 
-        if type(res) is not dict:
-            raise TypeError(f"Invalid response type: {type(res)} (dict expected)")
+        GrdfMeteoResponse.model_validate(res)
 
         return res
+
+    # ------------------------------------------------------
+    def get_pce_meteo(self, end_date: date, days: int, pce: str) -> dict[date, float | None]:
+        """Returns the temperature of each day, keyed by date."""
+
+        res = self.__meteo_json(end_date, days, pce)
+
+        if type(res) is list and len(res) == 0:
+            return {}
+
+        return GrdfMeteoResponse.model_validate(res).root

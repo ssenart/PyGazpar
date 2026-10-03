@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from unittest import mock
 
@@ -95,3 +96,34 @@ class TestConsumptionTypeOption:
             cli.main()
 
         assert exit_info.value.code == 2
+
+
+class TestRawDatasourcesOnTheCommandLine:  # pylint: disable=too-few-public-methods
+
+    # ------------------------------------------------------
+    def test_raw_consumption_prints_the_response_as_json(self, tmp_path, capsys):
+        payload = {PCE: {"idPce": PCE, "frequence": None, "releves": []}}
+        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "raw-consumption"]
+
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(APIClient, "login"),
+            mock.patch.object(APIClient, "get_pce_consumption_raw", return_value=payload),
+        ):
+            assert cli.main() == 0
+
+        assert json.loads(capsys.readouterr().out) == payload
+
+    # ------------------------------------------------------
+    def test_raw_temperature_prints_the_response_as_json(self, tmp_path, capsys):
+        meteo = {"2026-01-02": 5.5}
+        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "raw-temperature"]
+
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(APIClient, "login"),
+            mock.patch.object(APIClient, "get_pce_meteo_raw", return_value=meteo),
+        ):
+            assert cli.main() == 0
+
+        assert json.loads(capsys.readouterr().out) == meteo

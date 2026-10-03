@@ -164,6 +164,21 @@ data = client.load_since(pce_identifier='12345678901234',
 ```
 See [samples/testSample.py](samples/jsonSample.py) file for the full example.
 
+#### Typed readings:
+
+`load_readings_since` and `load_readings_date_range` return the models instead of dicts, so the fields are attributes with their types:
+
+```python
+import pygazpar
+
+client = pygazpar.Client(pygazpar.JsonWebDataSource(username='your login', password='your password'))
+
+readings = client.load_readings_since(pce_identifier='12345678901234', last_n_days=60,
+                                      frequencies=[pygazpar.Frequency.DAILY])
+for reading in readings[pygazpar.Frequency.DAILY.value]:
+    print(reading.start_date, reading.volume_m3, reading.energy_kwh)
+```
+
 #### Raw sources:
 
 The raw sources return the GrDF API responses as received, without PyGazpar's post processing:
@@ -194,31 +209,40 @@ data =>
 {
   "daily": [
     {
+      "start_date": "2022-10-13",
+      "end_date": "2022-10-14",
+      "frequency": "daily",
       "time_period": "13/10/2022",
       "start_index_m3": 15724,
       "end_index_m3": 15725,
       "volume_m3": 2,
       "energy_kwh": 17,
+      "timestamp": "2022-12-13T23:58:35.606763",
       "converter_factor_kwh/m3": 11.16,
       "temperature_degC": null,
-      "type": "Mesur\u00e9",
-      "timestamp": "2022-12-13T23:58:35.606763"
+      "type": "Mesur\u00e9"
     },
     ...
     {
+      "start_date": "2022-12-11",
+      "end_date": "2022-12-12",
+      "frequency": "daily",
       "time_period": "11/12/2022",
       "start_index_m3": 16081,
       "end_index_m3": 16098,
       "volume_m3": 18,
       "energy_kwh": 201,
+      "timestamp": "2022-12-13T23:58:35.606763",
       "converter_factor_kwh/m3": 11.27,
       "temperature_degC": -1.47,
-      "type": "Mesur\u00e9",
-      "timestamp": "2022-12-13T23:58:35.606763"
+      "type": "Mesur\u00e9"
     }
   ],
   "monthly": [
     {
+      "start_date": "2022-11-01",
+      "end_date": "2022-12-01",
+      "frequency": "monthly",
       "time_period": "Novembre 2022",
       "start_index_m3": 15750,
       "end_index_m3": 15950,
@@ -227,6 +251,9 @@ data =>
       "timestamp": "2022-12-13T23:58:35.606763"
     },
     {
+      "start_date": "2022-12-01",
+      "end_date": "2023-01-01",
+      "frequency": "monthly",
       "time_period": "D\u00e9cembre 2022",
       "start_index_m3": 15950,
       "end_index_m3": 16098,
@@ -242,6 +269,8 @@ data =>
 
 | Field | Meaning |
 |---|---|
+| `frequency` | The frequency of the reading: `daily`, `weekly`, `monthly` or `yearly`. |
+| `start_date`, `end_date` | The period of the reading, from `start_date` (included) to `end_date` (excluded), as ISO dates. |
 | `time_period` | The day (`dd/mm/yyyy`) for `daily`, or the bucket label for `weekly`, `monthly` and `yearly`. |
 | `start_index_m3`, `end_index_m3` | Meter index at the start and at the end of the day or bucket. |
 | `volume_m3`, `energy_kwh` | Consumption over the day or bucket. |
@@ -249,6 +278,7 @@ data =>
 | `temperature_degC` | Temperature of the day. Daily rows only. |
 | `type` | Quality of the daily row. Daily rows only. |
 | `timestamp` | When the data was read. |
+| Empty values | `null` when the source has no value: a day without data, or an Excel row without a start index. |
 
 The `type` values are:
 
@@ -257,6 +287,20 @@ The `type` values are:
 | `Mesuré` | Measured by GrDF. |
 | `Absence de Données` | GrDF reports no data for the day. It is rebuilt as `Calculé` when the indexes on both sides are known (see step 7), and kept as it is otherwise. |
 | `Calculé` | Derived by PyGazpar from a published period, or from a gap between periods. See [Published readings](#published-readings-period-computation). |
+
+#### Data model:
+
+The readings are models, shared by the parser, the converters and the Excel and test datasources. `load_since` and `load_date_range` return them in the dict form shown above, and `load_readings_since` and `load_readings_date_range` return the models.
+
+- **`PeriodReading`** covers a period of any frequency: `start_date` (included), `end_date` (excluded), the frequency, the time period label, the indexes, the volume, the energy and the timestamp.
+- **`DailyReading`** adds the converter factor, the temperature and the GrDF type of the day.
+
+The rules are checked when a reading is built:
+- A period lies inside one bucket of its frequency: a day, a week from Monday to Sunday (a partial first or last week keeps the days it covers), a calendar month or a calendar year.
+- The `time_period` label is computed from the dates. A label given by a source must match the dates.
+- A GrDF record is checked when it is read. A published period must give its indexes, volume, energy and coefficient, and negative consumption or an empty period is refused. An invalid record is skipped with a warning.
+- A GrDF response is checked as it arrives. A malformed response raises an error that names the field at fault.
+- An Excel file gives the dates through its labels, and an empty cell stays empty.
 
 #### Temperatures:
 
@@ -449,6 +493,8 @@ Periods with no days, or without dates, produce no rows: `test_published_period_
 ### Weekly, monthly and yearly buckets
 
 The weekly, monthly and yearly outputs group the daily rows and keep only complete buckets: at least 7 days for a week, 28 days for a month and 360 days for a year. The last bucket is always kept, even when it is incomplete. An incomplete first bucket is dropped.
+
+Weeks run from Monday to Sunday, on the calendar. The week of 30 December 2019 to 5 January 2020 is one week, even though it crosses the new year. Months and years are calendar months and calendar years.
 
 For example, daily data from 20 January to 15 February 2026 at 1 m³ per day gives 27 m³ in total. The monthly output is:
 

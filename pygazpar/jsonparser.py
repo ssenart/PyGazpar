@@ -4,11 +4,17 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-from pygazpar.enum import PropertyName
+from pydantic import ValidationError
+
+from pygazpar.grdf import (
+    GrdfConsumptionResponse,
+    GrdfMeteoResponse,
+    GrdfPceConsumption,
+    GrdfRecord,
+)
+from pygazpar.model import DailyReading, Frequency, PropertyName
 
 INPUT_DATE_FORMAT = "%Y-%m-%d"
-
-OUTPUT_DATE_FORMAT = "%d/%m/%Y"
 
 # Type of the rows derived from a published period or from a gap: volume, energy and indexes are calculated, not measured.
 CALCULATED_TYPE = "Calculé"
@@ -22,41 +28,104 @@ class JsonParser:  # pylint: disable=too-few-public-methods
     # ------------------------------------------------------
     @staticmethod
     def parse(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[dict[str, Any]]:
-        """Returns one row per day.
+        """Returns one row per day, as dicts. See readings_from_json() for the models."""
+
+        return [
+            reading.model_dump(by_alias=True)
+            for reading in JsonParser.readings_from_json(jsonStr, temperaturesStr, pceIdentifier)
+        ]
+
+    # ------------------------------------------------------
+    @staticmethod
+    def readings_from_json(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[DailyReading]:
+        """Returns one reading per day, from the JSON of the consumption and of the temperatures."""
+
+        # Decimal numbers are read from the JSON text, so that the splits of volumes and energies stay exact.
+        consumption = JsonParser.__consumption_of(json.loads(jsonStr, parse_float=Decimal))
+        temperatures = JsonParser.__temperatures_of(json.loads(temperaturesStr))
+
+        return JsonParser.readings(consumption, temperatures, pceIdentifier)
+
+    # ------------------------------------------------------
+    @staticmethod
+    def __consumption_of(data: Any) -> dict[str, GrdfPceConsumption]:
+        """Returns the consumption of a JSON document, empty when GrDF sends an empty list."""
+
+        if type(data) is list and len(data) == 0:
+            return {}
+
+        return GrdfConsumptionResponse.model_validate(data).root
+
+    # ------------------------------------------------------
+    @staticmethod
+    def __temperatures_of(data: Any) -> dict[date, float | None] | None:
+        """Returns the temperatures of a JSON document, or None when there are none."""
+
+        if data is None or (type(data) is list and len(data) == 0):
+            return None
+
+        return GrdfMeteoResponse.model_validate(data).root
+
+    # ------------------------------------------------------
+    @staticmethod
+    def readings(
+        consumption_by_pce: dict[str, GrdfPceConsumption],
+        temperatures: dict[date, float | None] | None,
+        pceIdentifier: str,
+    ) -> list[DailyReading]:
+        """Returns one reading per day.
 
         Every GrDF record is a period: an informative record is one gas day, and a published record covers several days.
-        A gap between two periods is rebuilt from the meter indexes.
+        A gap between two periods, and a day without data between two known indexes, is rebuilt from the meter indexes.
         """
 
-        res: list[dict[str, Any]] = []
+        res: list[DailyReading] = []
 
-        data = json.loads(jsonStr)
-
-        temperatures = json.loads(temperaturesStr)
+        if pceIdentifier not in consumption_by_pce:
+            return res
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        last_end = None
-        last_index = None
-        last_coefficient = None
+        last_end: date | None = None
+        last_index: Decimal | None = None
+        last_coefficient: Decimal | None = None
         # Days without consumption wait for the next period: a gap rebuilt from the indexes covers them when it can.
-        pending: list[tuple[date, date, dict[str, Any]]] = []
-        for start, end, releve in JsonParser.__periods(data[pceIdentifier]["releves"]):
-            if not JsonParser.__has_consumption(releve):
-                pending.append((start, end, releve))
+        pending: list[tuple[date, date, GrdfRecord]] = []
+        for start, end, record in JsonParser.__periods(
+            JsonParser.__validated(consumption_by_pce[pceIdentifier].releves)
+        ):
+            consumption = JsonParser.__consumption(record)
+            if consumption is None:
+                pending.append((start, end, record))
                 continue
+            volume, energy, coefficient = consumption
 
-            gap = JsonParser.__gap(last_end, last_index, last_coefficient, start, releve)
+            gap = JsonParser.__gap(last_end, last_index, last_coefficient, start, record.indexDebut, coefficient)
             if gap is None:
                 for no_data in pending:
                     res.extend(JsonParser.__no_data_rows(*no_data, temperatures, data_timestamp))
             else:
-                res.extend(JsonParser.__spread(*gap, temperatures, data_timestamp))
+                res.extend(JsonParser.__spread_derived(*gap, temperatures, data_timestamp))
             pending = []
 
-            res.extend(JsonParser.__spread(start, end, releve, temperatures, data_timestamp))
-            last_end, last_index, last_coefficient = end, releve.get("indexFin"), releve["coeffConversion"]
+            if record.journeeGaziere is not None:
+                res.append(JsonParser.__measured_row(start, record, coefficient, temperatures, data_timestamp))
+            else:
+                res.extend(
+                    JsonParser.__spread_derived(
+                        start,
+                        end,
+                        record.indexDebut,
+                        record.indexFin,
+                        volume,
+                        energy,
+                        coefficient,
+                        temperatures,
+                        data_timestamp,
+                    )
+                )
+            last_end, last_index, last_coefficient = end, record.indexFin, coefficient
 
         for no_data in pending:
             res.extend(JsonParser.__no_data_rows(*no_data, temperatures, data_timestamp))
@@ -67,43 +136,55 @@ class JsonParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __periods(releves: list[dict[str, Any]]) -> list[tuple[date, date, dict[str, Any]]]:
+    def __validated(releves: list[dict[str, Any]]) -> list[GrdfRecord]:
+        """Returns the records that are valid. An invalid record is reported and ignored."""
+
+        records = []
+        for releve in releves:
+            try:
+                records.append(GrdfRecord.model_validate(releve))
+            except ValidationError as error:
+                Logger.warning(f"Reading ignored because it is invalid: {error.errors()[0]['msg']}")
+
+        return records
+
+    # ------------------------------------------------------
+    @staticmethod
+    def __periods(records: list[GrdfRecord]) -> list[tuple[date, date, GrdfRecord]]:
         """Returns the periods as (first day, day after the last day, record), in chronological order."""
 
         periods = []
-        for releve in releves:
-            if releve.get("journeeGaziere") is not None:
-                start = datetime.strptime(releve["journeeGaziere"], INPUT_DATE_FORMAT).date()
-                periods.append((start, start + timedelta(days=1), releve))
-            elif releve.get("dateDebutReleve") is None or releve.get("dateFinReleve") is None:
+        for record in records:
+            if record.journeeGaziere is not None:
+                periods.append((record.journeeGaziere, record.journeeGaziere + timedelta(days=1), record))
+            elif record.dateDebutReleve is None or record.dateFinReleve is None:
                 Logger.warning("Reading ignored because it has no start or end date")
             else:
-                start = datetime.fromisoformat(releve["dateDebutReleve"]).date()
-                end = datetime.fromisoformat(releve["dateFinReleve"]).date()
-                if end <= start:
-                    Logger.warning("Published reading ignored because its period is empty")
-                else:
-                    periods.append((start, end, releve))
+                periods.append((record.dateDebutReleve.date(), record.dateFinReleve.date(), record))
 
         return sorted(periods, key=lambda period: period[0])
 
     # ------------------------------------------------------
     @staticmethod
-    def __has_consumption(releve: dict[str, Any]) -> bool:
-        """Tells whether a record has its volume, energy and coefficient, as opposed to a day without data."""
+    def __consumption(record: GrdfRecord) -> tuple[Decimal, Decimal, Decimal] | None:
+        """Returns the volume, energy and coefficient of a record, or None for a day without consumption."""
 
-        return all(releve.get(key) is not None for key in ("volumeBrutConsomme", "energieConsomme", "coeffConversion"))
+        if record.volumeBrutConsomme is None or record.energieConsomme is None or record.coeffConversion is None:
+            return None
+
+        return record.volumeBrutConsomme, record.energieConsomme, record.coeffConversion
 
     # ------------------------------------------------------
     @staticmethod
     def __gap(
         last_end: date | None,
-        last_index: int | None,
-        last_coefficient: float | None,
+        last_index: Decimal | None,
+        last_coefficient: Decimal | None,
         start: date,
-        releve: dict[str, Any],
-    ) -> tuple[date, date, dict[str, Any]] | None:
-        """Returns the period that fills the gap before a record, or None when there is no gap to fill.
+        index_start: Decimal | None,
+        coefficient: Decimal,
+    ) -> tuple[date, date, Decimal, Decimal, Decimal, Decimal, Decimal] | None:
+        """Returns the derived period that fills the gap before a record, or None when there is no gap to fill.
 
         The gap starts where the previous period ends and ends where this record starts. Its volume is the difference of
         the meter indexes at both ends, and its energy is that volume times the average coefficient of both periods.
@@ -112,8 +193,6 @@ class JsonParser:  # pylint: disable=too-few-public-methods
 
         if last_end is None:
             return None
-
-        index_start = releve.get("indexDebut")
 
         if start == last_end:
             if last_index is not None and index_start is not None and last_index != index_start:
@@ -124,133 +203,141 @@ class JsonParser:  # pylint: disable=too-few-public-methods
             Logger.warning(f"Periods overlap: a period ends on {last_end}, and the next starts on {start}")
             return None
 
-        if last_index is None or index_start is None or index_start < last_index:
+        if last_index is None or last_coefficient is None or index_start is None or index_start < last_index:
             Logger.warning(f"Periods do not chain: the gap from {last_end} to {start} cannot be rebuilt")
             return None
 
         volume = index_start - last_index
-        coefficient = (last_coefficient + releve["coeffConversion"]) / 2
+        gap_coefficient = (last_coefficient + coefficient) / 2
         Logger.warning(f"Periods do not chain: the gap from {last_end} to {start} is rebuilt ({volume} m3)")
 
-        gap_record = {
-            "journeeGaziere": None,
-            "indexDebut": last_index,
-            "indexFin": index_start,
-            "volumeBrutConsomme": volume,
-            "energieConsomme": round(volume * coefficient),
-            "coeffConversion": coefficient,
-            "temperature": None,
-        }
-        return last_end, start, gap_record
+        energy = Decimal(round(volume * gap_coefficient))
+        return last_end, start, last_index, index_start, volume, energy, gap_coefficient
 
     # ------------------------------------------------------
     @staticmethod
-    def __spread(
-        start: date, end: date, releve: dict[str, Any], temperatures: Any, data_timestamp: str
-    ) -> list[dict[str, Any]]:
-        """Returns the rows of a period, from start (included) to end (excluded).
+    def __spread_derived(
+        start: date,
+        end: date,
+        index_start: Decimal | None,
+        index_end: Decimal | None,
+        volume: Decimal,
+        energy: Decimal,
+        coefficient: Decimal,
+        temperatures: Any,
+        data_timestamp: str,
+    ) -> list[DailyReading]:
+        """Returns the rows of a derived period, from start (included) to end (excluded).
 
-        A measured record of one day is returned as GrDF reports it. A derived period, which is a published period or a
-        gap, is spread over its days: volume is split evenly, energy follows it in proportion, and indexes are
-        interpolated. Each total is split in units of its own published precision, so the parts sum exactly to the
-        totals. The temperature of each derived day comes from the meteo data.
+        Volume is split evenly, energy follows it in proportion, and indexes are interpolated. Each total is split in
+        units of its own published precision, so the parts sum exactly to the totals. The temperature of each day comes
+        from the meteo data.
         """
 
-        if releve.get("journeeGaziere") is not None:
-            return [JsonParser.__measured_row(start, releve, temperatures, data_timestamp)]
-
-        (index_start, index_end), index_scale = JsonParser.__to_units(releve["indexDebut"], releve["indexFin"])
-        (volume,), volume_scale = JsonParser.__to_units(releve["volumeBrutConsomme"])
-        (energy,), energy_scale = JsonParser.__to_units(releve["energieConsomme"])
+        (start_units, end_units), index_scale = JsonParser.__to_units(index_start, index_end)
+        (volume_units,), volume_scale = JsonParser.__to_units(volume)
+        (energy_units,), energy_scale = JsonParser.__to_units(energy)
 
         days = (end - start).days
-        volume_bounds = JsonParser.__bounds(0, volume, days)
-        index_bounds = JsonParser.__bounds(index_start, index_end, days)
+        volume_bounds = JsonParser.__bounds(0, volume_units, days)
+        index_bounds = JsonParser.__bounds(start_units, end_units, days)
 
         # Volume is the reference: energy follows it, so each day gets the share of the energy that matches its share
         # of the volume. Without volume, energy is spread evenly over the days.
-        if volume != 0:
-            energy_bounds = [energy * bound // volume for bound in volume_bounds]
+        if volume_units != 0:
+            energy_bounds = [energy_units * bound // volume_units for bound in volume_bounds]
         else:
-            energy_bounds = JsonParser.__bounds(0, energy, days)
+            energy_bounds = JsonParser.__bounds(0, energy_units, days)
 
         res = []
         for i in range(days):
             day = start + timedelta(days=i)
-
-            item: dict[str, Any] = {}
-            item[PropertyName.TIME_PERIOD.value] = day.strftime(OUTPUT_DATE_FORMAT)
-            item[PropertyName.START_INDEX.value] = JsonParser.__to_output(Decimal(index_bounds[i]) / index_scale)
-            item[PropertyName.END_INDEX.value] = JsonParser.__to_output(Decimal(index_bounds[i + 1]) / index_scale)
-            item[PropertyName.VOLUME.value] = JsonParser.__to_output(
-                Decimal(volume_bounds[i + 1] - volume_bounds[i]) / volume_scale
+            row = DailyReading.model_validate(
+                {
+                    PropertyName.START_DATE.value: day,
+                    PropertyName.END_DATE.value: day + timedelta(days=1),
+                    PropertyName.FREQUENCY.value: Frequency.DAILY,
+                    PropertyName.START_INDEX.value: JsonParser.__to_output(Decimal(index_bounds[i]) / index_scale),
+                    PropertyName.END_INDEX.value: JsonParser.__to_output(Decimal(index_bounds[i + 1]) / index_scale),
+                    PropertyName.VOLUME.value: JsonParser.__to_output(
+                        Decimal(volume_bounds[i + 1] - volume_bounds[i]) / volume_scale
+                    ),
+                    PropertyName.ENERGY.value: JsonParser.__to_output(
+                        Decimal(energy_bounds[i + 1] - energy_bounds[i]) / energy_scale
+                    ),
+                    PropertyName.CONVERTER_FACTOR.value: float(coefficient),
+                    PropertyName.TEMPERATURE.value: JsonParser.__meteo_of(temperatures, day),
+                    PropertyName.TYPE.value: CALCULATED_TYPE,
+                    PropertyName.TIMESTAMP.value: data_timestamp,
+                }
             )
-            item[PropertyName.ENERGY.value] = JsonParser.__to_output(
-                Decimal(energy_bounds[i + 1] - energy_bounds[i]) / energy_scale
-            )
-            item[PropertyName.CONVERTER_FACTOR.value] = releve["coeffConversion"]
-            item[PropertyName.TEMPERATURE.value] = JsonParser.__meteo(temperatures, day)
-            item[PropertyName.TYPE.value] = CALCULATED_TYPE
-            item[PropertyName.TIMESTAMP.value] = data_timestamp
-
-            res.append(item)
+            res.append(row)
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def __measured_row(day: date, releve: dict[str, Any], temperatures: Any, data_timestamp: str) -> dict[str, Any]:
+    def __measured_row(
+        start: date, record: GrdfRecord, coefficient: Decimal, temperatures: Any, data_timestamp: str
+    ) -> DailyReading:
         """Returns the row of a measured one-day record, with the values GrDF reports."""
 
-        temperature = releve.get("temperature")
-
-        item: dict[str, Any] = {}
-        item[PropertyName.TIME_PERIOD.value] = day.strftime(OUTPUT_DATE_FORMAT)
-        item[PropertyName.START_INDEX.value] = releve.get("indexDebut")
-        item[PropertyName.END_INDEX.value] = releve.get("indexFin")
-        item[PropertyName.VOLUME.value] = releve["volumeBrutConsomme"]
-        item[PropertyName.ENERGY.value] = releve["energieConsomme"]
-        item[PropertyName.CONVERTER_FACTOR.value] = releve["coeffConversion"]
-        item[PropertyName.TEMPERATURE.value] = (
-            temperature if temperature is not None else JsonParser.__meteo(temperatures, day)
+        temperature = record.temperature
+        row = DailyReading.model_validate(
+            {
+                PropertyName.START_DATE.value: start,
+                PropertyName.END_DATE.value: start + timedelta(days=1),
+                PropertyName.FREQUENCY.value: Frequency.DAILY,
+                PropertyName.START_INDEX.value: JsonParser.__to_output(record.indexDebut),
+                PropertyName.END_INDEX.value: JsonParser.__to_output(record.indexFin),
+                PropertyName.VOLUME.value: JsonParser.__to_output(record.volumeBrutConsomme),
+                PropertyName.ENERGY.value: JsonParser.__to_output(record.energieConsomme),
+                PropertyName.CONVERTER_FACTOR.value: float(coefficient),
+                PropertyName.TEMPERATURE.value: (
+                    float(temperature) if temperature is not None else JsonParser.__meteo_of(temperatures, start)
+                ),
+                PropertyName.TYPE.value: record.qualificationReleve,
+                PropertyName.TIMESTAMP.value: data_timestamp,
+            }
         )
-        item[PropertyName.TYPE.value] = releve["qualificationReleve"]
-        item[PropertyName.TIMESTAMP.value] = data_timestamp
 
-        return item
+        return row
 
     # ------------------------------------------------------
     @staticmethod
     def __no_data_rows(
-        start: date, end: date, releve: dict[str, Any], temperatures: Any, data_timestamp: str
-    ) -> list[dict[str, Any]]:
+        start: date, end: date, record: GrdfRecord, temperatures: Any, data_timestamp: str
+    ) -> list[DailyReading]:
         """Returns one row per day of a record without consumption, typed as GrDF qualifies it."""
 
         res = []
         for i in range((end - start).days):
             day = start + timedelta(days=i)
-
-            item: dict[str, Any] = {}
-            item[PropertyName.TIME_PERIOD.value] = day.strftime(OUTPUT_DATE_FORMAT)
-            item[PropertyName.START_INDEX.value] = None
-            item[PropertyName.END_INDEX.value] = None
-            item[PropertyName.VOLUME.value] = None
-            item[PropertyName.ENERGY.value] = None
-            item[PropertyName.CONVERTER_FACTOR.value] = None
-            item[PropertyName.TEMPERATURE.value] = JsonParser.__meteo(temperatures, day)
-            item[PropertyName.TYPE.value] = releve.get("qualificationReleve")
-            item[PropertyName.TIMESTAMP.value] = data_timestamp
-
-            res.append(item)
+            row = DailyReading.model_validate(
+                {
+                    PropertyName.START_DATE.value: day,
+                    PropertyName.END_DATE.value: day + timedelta(days=1),
+                    PropertyName.FREQUENCY.value: Frequency.DAILY,
+                    PropertyName.START_INDEX.value: None,
+                    PropertyName.END_INDEX.value: None,
+                    PropertyName.VOLUME.value: None,
+                    PropertyName.ENERGY.value: None,
+                    PropertyName.CONVERTER_FACTOR.value: None,
+                    PropertyName.TEMPERATURE.value: JsonParser.__meteo_of(temperatures, day),
+                    PropertyName.TYPE.value: record.qualificationReleve,
+                    PropertyName.TIMESTAMP.value: data_timestamp,
+                }
+            )
+            res.append(row)
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def __meteo(temperatures: Any, day: date) -> Any:
+    def __meteo_of(temperatures: dict[date, float | None] | None, day: date) -> float | None:
         """Returns the meteo temperature of a day, or None when there is none."""
 
-        return temperatures.get(day.strftime(INPUT_DATE_FORMAT)) if temperatures else None
+        return temperatures.get(day) if temperatures else None
 
     # ------------------------------------------------------
     @staticmethod
@@ -271,7 +358,10 @@ class JsonParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __to_output(value: Decimal) -> int | float:
+    def __to_output(value: Decimal | None) -> int | float | None:
         """Keeps whole numbers as int, and returns other values as float, at their published precision."""
+
+        if value is None:
+            return None
 
         return int(value) if value == value.to_integral_value() else float(value)

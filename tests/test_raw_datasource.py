@@ -16,7 +16,7 @@ class TestRawConsumptionWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_consumption", return_value=consumption) as get_consumption,
+            mock.patch.object(APIClient, "get_pce_consumption_raw", return_value=consumption) as get_consumption,
         ):
             res = RawConsumptionWebDataSource("user", "password").load("123", date(2026, 9, 1), date(2026, 9, 30))
 
@@ -30,7 +30,7 @@ class TestRawConsumptionWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_consumption", return_value={}) as get_consumption,
+            mock.patch.object(APIClient, "get_pce_consumption_raw", return_value={}) as get_consumption,
         ):
             RawConsumptionWebDataSource("user", "password", ConsumptionType.PUBLISHED).load(
                 "123", date(2026, 9, 1), date(2026, 9, 30)
@@ -48,7 +48,7 @@ class TestRawTemperatureWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_meteo", return_value=temperatures),
+            mock.patch.object(APIClient, "get_pce_meteo_raw", return_value=temperatures),
         ):
             res = RawTemperatureWebDataSource("user", "password").load("123", date(2026, 9, 1), date(2026, 9, 30))
 
@@ -59,7 +59,7 @@ class TestRawTemperatureWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_meteo", return_value={}) as get_meteo,
+            mock.patch.object(APIClient, "get_pce_meteo_raw", return_value={}) as get_meteo,
         ):
             RawTemperatureWebDataSource("user", "password").load("123", date(2026, 9, 1), date(2026, 9, 30))
 
@@ -72,7 +72,7 @@ class TestRawTemperatureWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_meteo", return_value={}) as get_meteo,
+            mock.patch.object(APIClient, "get_pce_meteo_raw", return_value={}) as get_meteo,
         ):
             RawTemperatureWebDataSource("user", "password").load("123", today - timedelta(days=5), today)
 
@@ -83,7 +83,7 @@ class TestRawTemperatureWebDataSource:
 
         with (
             mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_meteo", side_effect=ConnectionError("meteo down")),
+            mock.patch.object(APIClient, "get_pce_meteo_raw", side_effect=ConnectionError("meteo down")),
         ):
             with pytest.raises(ConnectionError):
                 RawTemperatureWebDataSource("user", "password").load("123", date(2026, 9, 1), date(2026, 9, 30))

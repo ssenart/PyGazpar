@@ -113,7 +113,8 @@ class TestAPIClient:
             ConsumptionType.INFORMATIVE, start_date, end_date, Frequency.DAILY, [TestAPIClient._pceIdentifier]
         )
 
-        assert len(pce_consumption_informative) > 0
+        assert pce_consumption_informative.filename
+        assert len(pce_consumption_informative.content) > 0
 
     # ------------------------------------------------------
     def test_get_pce_meteo(self):

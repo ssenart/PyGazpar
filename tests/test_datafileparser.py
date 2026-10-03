@@ -1,5 +1,5 @@
-from pygazpar.enum import Frequency
 from pygazpar.excelparser import ExcelParser
+from pygazpar.model import Frequency
 
 
 class TestDataFileParser:

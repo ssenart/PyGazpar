@@ -1,12 +1,14 @@
 import logging
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
+from pydantic import ValidationError
 
-from pygazpar.enum import Frequency, PropertyName
+from pygazpar.model import DailyReading, Frequency, PeriodReading, parse_period_label, PropertyName
 
 FIRST_DATA_LINE_NUMBER = 10
 
@@ -18,9 +20,9 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> list[dict[str, Any]]:
+    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> Sequence[PeriodReading]:
 
-        parseByFrequency = {
+        parseByFrequency: dict[Frequency, Any] = {
             Frequency.HOURLY: ExcelParser.__parseHourly,
             Frequency.DAILY: ExcelParser.__parseDaily,
             Frequency.WEEKLY: ExcelParser.__parseWeekly,
@@ -43,28 +45,32 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __fillRow(row: dict, propertyName: str, cell: Cell, isNumber: bool):
+    def __number(cell: Cell) -> int | float | None:
+        """Returns the number of a cell, written with a comma or with a point, or None when the cell is empty."""
 
-        if cell.value is not None:
-            if isNumber:
-                if type(cell.value) is str:
-                    if len(cell.value.strip()) > 0:
-                        row[propertyName] = float(cell.value.replace(",", "."))
-                else:
-                    row[propertyName] = cell.value
-            else:
-                row[propertyName] = cell.value.strip() if type(cell.value) is str else cell.value
+        if cell.value is None:
+            return None
+        if isinstance(cell.value, str):
+            return float(cell.value.replace(",", ".")) if len(cell.value.strip()) > 0 else None
+        return cell.value
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> list[dict[str, Any]]:  # pylint: disable=unused-argument
+    def __text(cell: Cell) -> Any:
+        """Returns the text of a cell, without surrounding spaces, or None when the cell is empty."""
+
+        return cell.value.strip() if isinstance(cell.value, str) else cell.value
+
+    # ------------------------------------------------------
+    @staticmethod
+    def __parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # pylint: disable=unused-argument
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseDaily(worksheet: Worksheet) -> list[PeriodReading]:
 
-        res = []
+        res: list[PeriodReading] = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
@@ -72,18 +78,32 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
         minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet["B"])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = dict[str, Any]()
-            if worksheet.cell(column=2, row=rownum).value is not None:
-                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.START_INDEX.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.END_INDEX.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=5, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=6, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.CONVERTER_FACTOR.value, worksheet.cell(column=7, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.TEMPERATURE.value, worksheet.cell(column=8, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.TYPE.value, worksheet.cell(column=9, row=rownum), False)  # type: ignore
-                row[PropertyName.TIMESTAMP.value] = data_timestamp
-                res.append(row)
+            label = worksheet.cell(column=2, row=rownum)
+            if label.value is None:
+                continue
+            try:
+                start_date, end_date = parse_period_label(Frequency.DAILY, str(label.value))
+                res.append(
+                    DailyReading.model_validate(
+                        {
+                            PropertyName.START_DATE.value: start_date,
+                            PropertyName.END_DATE.value: end_date,
+                            PropertyName.FREQUENCY.value: Frequency.DAILY,
+                            PropertyName.START_INDEX.value: ExcelParser.__number(worksheet.cell(column=3, row=rownum)),
+                            PropertyName.END_INDEX.value: ExcelParser.__number(worksheet.cell(column=4, row=rownum)),
+                            PropertyName.VOLUME.value: ExcelParser.__number(worksheet.cell(column=5, row=rownum)),
+                            PropertyName.ENERGY.value: ExcelParser.__number(worksheet.cell(column=6, row=rownum)),
+                            PropertyName.CONVERTER_FACTOR.value: ExcelParser.__number(
+                                worksheet.cell(column=7, row=rownum)
+                            ),
+                            PropertyName.TEMPERATURE.value: ExcelParser.__number(worksheet.cell(column=8, row=rownum)),
+                            PropertyName.TYPE.value: ExcelParser.__text(worksheet.cell(column=9, row=rownum)),
+                            PropertyName.TIMESTAMP.value: data_timestamp,
+                        }
+                    )
+                )
+            except (ValueError, ValidationError) as error:
+                Logger.warning(f"Excel row #{rownum} ignored: {error}")
 
         Logger.debug(f"Daily data read successfully between row #{minRowNum} and row #{maxRowNum}")
 
@@ -91,33 +111,20 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet) -> list[dict[str, Any]]:
-
-        res = []
-
-        # Timestamp of the data.
-        data_timestamp = datetime.now().isoformat()
-
-        minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet["B"])
-        for rownum in range(minRowNum, maxRowNum + 1):
-            row = dict[str, Any]()
-            if worksheet.cell(column=2, row=rownum).value is not None:
-                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
-                row[PropertyName.TIMESTAMP.value] = data_timestamp
-                res.append(row)
-
-        Logger.debug(f"Weekly data read successfully between row #{minRowNum} and row #{maxRowNum}")
-
-        return res
+    def __parseWeekly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser.__parsePeriods(worksheet, Frequency.WEEKLY)
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet) -> list[dict[str, Any]]:
+    def __parseMonthly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser.__parsePeriods(worksheet, Frequency.MONTHLY)
 
-        res = []
+    # ------------------------------------------------------
+    @staticmethod
+    def __parsePeriods(worksheet: Worksheet, frequency: Frequency) -> list[PeriodReading]:
+        """Reads the weekly or monthly rows: a label, the volume and the energy of the period."""
+
+        res: list[PeriodReading] = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
@@ -125,14 +132,26 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
         minRowNum = FIRST_DATA_LINE_NUMBER
         maxRowNum = len(worksheet["B"])
         for rownum in range(minRowNum, maxRowNum + 1):
-            row = dict[str, Any]()
-            if worksheet.cell(column=2, row=rownum).value is not None:
-                ExcelParser.__fillRow(row, PropertyName.TIME_PERIOD.value, worksheet.cell(column=2, row=rownum), False)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.VOLUME.value, worksheet.cell(column=3, row=rownum), True)  # type: ignore
-                ExcelParser.__fillRow(row, PropertyName.ENERGY.value, worksheet.cell(column=4, row=rownum), True)  # type: ignore
-                row[PropertyName.TIMESTAMP.value] = data_timestamp
-                res.append(row)
+            label = worksheet.cell(column=2, row=rownum)
+            if label.value is None:
+                continue
+            try:
+                start_date, end_date = parse_period_label(frequency, str(label.value))
+                res.append(
+                    PeriodReading.model_validate(
+                        {
+                            PropertyName.START_DATE.value: start_date,
+                            PropertyName.END_DATE.value: end_date,
+                            PropertyName.FREQUENCY.value: frequency,
+                            PropertyName.VOLUME.value: ExcelParser.__number(worksheet.cell(column=3, row=rownum)),
+                            PropertyName.ENERGY.value: ExcelParser.__number(worksheet.cell(column=4, row=rownum)),
+                            PropertyName.TIMESTAMP.value: data_timestamp,
+                        }
+                    )
+                )
+            except (ValueError, ValidationError) as error:
+                Logger.warning(f"Excel row #{rownum} ignored: {error}")
 
-        Logger.debug(f"Monthly data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"{frequency} data read successfully between row #{minRowNum} and row #{maxRowNum}")
 
         return res

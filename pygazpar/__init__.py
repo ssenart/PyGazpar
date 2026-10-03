@@ -5,6 +5,8 @@ from pygazpar.datasource import (  # noqa: F401
     ExcelWebDataSource,
     JsonFileDataSource,
     JsonWebDataSource,
+    RawConsumptionWebDataSource,
+    RawTemperatureWebDataSource,
     TestDataSource,
 )
 from pygazpar.enum import Frequency, PropertyName  # noqa: F401

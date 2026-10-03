@@ -17,8 +17,12 @@ classifiers = [
 dependencies = [
     "openpyxl (>=3.1.5,<4.0.0)",
     "requests (>=2.32.3,<3.0.0)",
-    "pandas (>=2.1.4,<3.0.0)"
+    "pandas (>=2.1.4,<3.0.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)"
 ]
+
+[project.scripts]
+pygazpar = "pygazpar.__main__:main"
 
 [tool.poetry]
 requires-poetry = ">=2.0"
@@ -34,7 +38,6 @@ flake8 = "^7.1.1"
 isort = "^6.0.0"
 mypy = "^1.14.1"
 ruff = "^0.9.4"
-python-dotenv = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

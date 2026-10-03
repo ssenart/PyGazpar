@@ -9,10 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support explicitly requesting published GRDF consumption readings.
+- CLI reads `GRDF_USERNAME`, `GRDF_PASSWORD` and `PCE_IDENTIFIER` from the environment or a `.env` file when the credentials are not given on the command line. `python-dotenv` is now a runtime dependency.
+- CLI `--consumption-type` option (`INFORMATIVE` or `PUBLISHED`) for the `json` and `raw-consumption` datasources.
+- CLI `raw-consumption` and `raw-temperature` datasources printing the GrDF API responses without post processing.
+- `RawConsumptionWebDataSource` and `RawTemperatureWebDataSource` in the library, returning the GrDF API responses as received.
 
-### Fixed
+### Changed
 
-- Parse published readings whose `journeeGaziere` field is empty by using the last day of their reporting period.
+- Published readings are split into one row per day instead of one row on the last day of their period. Volume is spread evenly across the days and energy follows it in proportion, keeping the published totals exact. Indexes are interpolated, and the rows have the type `Calculé`.
+- `--datasource` only accepts the listed datasources. Any other value is a usage error.
 
 ## [1.3.1] - 2025-07-22
 

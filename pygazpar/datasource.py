@@ -24,6 +24,19 @@ MeterReadingsByFrequency = dict[str, MeterReadings]
 
 
 # ------------------------------------------------------------------------------------------------------------
+def meteo_window(start_date: date, end_date: date) -> tuple[date, int]:
+    """Returns the end date and the number of days to request temperatures for a consumption period.
+
+    The end date is capped at yesterday, and the number of days is kept between 10 and 730 to avoid HTTP 500 errors.
+    """
+
+    meteo_end_date = date.today() - timedelta(days=1) if end_date >= date.today() else end_date
+    meteo_days = max(min((meteo_end_date - start_date).days, 730), 10)
+
+    return meteo_end_date, meteo_days
+
+
+# ------------------------------------------------------------------------------------------------------------
 class IDataSource(ABC):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
@@ -270,15 +283,11 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 
         Logger.debug("Json meter data: %s", data)
 
-        # Temperatures URL: Inject parameters.
-        endDate = date.today() - timedelta(days=1) if endDate >= date.today() else endDate
-        days = max(
-            min((endDate - startDate).days, 730), 10
-        )  # At least 10 days, at most 730 days, to avoid HTTP 500 error.
+        meteo_end_date, meteo_days = meteo_window(startDate, endDate)
 
         # Get weather data.
         try:
-            temperatures = self._api_client.get_pce_meteo(endDate, days, pceIdentifier)
+            temperatures = self._api_client.get_pce_meteo(meteo_end_date, meteo_days, pceIdentifier)
         except Exception:  # pylint: disable=broad-except
             # Not a blocking error.
             temperatures = None
@@ -304,6 +313,55 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
             res[frequency.value] = computeByFrequency[frequency](daily)
 
         return res
+
+
+# ------------------------------------------------------------------------------------------------------------
+class RawConsumptionWebDataSource:  # pylint: disable=too-few-public-methods
+    """Returns the GrDF consumption API response as received, without post processing.
+
+    Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
+    """
+
+    # ------------------------------------------------------
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
+    ):
+        self.__api_client = APIClient(username, password)
+        self.__consumption_type = consumption_type
+
+    # ------------------------------------------------------
+    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+
+        if not self.__api_client.is_logged_in():
+            self.__api_client.login()
+
+        return self.__api_client.get_pce_consumption(self.__consumption_type, start_date, end_date, [pce_identifier])
+
+
+# ------------------------------------------------------------------------------------------------------------
+class RawTemperatureWebDataSource:  # pylint: disable=too-few-public-methods
+    """Returns the GrDF temperature (meteo) API response as received, without post processing.
+
+    Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
+    """
+
+    # ------------------------------------------------------
+    def __init__(self, username: str, password: str):
+
+        self.__api_client = APIClient(username, password)
+
+    # ------------------------------------------------------
+    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+
+        if not self.__api_client.is_logged_in():
+            self.__api_client.login()
+
+        meteo_end_date, meteo_days = meteo_window(start_date, end_date)
+
+        return self.__api_client.get_pce_meteo(meteo_end_date, meteo_days, pce_identifier)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -495,7 +553,7 @@ class FrequencyConverter:
             .reset_index()
         )
 
-        # Sort rows by month ascending.
+        # Sort rows by week ascending.
         df = df.sort_values(by=["first_day_of_week"])
 
         # Select rows where we have a full week (7 days) except for the current week.
@@ -583,7 +641,7 @@ class FrequencyConverter:
             .reset_index()
         )
 
-        # Sort rows by month ascending.
+        # Sort rows by year ascending.
         df = df.sort_values(by=["year"])
 
         # Select rows where we have almost a full year (more than 360) except for the current year.

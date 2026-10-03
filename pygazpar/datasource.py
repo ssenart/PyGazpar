@@ -9,6 +9,7 @@ from typing import Any, Callable, Optional, cast
 
 from pygazpar.api_client import APIClient, ConsumptionType
 from pygazpar.api_client import Frequency as APIClientFrequency
+from pygazpar.api_client import ServerError
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
 from pygazpar.model import MONTHS as MONTH_NAMES
@@ -70,6 +71,17 @@ def meteo_window(start_date: date, end_date: date) -> tuple[date, int]:
     meteo_days = max(min((meteo_end_date - start_date).days, 730), 10)
 
     return meteo_end_date, meteo_days
+
+
+# ------------------------------------------------------------------------------------------------------------
+class UnknownPceError(ServerError):
+    """Raised when the PCE identifier is not one of the PCEs of the account.
+
+    The status code is the one GrDF sends when it refuses an unknown PCE for the temperatures.
+    """
+
+    def __init__(self, pceIdentifier: str):
+        super().__init__(f"The PCE {pceIdentifier} does not exist in this account.", 400)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -144,6 +156,9 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
         if not self._api_client.is_logged_in():
             self._api_client.login()
+
+        if pceIdentifier not in self.get_pce_identifiers():
+            raise UnknownPceError(pceIdentifier)
 
         res = self._loadFromSession(pceIdentifier, startDate, endDate, frequencies)
 

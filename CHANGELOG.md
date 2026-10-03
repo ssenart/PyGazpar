@@ -50,6 +50,7 @@ Compared with the last release, 1.3.1:
 - `pydantic` is a new runtime dependency, and `typing-extensions` is bumped to 4.16.0.
 - A custom `IDataSource` implements `readings()`, which returns models, instead of `load()`. `load()` is now the dict form, provided by the base class.
 - The CLI refuses an unknown `--datasource` with a usage error (exit code 2), where it used to raise a `ValueError`.
+- Loading readings for a PCE that is not in the account raises `UnknownPceError`, a `ServerError`, where it used to return no data. The identifier is checked against the PCE list of the account, so a PCE of the account with no data still returns no readings. The raw sources and `APIClient` are unchanged.
 
 ## [1.3.1] - 2025-07-22
 

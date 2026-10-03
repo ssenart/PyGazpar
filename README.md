@@ -179,6 +179,8 @@ for reading in readings[pygazpar.Frequency.DAILY.value]:
     print(reading.start_date, reading.volume_m3, reading.energy_kwh)
 ```
 
+If the PCE identifier is not one of the PCEs of the account, the web sources raise `pygazpar.datasource.UnknownPceError` (a `ServerError`) instead of returning no data. A PCE of the account that has no data for the period returns no readings.
+
 #### Raw sources:
 
 The raw sources return the GrDF API responses as received, without PyGazpar's post processing:

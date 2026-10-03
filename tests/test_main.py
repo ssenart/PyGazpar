@@ -7,6 +7,7 @@ import pytest
 
 from pygazpar import __main__ as cli
 from pygazpar.api_client import APIClient, ConsumptionType
+from pygazpar.grdf import GrdfPce
 
 PCE = "12345678901234"
 
@@ -76,6 +77,7 @@ class TestConsumptionTypeOption:
             mock.patch.object(cli, "load_dotenv"),
             mock.patch.object(sys, "argv", argv),
             mock.patch.object(APIClient, "login"),
+            mock.patch.object(APIClient, "get_pce_list", return_value=[GrdfPce.model_validate({"idObject": PCE})]),
             mock.patch.object(APIClient, "get_pce_consumption", return_value={}) as get_consumption,
         ):
             assert cli.main() == 0

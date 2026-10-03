@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -13,7 +14,56 @@ from pygazpar.jsonparser import CALCULATED_TYPE, JsonParser
 PCE_IDENTIFIER = "12345678901234"
 
 
-class TestJsonParser:
+def period_dates(releve):
+    """Returns the first day and the day after the last day of a published period."""
+
+    return (
+        datetime.fromisoformat(releve["dateDebutReleve"]).date(),
+        datetime.fromisoformat(releve["dateFinReleve"]).date(),
+    )
+
+
+def rows_between(readings, start, end):
+    """Returns the daily rows whose day is in [start, end)."""
+
+    return [
+        reading
+        for reading in readings
+        if start <= datetime.strptime(reading[PropertyName.TIME_PERIOD.value], "%d/%m/%Y").date() < end
+    ]
+
+
+def informative_record(day, index_start, index_end, coefficient=11.0):
+    """Returns a measured GrDF informative record, one gas day with its indexes."""
+
+    return {
+        "journeeGaziere": day,
+        "qualificationReleve": "Mesuré",
+        "indexDebut": index_start,
+        "indexFin": index_end,
+        "volumeBrutConsomme": index_end - index_start,
+        "energieConsomme": round((index_end - index_start) * coefficient),
+        "coeffConversion": coefficient,
+        "temperature": None,
+    }
+
+
+def no_data_record(day):
+    """Returns a GrDF informative record without data for its day."""
+
+    return {
+        "journeeGaziere": day,
+        "qualificationReleve": "Absence de Données",
+        "indexDebut": None,
+        "indexFin": None,
+        "volumeBrutConsomme": None,
+        "energieConsomme": None,
+        "coeffConversion": None,
+        "temperature": None,
+    }
+
+
+class TestJsonParser:  # pylint: disable=too-many-public-methods
 
     # ------------------------------------------------------
     def test_informative_readings_use_gas_day(self):
@@ -42,41 +92,38 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_published_readings_are_split_by_day(self):
-        pce_identifier = PCE_IDENTIFIER
-
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
 
-        readings = JsonParser.parse(raw, "null", pce_identifier)
-        published = json.loads(raw)[pce_identifier]["releves"]
+        readings = JsonParser.parse(raw, "null", PCE_IDENTIFIER)
+        published = json.loads(raw)[PCE_IDENTIFIER]["releves"]
 
-        assert len(readings) == 1819
+        assert len(readings) == 1850
         assert readings[0][PropertyName.TIME_PERIOD.value] == "10/10/2017"
         assert readings[-1][PropertyName.TIME_PERIOD.value] == "02/11/2022"
-        assert sum(r[PropertyName.VOLUME.value] for r in readings) == sum(r["volumeBrutConsomme"] for r in published)
-        assert sum(r[PropertyName.ENERGY.value] for r in readings) == sum(r["energieConsomme"] for r in published)
+        assert (
+            sum(r[PropertyName.VOLUME.value] for r in readings)
+            == published[-1]["indexFin"] - published[0]["indexDebut"]
+        )
+        # The gap of October 2019 adds 1194 kWh to the published energy.
+        assert (
+            sum(r[PropertyName.ENERGY.value] for r in readings) == sum(r["energieConsomme"] for r in published) + 1194
+        )
         assert all(r[PropertyName.TYPE.value] == CALCULATED_TYPE for r in readings)
 
     # ------------------------------------------------------
     def test_each_published_period_keeps_its_exact_volume_and_energy_sums(self):
-        pce_identifier = PCE_IDENTIFIER
-
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
 
-        readings = JsonParser.parse(raw, "null", pce_identifier)
-        published = json.loads(raw)[pce_identifier]["releves"]
+        readings = JsonParser.parse(raw, "null", PCE_IDENTIFIER)
+        published = json.loads(raw)[PCE_IDENTIFIER]["releves"]
 
-        position = 0
         for releve in published:
-            days = (
-                datetime.fromisoformat(releve["dateFinReleve"]).date()
-                - datetime.fromisoformat(releve["dateDebutReleve"]).date()
-            ).days
-            block = readings[position : position + days]
-            position += days
+            start, end = period_dates(releve)
+            block = rows_between(readings, start, end)
 
-            assert len(block) == days
+            assert len(block) == (end - start).days
             assert sum(r[PropertyName.VOLUME.value] for r in block) == releve["volumeBrutConsomme"]
             assert sum(r[PropertyName.ENERGY.value] for r in block) == releve["energieConsomme"]
 
@@ -198,48 +245,28 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_split_volumes_of_a_published_period_differ_by_at_most_one_unit(self):
-        pce_identifier = PCE_IDENTIFIER
-
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
 
-        readings = JsonParser.parse(raw, "null", pce_identifier)
-        published = json.loads(raw)[pce_identifier]["releves"]
+        readings = JsonParser.parse(raw, "null", PCE_IDENTIFIER)
 
-        position = 0
-        for releve in published:
-            days = (
-                datetime.fromisoformat(releve["dateFinReleve"]).date()
-                - datetime.fromisoformat(releve["dateDebutReleve"]).date()
-            ).days
-            volumes = [r[PropertyName.VOLUME.value] for r in readings[position : position + days]]
-            position += days
+        for releve in json.loads(raw)[PCE_IDENTIFIER]["releves"]:
+            volumes = [r[PropertyName.VOLUME.value] for r in rows_between(readings, *period_dates(releve))]
 
             assert max(volumes) - min(volumes) <= 1
 
     # ------------------------------------------------------
     def test_split_energy_is_within_one_kwh_of_its_pro_rata_share(self):
-        pce_identifier = PCE_IDENTIFIER
-
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
 
-        readings = JsonParser.parse(raw, "null", pce_identifier)
-        published = json.loads(raw)[pce_identifier]["releves"]
+        readings = JsonParser.parse(raw, "null", PCE_IDENTIFIER)
 
-        position = 0
-        for releve in published:
-            days = (
-                datetime.fromisoformat(releve["dateFinReleve"]).date()
-                - datetime.fromisoformat(releve["dateDebutReleve"]).date()
-            ).days
-            block = readings[position : position + days]
-            position += days
-
+        for releve in json.loads(raw)[PCE_IDENTIFIER]["releves"]:
             volume = releve["volumeBrutConsomme"]
             if volume == 0:
                 continue
-            for reading in block:
+            for reading in rows_between(readings, *period_dates(releve)):
                 share = Fraction(releve["energieConsomme"] * reading[PropertyName.VOLUME.value], volume)
                 assert abs(Fraction(reading[PropertyName.ENERGY.value]) - share) < 1
 
@@ -387,6 +414,134 @@ class TestJsonParser:
                 if volume_tenths:
                     share = Fraction(str(volume)) * Fraction(energy_tenths, volume_tenths)
                     assert abs(Fraction(str(energy)) - share) < Fraction(1, 10)
+
+    # ------------------------------------------------------
+    def test_published_periods_that_do_not_chain_log_one_warning(self, caplog):
+        with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
+            raw = consumption_file.read()
+
+        with caplog.at_level(logging.WARNING, logger="pygazpar.jsonparser"):
+            JsonParser.parse(raw, "null", PCE_IDENTIFIER)
+
+        warnings = [record.getMessage() for record in caplog.records if "do not chain" in record.getMessage()]
+        assert len(warnings) == 1
+        assert "2019-10-03" in warnings[0]
+        assert "107" in warnings[0]
+
+    # ------------------------------------------------------
+    def test_chained_published_periods_log_no_warning(self, caplog):
+        releves = [
+            {
+                "journeeGaziere": None,
+                "dateDebutReleve": "2026-01-01T06:00:00+00:00",
+                "dateFinReleve": "2026-01-03T06:00:00+00:00",
+                "indexDebut": 100,
+                "indexFin": 104,
+                "volumeBrutConsomme": 4,
+                "energieConsomme": 44,
+                "coeffConversion": 11.0,
+                "temperature": None,
+            },
+            {
+                "journeeGaziere": None,
+                "dateDebutReleve": "2026-01-03T06:00:00+00:00",
+                "dateFinReleve": "2026-01-05T06:00:00+00:00",
+                "indexDebut": 104,
+                "indexFin": 108,
+                "volumeBrutConsomme": 4,
+                "energieConsomme": 44,
+                "coeffConversion": 11.0,
+                "temperature": None,
+            },
+        ]
+
+        with caplog.at_level(logging.WARNING, logger="pygazpar.jsonparser"):
+            JsonParser.parse(json.dumps({PCE_IDENTIFIER: {"releves": releves}}), "null", PCE_IDENTIFIER)
+
+        assert not [record for record in caplog.records if "do not chain" in record.getMessage()]
+
+    # ------------------------------------------------------
+    def test_gap_between_published_periods_is_rebuilt_from_the_indexes(self):
+        with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
+            raw = consumption_file.read()
+
+        readings = JsonParser.parse(raw, "null", PCE_IDENTIFIER)
+        gap = rows_between(readings, date(2019, 10, 3), date(2019, 11, 3))
+
+        assert len(gap) == 31
+        assert gap[0][PropertyName.START_INDEX.value] == 9996
+        assert gap[-1][PropertyName.END_INDEX.value] == 10103
+        assert sum(r[PropertyName.VOLUME.value] for r in gap) == 107
+        assert sum(r[PropertyName.ENERGY.value] for r in gap) == 1194
+        assert all(abs(r[PropertyName.CONVERTER_FACTOR.value] - 11.16) < 1e-9 for r in gap)
+        assert all(r[PropertyName.TYPE.value] == CALCULATED_TYPE for r in gap)
+        for before, after in zip(gap, gap[1:]):
+            assert before[PropertyName.END_INDEX.value] == after[PropertyName.START_INDEX.value]
+
+    # ------------------------------------------------------
+    def test_synthetic_gap_is_rebuilt_from_the_index_difference(self):
+        releves = [
+            {
+                "journeeGaziere": None,
+                "dateDebutReleve": "2026-01-01T06:00:00+00:00",
+                "dateFinReleve": "2026-01-03T06:00:00+00:00",
+                "indexDebut": 100,
+                "indexFin": 104,
+                "volumeBrutConsomme": 4,
+                "energieConsomme": 44,
+                "coeffConversion": 11.0,
+                "temperature": None,
+            },
+            {
+                "journeeGaziere": None,
+                "dateDebutReleve": "2026-01-06T06:00:00+00:00",
+                "dateFinReleve": "2026-01-08T06:00:00+00:00",
+                "indexDebut": 110,
+                "indexFin": 114,
+                "volumeBrutConsomme": 4,
+                "energieConsomme": 44,
+                "coeffConversion": 11.2,
+                "temperature": None,
+            },
+        ]
+
+        readings = JsonParser.parse(json.dumps({PCE_IDENTIFIER: {"releves": releves}}), "null", PCE_IDENTIFIER)
+        gap = rows_between(readings, date(2026, 1, 3), date(2026, 1, 6))
+
+        assert [r[PropertyName.TIME_PERIOD.value] for r in gap] == ["03/01/2026", "04/01/2026", "05/01/2026"]
+        assert sum(r[PropertyName.VOLUME.value] for r in gap) == 6
+        assert sum(r[PropertyName.ENERGY.value] for r in gap) == 67
+        assert all(abs(r[PropertyName.CONVERTER_FACTOR.value] - 11.1) < 1e-9 for r in gap)
+
+    # ------------------------------------------------------
+    def test_informative_day_without_data_is_rebuilt_from_the_indexes(self):
+        releves = [
+            informative_record("2026-01-01", 100, 104),
+            no_data_record("2026-01-02"),
+            informative_record("2026-01-03", 108, 112),
+        ]
+
+        readings = JsonParser.parse(json.dumps({PCE_IDENTIFIER: {"releves": releves}}), "null", PCE_IDENTIFIER)
+        day = rows_between(readings, date(2026, 1, 2), date(2026, 1, 3))
+
+        assert len(day) == 1
+        assert day[0][PropertyName.START_INDEX.value] == 104
+        assert day[0][PropertyName.END_INDEX.value] == 108
+        assert day[0][PropertyName.VOLUME.value] == 4
+        assert day[0][PropertyName.ENERGY.value] == 44
+        assert day[0][PropertyName.TYPE.value] == CALCULATED_TYPE
+        assert readings[0][PropertyName.TYPE.value] == "Mesuré"
+        assert readings[-1][PropertyName.TYPE.value] == "Mesuré"
+
+    # ------------------------------------------------------
+    def test_informative_day_without_data_at_the_start_stays_without_data(self):
+        releves = [no_data_record("2026-01-01"), informative_record("2026-01-02", 100, 104)]
+
+        readings = JsonParser.parse(json.dumps({PCE_IDENTIFIER: {"releves": releves}}), "null", PCE_IDENTIFIER)
+
+        assert readings[0][PropertyName.TYPE.value] == "Absence de Données"
+        assert readings[0][PropertyName.VOLUME.value] is None
+        assert readings[1][PropertyName.TYPE.value] == "Mesuré"
 
 
 class TestJsonWebDataSource:  # pylint: disable=too-few-public-methods

@@ -13,10 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI `--consumption-type` option (`INFORMATIVE` or `PUBLISHED`) for the `json` and `raw-consumption` datasources.
 - CLI `raw-consumption` and `raw-temperature` datasources printing the GrDF API responses without post processing.
 - `RawConsumptionWebDataSource` and `RawTemperatureWebDataSource` in the library, returning the GrDF API responses as received.
+- Log a warning when published periods do not chain, that is when a period does not start where the previous one ended.
 
 ### Changed
 
 - Published readings are split into one row per day instead of one row on the last day of their period. Volume is spread evenly across the days and energy follows it in proportion, keeping the published totals exact. Indexes are interpolated, and the rows have the type `Calculé`.
+- Gaps between published periods are rebuilt from the meter indexes: the volume is the index difference, and the energy uses the average coefficient of the neighbouring periods. The rows have the type `Calculé`.
+- Informative records and published periods share one parsing path: each record is a period. Informative days without data are rebuilt from the meter indexes when the indexes on both sides are known.
 - `--datasource` only accepts the listed datasources. Any other value is a usage error.
 
 ## [1.3.1] - 2025-07-22

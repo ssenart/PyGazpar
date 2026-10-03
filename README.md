@@ -255,8 +255,8 @@ The `type` values are:
 | Value | Meaning |
 |---|---|
 | `Mesuré` | Measured by GrDF. |
-| `Absence de Données` | GrDF reports no data for the day. |
-| `Calculé` | Derived by PyGazpar from a published period. See [Published readings](#published-readings-period-computation). |
+| `Absence de Données` | GrDF reports no data for the day. It is rebuilt as `Calculé` when the indexes on both sides are known (see step 7), and kept as it is otherwise. |
+| `Calculé` | Derived by PyGazpar from a published period, or from a gap between periods. See [Published readings](#published-readings-period-computation). |
 
 #### Temperatures:
 
@@ -264,8 +264,9 @@ Temperatures come from GrDF's meteo data. PyGazpar asks for the period ending ye
 
 Each daily row takes its temperature as follows:
 
-- An informative reading keeps GrDF's own temperature when it has one. Otherwise, it takes the meteo value of its day.
-- A published period always takes the meteo value of each day. The temperature of the period itself is not used.
+- A record that covers exactly one day, such as an informative reading, keeps GrDF's own temperature when it has one. Otherwise, the day takes its meteo value.
+- A record that covers several days, such as a published period, never gives its temperature to each day. Each day takes its meteo value, or stays empty when meteo has none.
+- A gap day takes its meteo value.
 
 ```python
 # Informative reading (journeeGaziere is set)
@@ -298,6 +299,7 @@ For a period from `dateDebutReleve` (included) to `dateFinReleve` (excluded), wi
 4. **Indexes** are interpolated: `start_j = indexDebut + (indexFin − indexDebut) × j ÷ days`. The end of a day is the start of the next day.
 5. **Temperature** of each day comes from the meteo data. The period's own temperature is not used.
 6. **Type** is `Calculé`, and `converter_factor_kwh/m3` is the period's `coeffConversion`.
+7. **Gaps** between two periods are rebuilt as a derived period, and so are the informative days without data (`Absence de Données`) between two known indexes. The volume is the index difference between the end of the previous period and the start of the next one. The energy is that volume times the average of the two coefficients, rounded to whole kWh. When the dates or the indexes cannot be used, nothing is filled, and PyGazpar logs a warning.
 
 Integer division works on whole units, so the parts never drift from the total, and each part is written back with the decimal places of its published total. For example, 10.3 m³ gives parts of 3.4, 3.4 and 3.5 m³. The bounds start at 0 and end at the period total, so the daily differences add up to the published totals exactly.
 
@@ -383,11 +385,13 @@ Each day gets 11 m³ or 12 m³ over the 181 days, and the energy of the whole pe
 
 #### 9. A gap in the publication
 
-In the sample, the period ending on 3 October 2019 is followed by one starting on 3 November 2019. No rows are produced for the days in between, and the indexes do not chain.
+Between the period ending on 3 October 2019 and the one starting on 3 November 2019, the publication has no records. The meter indexes still show that 107 m³ were used (10,103 − 9,996). The gap is rebuilt as a period: its volume is that index difference, and its energy is that volume times the average of the two neighbouring coefficients, (11.2 + 11.12) ÷ 2 = 11.16. So the energy is 1,194 kWh.
 
 | time_period | start_index_m3 | end_index_m3 | volume_m3 | energy_kwh | converter_factor_kwh/m3 | temperature_degC | type |
 |---|---|---|---|---|---|---|---|
 | 02/10/2019 | 9993 | 9996 | 3 | 34 | 11.2 | null | Calculé |
+| 03/10/2019 | 9996 | 9999 | 3 | 33 | 11.16 | null | Calculé |
+| 02/11/2019 | 10099 | 10103 | 4 | 45 | 11.16 | null | Calculé |
 | 03/11/2019 | 10103 | 10112 | 9 | 100 | 11.12 | null | Calculé |
 
 #### 10. Decimal values
@@ -408,7 +412,7 @@ These are the rules the code enforces, and what the sample shows for each.
 
 | # | Invariant | Holds because | Sample |
 |---|---|---|---|
-| 1 | One row per calendar day, from `dateDebutReleve` to `dateFinReleve` excluded | Construction | 1,819 rows for 1,819 days |
+| 1 | One row per calendar day, for each period (from `dateDebutReleve` to `dateFinReleve` excluded) and each gap between periods | Construction | 1,850 rows: 1,819 for the periods, 31 for the gap |
 | 2 | Daily volumes sum to `volumeBrutConsomme` for each period | Exact bounds in published units | 87 of 87 periods |
 | 3 | Daily energies sum to `energieConsomme` for each period | Exact bounds in published units | 87 of 87 periods |
 | 4 | Daily volumes of a period differ by at most one unit of volume (1 m³ for whole m³ data) | Floor and ceiling of `V ÷ days` | Holds |
@@ -419,6 +423,7 @@ These are the rules the code enforces, and what the sample shows for each.
 | 9 | Each day's energy is close to `volume × coeffConversion` | Depends on the publication | Largest gap 1.2 kWh, 1,819 of 1,819 within 1.5 kWh |
 | 10 | Zero-volume periods have zero energy | Publication: energy is zero when volume is zero | Holds for the 2 such periods |
 | 11 | Informative readings are passed through unchanged | Construction | Not split |
+| 12 | Daily volumes sum to the last index minus the first index, over the whole series | Construction: gaps are rebuilt from the indexes | 10,664 m³ = 15,753 − 5,089 |
 
 Invariants 6 and 9 depend on what GrDF publishes, so they are not guaranteed for every period. The code keeps each period's totals exact in all cases.
 
@@ -435,6 +440,9 @@ Invariants 6 and 9 depend on what GrDF publishes, so they are not guaranteed for
 | 9. Energy close to volume times coefficient | `test_split_rows_keep_index_difference_equal_to_volume_and_energy_close_to_volume_times_coefficient` |
 | 10. Zero volume | `test_zero_volume_period_has_zero_energy`, `test_energy_without_volume_is_spread_evenly_over_the_days` |
 | 11. Informative readings unchanged | `test_informative_readings_use_gas_day` |
+| 12. Whole-series volume | `test_published_readings_are_split_by_day` |
+
+Gaps between periods: `test_gap_between_published_periods_is_rebuilt_from_the_indexes` and `test_synthetic_gap_is_rebuilt_from_the_index_difference`. Days without data: `test_informative_day_without_data_is_rebuilt_from_the_indexes` and `test_informative_day_without_data_at_the_start_stays_without_data`.
 
 Periods with no days, or without dates, produce no rows: `test_published_period_without_days_is_ignored` and `test_readings_without_any_date_are_ignored`.
 
@@ -452,9 +460,9 @@ January has only 12 days, so it is dropped, and the output totals 15 m³ rather 
 
 ### Known exceptions
 
-- **Gap in the publication:** the period ending on 3 October 2019 is followed by one starting on 3 November 2019. No rows cover the gap, so the indexes do not chain from one period to the next there.
+- **Gap energy:** the energy of a gap is an estimate: its volume times the average of the two neighbouring coefficients. In the sample, the coefficients are 11.2 and 11.12, so the estimate is 1,194 kWh.
 - **Informative readings:** GrDF's own data does not always satisfy invariants 6 and 9. In the sample, the index difference differs from the volume in 244 of 1,096 rows, and energy differs from `volume × coeffConversion` by up to 6 kWh. PyGazpar passes these values through and does not correct them.
-- **Totals at weekly, monthly and yearly frequencies:** these outputs keep only complete buckets, so their totals can be lower than the daily total. In the sample, the yearly total is 7,549 m³ against 10,557 m³ daily, because 2017 and 2019 are incomplete (see [Weekly, monthly and yearly buckets](#weekly-monthly-and-yearly-buckets)).
+- **Totals at weekly, monthly and yearly frequencies:** these outputs keep only complete buckets, so their totals can be lower than the daily total. In the sample, the yearly total is 9,736 m³ against 10,664 m³ daily, because 2017 is incomplete (see [Weekly, monthly and yearly buckets](#weekly-monthly-and-yearly-buckets)).
 
 ## Limitation
 PyGazpar relies on how GrDF Web Site is built.

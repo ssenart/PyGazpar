@@ -10,7 +10,7 @@ Published readings cover a period (`dateDebutReleve` to `dateFinReleve`). The fi
 
 ## Published consumption: gaps
 
-- [ ] Some published periods do not chain: the index at the end of one period differs from the start of the next. In the sample, 3 October 2019 ends at index 9,996 and 3 November 2019 starts at 10,103, with no readings in between. Log a warning for such gaps. Monthly output drops any month with fewer than 28 days, so this month disappears.
+- [x] Some published periods do not chain. The parser rebuilds each gap from the meter indexes: its volume is the index difference, and its energy is that volume times the average coefficient of the neighbouring periods. It logs a warning for each gap. In the sample, the gap of October 2019 is 107 m³ and 1,194 kWh.
 
 ## Sibling projects
 

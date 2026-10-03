@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import time
@@ -21,18 +22,8 @@ from pygazpar.grdf import (
 START_URL = "https://monespace.grdf.fr/"
 
 MAIL_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/identify"
-MAIL_SESSION_TOKEN_PAYLOAD = """{{
-    "identifier": "{0}",
-    "stateHandle": "{1}"
-}}"""
 
 PASSWORD_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/challenge/answer"
-PASSWORD_SESSION_TOKEN_PAYLOAD = """{{
-    "credentials": {{
-        "passcode": "{0}"
-    }},
-    "stateHandle": "{1}"
-}}"""
 
 API_BASE_URL = "https://monespace.grdf.fr/api"
 
@@ -104,7 +95,7 @@ class APIClient:
         else:
             raise ValueError("Cannot retrieve stateToken inside HTML response")
 
-        payload = MAIL_SESSION_TOKEN_PAYLOAD.format(self._username, state_token)
+        payload = json.dumps({"identifier": self._username, "stateHandle": state_token})
         session.cookies.set("ln", self._username)
 
         mail_response = session.post(
@@ -121,7 +112,7 @@ class APIClient:
 
         state_handle = mail_response.json().get("stateHandle")
 
-        payload = PASSWORD_SESSION_TOKEN_PAYLOAD.format(self._password, state_handle)
+        payload = json.dumps({"credentials": {"passcode": self._password}, "stateHandle": state_handle})
 
         password_response = session.post(
             PASSWORD_SESSION_TOKEN_URL,

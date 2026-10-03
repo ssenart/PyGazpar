@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Weekly rows follow the calendar: the week of 30 December 2019 to 5 January 2020 is its own week. Before, its first days were merged into the following week's label and totals.
 - Empty buckets give `null` values instead of `NaN`, which is not valid JSON.
+- A password with a double quote, a backslash, a tab or a non-ASCII character no longer breaks the login. The login requests are now built with `json.dumps`, so the password is sent as typed.
 
 ### Breaking changes
 

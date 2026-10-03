@@ -7,7 +7,7 @@ import pytest
 from pygazpar import __main__ as cli
 from pygazpar.api_client import APIClient, ConsumptionType
 
-PCE = "22423299474865"
+PCE = "12345678901234"
 
 
 class TestCredentialsFromEnvironment:

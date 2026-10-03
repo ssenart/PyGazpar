@@ -44,7 +44,7 @@ $ poetry install
 
 #### Command line:
 
-Credentials can be omitted from the command line. PyGazpar then reads `GRDF_USERNAME`, `GRDF_PASSWORD` and `PCE_IDENTIFIER` from the environment, or from a `.env` file in the working directory. Command line options take precedence.
+Credentials can be omitted from the command line. PyGazpar then reads `GRDF_USERNAME`, `GRDF_PASSWORD` and `PCE_IDENTIFIER` from the environment, or from a `.env` file in the working directory. Command line options take precedence. A PCE identifier is a 14-digit number; the examples use `12345678901234` as a dummy value.
 
 | Option | Meaning |
 |---|---|
@@ -69,30 +69,30 @@ For the raw datasources, the version banner goes to stderr, so stdout only conta
 1. Standard usage (using Json GrDF API).
 
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'json'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' --datasource 'json'
 ```
 
 2. Alternate usage (using Excel GrDF document).
 
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' -t 'temporary directory where to store Excel file (ex: /tmp)' --datasource 'excel'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' -t 'temporary directory where to store Excel file (ex: /tmp)' --datasource 'excel'
 ```
 
 3. Test usage (using local static data files, do not connect to GrDF site).
 
 ```bash
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'test'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' --datasource 'test'
 ```
 
 4. Raw usage (output the GrDF API response as received, without PyGazpar post processing; `--frequency` is ignored).
 
 ```bash
 # Consumption (informative data by default, use --consumption-type PUBLISHED for published data)
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'raw-consumption'
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'raw-consumption' --consumption-type 'PUBLISHED'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' --datasource 'raw-consumption'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' --datasource 'raw-consumption' --consumption-type 'PUBLISHED'
 
 # Temperatures (meteo)
-$ pygazpar -u 'your login' -p 'your password' -c 'your PCE identifier' --datasource 'raw-temperature'
+$ pygazpar -u 'your login' -p 'your password' -c '12345678901234' --datasource 'raw-temperature'
 ```
 
 #### Library:
@@ -111,7 +111,7 @@ client = pygazpar.Client(pygazpar.JsonWebDataSource(
 pce_identifiers = client.get_pce_identifiers()
 
 # Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
-data = client.load_since(pce_identifier='your PCE identifier',
+data = client.load_since(pce_identifier='12345678901234',
                         last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
@@ -145,7 +145,7 @@ client = pygazpar.Client(pygazpar.ExcelWebDataSource(
 pce_identifiers = client.get_pce_identifiers()
 
 # Returns the daily and monthly consumptions for the last 60 days on your PCE identifier.
-data = client.load_since(pce_identifier='your PCE identifier',
+data = client.load_since(pce_identifier='12345678901234',
                         last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
@@ -158,7 +158,7 @@ import pygazpar
 
 client = pygazpar.Client(pygazpar.TestDataSource())
 
-data = client.load_since(pce_identifier='your PCE identifier',
+data = client.load_since(pce_identifier='12345678901234',
                         last_n_days=10,
                         frequencies=[pygazpar.Frequency.DAILY, Frequency.MONTHLY])
 ```
@@ -178,11 +178,11 @@ start_date = end_date - timedelta(days=30)
 
 consumption = pygazpar.RawConsumptionWebDataSource(
     'your login', 'your password', pygazpar.ConsumptionType.PUBLISHED
-).load('your PCE identifier', start_date, end_date)
+).load('12345678901234', start_date, end_date)
 
 temperatures = pygazpar.RawTemperatureWebDataSource(
     'your login', 'your password'
-).load('your PCE identifier', start_date, end_date)
+).load('12345678901234', start_date, end_date)
 ```
 
 `consumption` is the consumption response and `temperatures` is the meteo response. Both are dictionaries, as returned by GrDF.

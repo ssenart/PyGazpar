@@ -12,6 +12,8 @@ from pygazpar.datasource import (
 )
 from pygazpar.enum import Frequency
 
+PCE_IDENTIFIER = "12345678901234"
+
 
 class TestAllDataSource:
 
@@ -82,7 +84,7 @@ class TestAllDataSource:
         startDate = endDate + timedelta(days=-365)
 
         data = dataSource.load(
-            self.__pceIdentifier,
+            PCE_IDENTIFIER,
             startDate,
             endDate,
             [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY],

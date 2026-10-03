@@ -10,12 +10,14 @@ from pygazpar.datasource import JsonWebDataSource
 from pygazpar.enum import PropertyName
 from pygazpar.jsonparser import CALCULATED_TYPE, JsonParser
 
+PCE_IDENTIFIER = "12345678901234"
+
 
 class TestJsonParser:
 
     # ------------------------------------------------------
     def test_informative_readings_use_gas_day(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         data = {
             pce_identifier: {
                 "releves": [
@@ -40,7 +42,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_published_readings_are_split_by_day(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
 
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
@@ -57,7 +59,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_each_published_period_keeps_its_exact_volume_and_energy_sums(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
 
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
@@ -80,7 +82,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_split_rows_keep_index_difference_equal_to_volume_and_energy_close_to_volume_times_coefficient(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
 
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
@@ -97,7 +99,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_published_period_is_spread_with_exact_sums_and_chained_indexes(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         data = {
             pce_identifier: {
                 "releves": [
@@ -127,7 +129,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_published_period_takes_the_meteo_temperature_of_each_day(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         data = {
             pce_identifier: {
                 "releves": [
@@ -152,7 +154,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_published_period_without_days_is_ignored(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         data = {
             pce_identifier: {
                 "releves": [
@@ -177,7 +179,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_readings_without_any_date_are_ignored(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         data = {
             pce_identifier: {
                 "releves": [
@@ -196,7 +198,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_split_volumes_of_a_published_period_differ_by_at_most_one_unit(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
 
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
@@ -217,7 +219,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_split_energy_is_within_one_kwh_of_its_pro_rata_share(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
 
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as consumption_file:
             raw = consumption_file.read()
@@ -243,7 +245,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_random_periods_keep_the_volume_and_energy_invariants(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         generator = random.Random(42)
 
         for _ in range(300):
@@ -287,7 +289,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_zero_volume_period_has_zero_energy(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         releve = {
             "journeeGaziere": None,
             "dateDebutReleve": "2026-03-01T06:00:00+00:00",
@@ -307,7 +309,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_energy_without_volume_is_spread_evenly_over_the_days(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         releve = {
             "journeeGaziere": None,
             "dateDebutReleve": "2026-03-01T06:00:00+00:00",
@@ -326,7 +328,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_decimal_period_is_split_in_the_precision_of_its_totals(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         releve = {
             "journeeGaziere": None,
             "dateDebutReleve": "2026-01-01T06:00:00+00:00",
@@ -349,7 +351,7 @@ class TestJsonParser:
 
     # ------------------------------------------------------
     def test_random_decimal_periods_keep_exact_sums(self):
-        pce_identifier = "22423299474865"
+        pce_identifier = PCE_IDENTIFIER
         generator = random.Random(7)
 
         for _ in range(200):
@@ -398,7 +400,7 @@ class TestJsonWebDataSource:  # pylint: disable=too-few-public-methods
         data_source._api_client = api_client  # pylint: disable=protected-access
 
         data_source._loadFromSession(  # pylint: disable=protected-access
-            "22423299474865",
+            PCE_IDENTIFIER,
             date(2023, 7, 27),
             date(2026, 7, 25),
         )
@@ -407,5 +409,5 @@ class TestJsonWebDataSource:  # pylint: disable=too-few-public-methods
             ConsumptionType.PUBLISHED,
             date(2023, 7, 27),
             date(2026, 7, 25),
-            ["22423299474865"],
+            [PCE_IDENTIFIER],
         )

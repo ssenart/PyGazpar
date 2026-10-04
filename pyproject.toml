@@ -31,11 +31,11 @@ requires-poetry = ">=2.0"
 include = ["CHANGELOG.md"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-pytest-asyncio = "^0.25.0"
+pytest = "^9.0.3"
+pytest-asyncio = "^1.4.0"
 flake8-pyproject = "^1.2.3"
 pylint = "^3.3.4"
-black = "^25.1.0"
+black = "^26.3.1"
 flake8 = "^7.1.1"
 isort = "^6.0.0"
 mypy = "^1.14.1"

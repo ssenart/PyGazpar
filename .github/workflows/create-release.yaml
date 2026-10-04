@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (PEP 440): 0.5.1a4 on develop, 0.5.1b1 or 0.5.1rc1 on release/0.5.1, 0.5.1 on main"
+        description: "Version to release (PEP 440): 0.5.1a4 on develop, 0.5.1b1 or 0.5.1rc1 on release/0.5.1, 0.5.1 on master"
         required: true
         type: string
       draft:
@@ -96,9 +96,9 @@ jobs:
           kind = version.pre[0] if version.pre else None  # "a", "b", "rc" or None for a final version
 
           # Channel rules: which version kind is allowed on which branch, and where it is published
-          if branch == "main":
+          if branch == "master":
               if kind is not None:
-                  fail("main only accepts final versions (e.g. 0.5.1)")
+                  fail("master only accepts final versions (e.g. 0.5.1)")
               environment = "pypi"
           elif branch == "develop":
               if kind != "a":

@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Release process: the create-release workflow takes an explicit version, and checks it against the branch, the existing tags and the changelog before anything is changed.
+- Release process: the changelog is finalized automatically: `[Unreleased]` becomes the released version, a new empty `[Unreleased]` is added above it, and the compare links are updated.
+- Release process: GitHub releases are created as drafts by default, with the changelog section as their notes. A dry run option builds and validates a release without publishing it.
+- Release process: the version bump commit and the tag are pushed together, and only after the package is published.
+- Release process: final versions are released from `master`, alphas from `develop`, and betas and release candidates from `release/*`. Feature branches publish to TestPyPI.
+
+### Removed
+
+- GitVersion, its configuration and the version step in CI.
+
 ## [1.4.0a2] - 2026-10-03
 
 ### Added

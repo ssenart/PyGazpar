@@ -4,8 +4,7 @@ from pygazpar.excelparser import ExcelParser
 from pygazpar.model import Frequency
 
 
-class TestExcelReadings:  # pylint: disable=too-few-public-methods
-
+class TestExcelReadings:
     # ------------------------------------------------------
     def test_weekly_dates_come_from_the_label(self):
         rows = ExcelParser.parse("tests/resources/Donnees_informatives_PCE_WEEKLY.xlsx", Frequency.WEEKLY)

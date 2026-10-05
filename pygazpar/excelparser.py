@@ -23,8 +23,7 @@ Logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------------------------------------------------
-class ExcelParser:  # pylint: disable=too-few-public-methods
-
+class ExcelParser:
     # ------------------------------------------------------
     @staticmethod
     def parse(dataFilename: str, dataReadingFrequency: Frequency) -> Sequence[PeriodReading]:
@@ -78,7 +77,7 @@ class ExcelParser:  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # pylint: disable=unused-argument
+    def __parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # noqa: ARG004
         return []
 
     # ------------------------------------------------------

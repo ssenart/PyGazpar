@@ -23,8 +23,7 @@ Logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------------------------------------------------
-class JsonParser:  # pylint: disable=too-few-public-methods
-
+class JsonParser:
     # ------------------------------------------------------
     @staticmethod
     def parse(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[dict[str, Any]]:
@@ -283,7 +282,7 @@ class JsonParser:  # pylint: disable=too-few-public-methods
         """Returns the row of a measured one-day record, with the values GrDF reports."""
 
         temperature = record.temperature
-        row = DailyReading.model_validate(
+        return DailyReading.model_validate(
             {
                 PropertyName.START_DATE.value: start,
                 PropertyName.END_DATE.value: start + timedelta(days=1),
@@ -300,8 +299,6 @@ class JsonParser:  # pylint: disable=too-few-public-methods
                 PropertyName.TIMESTAMP.value: data_timestamp,
             }
         )
-
-        return row
 
     # ------------------------------------------------------
     @staticmethod

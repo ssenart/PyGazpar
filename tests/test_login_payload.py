@@ -37,8 +37,7 @@ def login_with_a_mocked_session(password):
     return identifier_body, password_body
 
 
-class TestLoginPayload:  # pylint: disable=too-few-public-methods
-
+class TestLoginPayload:
     # ------------------------------------------------------
     @pytest.mark.parametrize(
         "password",

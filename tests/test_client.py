@@ -2,13 +2,13 @@ import os
 
 import pytest
 
+from pygazpar.api_client import ServerError
 from pygazpar.client import Client
 from pygazpar.datasource import ExcelWebDataSource, JsonWebDataSource, TestDataSource
 from pygazpar.model import Frequency
 
 
-class TestClient:  # pylint: disable=too-many-public-methods
-
+class TestClient:
     @classmethod
     def setup_class(cls):
         """setup any state specific to the execution of the given class (which
@@ -20,10 +20,10 @@ class TestClient:  # pylint: disable=too-many-public-methods
         if not os.path.exists(tmpdir):
             os.mkdir(tmpdir)
 
-        cls._username = os.environ["GRDF_USERNAME"]  # pylint: disable=attribute-defined-outside-init
-        cls._password = os.environ["GRDF_PASSWORD"]  # pylint: disable=attribute-defined-outside-init
-        cls._pceIdentifier = os.environ["PCE_IDENTIFIER"]  # pylint: disable=attribute-defined-outside-init
-        cls._tmp_directory = tmpdir  # pylint: disable=attribute-defined-outside-init
+        cls._username = os.environ["GRDF_USERNAME"]
+        cls._password = os.environ["GRDF_PASSWORD"]
+        cls._pceIdentifier = os.environ["PCE_IDENTIFIER"]
+        cls._tmp_directory = tmpdir
 
         cls._jsonClient = Client(JsonWebDataSource(TestClient._username, TestClient._password))
         cls._excelClient = Client(
@@ -53,7 +53,7 @@ class TestClient:  # pylint: disable=too-many-public-methods
     def test_login_error(self):
         client = Client(JsonWebDataSource("WrongUsername", "WrongPassword"))
 
-        with pytest.raises(Exception):
+        with pytest.raises(ServerError):
             client.load_since(TestClient._pceIdentifier, 365, [Frequency.DAILY])
 
     def test_get_pce_identifiers(self):

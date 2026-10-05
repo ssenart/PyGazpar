@@ -27,8 +27,7 @@ def daily_readings(first_day: date, days: int) -> list[DailyReading]:
     ]
 
 
-class TestFrequencyConverter:  # pylint: disable=too-few-public-methods
-
+class TestFrequencyConverter:
     # ------------------------------------------------------
     def test_incomplete_first_month_is_dropped_and_last_month_is_kept(self):
 

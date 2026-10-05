@@ -6,8 +6,7 @@ from pygazpar.datasource import JsonFileDataSource, TestDataSource
 from pygazpar.model import DailyReading, Frequency, PeriodReading
 
 
-class TestClientReadings:  # pylint: disable=too-few-public-methods
-
+class TestClientReadings:
     # ------------------------------------------------------
     def test_load_readings_since_returns_models(self):
         readings = Client(TestDataSource()).load_readings_since("0", 365, [Frequency.DAILY, Frequency.MONTHLY])
@@ -29,8 +28,7 @@ class TestClientReadings:  # pylint: disable=too-few-public-methods
         ]
 
 
-class TestFileDataSourceReadings:  # pylint: disable=too-few-public-methods
-
+class TestFileDataSourceReadings:
     # ------------------------------------------------------
     def test_file_datasource_readings_are_models_and_load_gives_their_dict_form(self):
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as sample_file:

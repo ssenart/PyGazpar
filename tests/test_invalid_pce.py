@@ -34,7 +34,7 @@ def fake_response(status_code, body):
     return response
 
 
-def answer(url, params=None):  # pylint: disable=unused-argument
+def answer(url, params=None):  # noqa: ARG001
     """Answers the way GrDF does: the account has one PCE. An unknown PCE gets no consumption, and a refusal for its temperatures."""
 
     if url.endswith("/e-conso/pce"):
@@ -52,13 +52,12 @@ def client_after_a_successful_login():
     client = APIClient("user@example.com", "password")
     session = mock.Mock()
     session.get.side_effect = answer
-    client._session = session  # pylint: disable=protected-access
+    client._session = session
 
     return client
 
 
-class TestUnknownPceAfterASuccessfulLogin:  # pylint: disable=too-few-public-methods
-
+class TestUnknownPceAfterASuccessfulLogin:
     # ------------------------------------------------------
     def test_consumption_of_an_unknown_pce_is_empty(self):
         client = client_after_a_successful_login()
@@ -112,8 +111,7 @@ class TestUnknownPceAfterASuccessfulLogin:  # pylint: disable=too-few-public-met
                 RawTemperatureWebDataSource("user@example.com", "password").load(INVALID_PCE, START_DATE, END_DATE)
 
 
-class TestKnownPceWithoutData:  # pylint: disable=too-few-public-methods
-
+class TestKnownPceWithoutData:
     # ------------------------------------------------------
     def test_load_date_range_returns_no_readings_for_a_known_pce_without_data(self):
         client = client_after_a_successful_login()
@@ -130,8 +128,7 @@ CREDENTIALS_ARE_SET = bool(os.environ.get("GRDF_USERNAME") and os.environ.get("G
 
 
 @pytest.mark.skipif(not CREDENTIALS_ARE_SET, reason="GRDF_USERNAME and GRDF_PASSWORD are needed for the real API")
-class TestUnknownPceWithTheRealApi:  # pylint: disable=too-few-public-methods
-
+class TestUnknownPceWithTheRealApi:
     @classmethod
     def setup_class(cls):
         cls._username = os.environ["GRDF_USERNAME"]

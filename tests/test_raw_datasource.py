@@ -8,7 +8,6 @@ from pygazpar.datasource import RawConsumptionWebDataSource, RawTemperatureWebDa
 
 
 class TestRawConsumptionWebDataSource:
-
     # ------------------------------------------------------
     def test_load_returns_api_payload_unmodified(self):
 
@@ -40,7 +39,6 @@ class TestRawConsumptionWebDataSource:
 
 
 class TestRawTemperatureWebDataSource:
-
     # ------------------------------------------------------
     def test_load_returns_api_payload_unmodified(self):
 

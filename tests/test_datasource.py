@@ -16,7 +16,6 @@ PCE_IDENTIFIER = "12345678901234"
 
 
 class TestAllDataSource:
-
     # ------------------------------------------------------
     @classmethod
     def setup_class(cls):
@@ -44,10 +43,10 @@ class TestAllDataSource:
 
         load_dotenv()
 
-        self.__username = os.environ["GRDF_USERNAME"]  # pylint: disable=attribute-defined-outside-init
-        self.__password = os.environ["GRDF_PASSWORD"]  # pylint: disable=attribute-defined-outside-init
-        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]  # pylint: disable=attribute-defined-outside-init
-        self.__tmp_directory = tmpdir  # pylint: disable=attribute-defined-outside-init
+        self.__username = os.environ["GRDF_USERNAME"]
+        self.__password = os.environ["GRDF_PASSWORD"]
+        self.__pceIdentifier = os.environ["PCE_IDENTIFIER"]
+        self.__tmp_directory = tmpdir
 
     # ------------------------------------------------------
     def teardown_method(self):

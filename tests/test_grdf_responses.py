@@ -11,8 +11,7 @@ from pygazpar.grdf import GrdfConsumptionResponse, GrdfMeteoResponse, GrdfPceLis
 PCE_IDENTIFIER = "12345678901234"
 
 
-class TestGrdfResponses:  # pylint: disable=too-few-public-methods
-
+class TestGrdfResponses:
     # ------------------------------------------------------
     def test_sample_consumption_response_is_valid(self):
         with open("tests/resources/donnees_publiees.json", encoding="utf-8") as sample_file:
@@ -41,8 +40,7 @@ class TestGrdfResponses:  # pylint: disable=too-few-public-methods
             GrdfPceList.model_validate([{"name": "no identifier"}])
 
 
-class TestApiClientValidation:  # pylint: disable=too-few-public-methods
-
+class TestApiClientValidation:
     # ------------------------------------------------------
     def test_malformed_consumption_is_rejected_at_the_boundary(self):
         response = mock.Mock()

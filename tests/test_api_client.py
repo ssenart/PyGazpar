@@ -7,7 +7,6 @@ from pygazpar.api_client import APIClient, ConsumptionType, Frequency, ServerErr
 
 
 class TestAPIClient:
-
     # ------------------------------------------------------
     @classmethod
     def setup_class(cls):

@@ -60,7 +60,7 @@ class GrdfRecord(BaseModel):
         return self
 
 
-class GrdfPce(BaseModel):  # pylint: disable=too-few-public-methods
+class GrdfPce(BaseModel):
     """One PCE of the account, as the PCE list returns it. Unknown fields are kept."""
 
     model_config = ConfigDict(extra="allow")
@@ -68,11 +68,11 @@ class GrdfPce(BaseModel):  # pylint: disable=too-few-public-methods
     idObject: str
 
 
-class GrdfPceList(RootModel[list[GrdfPce]]):  # pylint: disable=too-few-public-methods
+class GrdfPceList(RootModel[list[GrdfPce]]):
     """The PCE list of the account."""
 
 
-class GrdfPceConsumption(BaseModel):  # pylint: disable=too-few-public-methods
+class GrdfPceConsumption(BaseModel):
     """The consumption of one PCE. Its records are validated one by one by the parser."""
 
     model_config = ConfigDict(extra="allow")
@@ -82,11 +82,11 @@ class GrdfPceConsumption(BaseModel):  # pylint: disable=too-few-public-methods
     releves: list[Any]
 
 
-class GrdfConsumptionResponse(RootModel[dict[str, GrdfPceConsumption]]):  # pylint: disable=too-few-public-methods
+class GrdfConsumptionResponse(RootModel[dict[str, GrdfPceConsumption]]):
     """The consumption response, keyed by PCE identifier."""
 
 
-class GrdfMeteoResponse(RootModel[dict[date, float | None]]):  # pylint: disable=too-few-public-methods
+class GrdfMeteoResponse(RootModel[dict[date, float | None]]):
     """The temperature of each day, keyed by date."""
 
 

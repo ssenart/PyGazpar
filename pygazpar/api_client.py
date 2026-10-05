@@ -49,7 +49,6 @@ class Frequency(str, Enum):
 
 # ------------------------------------------------------
 class ServerError(SystemError):
-
     def __init__(self, message: str, status_code: int):
         super().__init__(message)
         self.status_code = status_code
@@ -57,14 +56,12 @@ class ServerError(SystemError):
 
 # ------------------------------------------------------
 class InternalServerError(ServerError):
-
     def __init__(self, message: str):
         super().__init__(message, 500)
 
 
 # ------------------------------------------------------
 class APIClient:
-
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, retry_count: int = 10):
         self._username = username
@@ -158,7 +155,6 @@ class APIClient:
 
         retry = self._retry_count
         while retry > 0:
-
             try:
                 response = self._session.get(f"{API_BASE_URL}{endpoint}", params=params)
 
@@ -174,7 +170,7 @@ class APIClient:
                     )
 
                 break
-            except InternalServerError as internalServerError:  # pylint: disable=broad-exception-caught
+            except InternalServerError as internalServerError:
                 if retry == 1:
                     Logger.error(f"{internalServerError}. Retry limit reached: {traceback.format_exc()}")
                     raise internalServerError

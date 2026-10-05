@@ -13,7 +13,6 @@ PCE = "12345678901234"
 
 
 class TestCredentialsFromEnvironment:
-
     # ------------------------------------------------------
     def test_missing_credentials_are_read_from_environment(self, monkeypatch):
 
@@ -53,7 +52,6 @@ class TestCredentialsFromEnvironment:
 
 
 class TestConsumptionTypeOption:
-
     # ------------------------------------------------------
     def test_json_datasource_forwards_published_consumption_type(self, tmp_path):
 
@@ -100,8 +98,7 @@ class TestConsumptionTypeOption:
         assert exit_info.value.code == 2
 
 
-class TestRawDatasourcesOnTheCommandLine:  # pylint: disable=too-few-public-methods
-
+class TestRawDatasourcesOnTheCommandLine:
     # ------------------------------------------------------
     def test_raw_consumption_prints_the_response_as_json(self, tmp_path, capsys):
         payload = {PCE: {"idPce": PCE, "frequence": None, "releves": []}}

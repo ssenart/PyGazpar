@@ -1,7 +1,6 @@
 import logging
 import warnings
 from datetime import date, timedelta
-from typing import Optional
 
 from pygazpar.datasource import (
     IDataSource,
@@ -18,7 +17,6 @@ Logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------------------------------------
 class Client:
-
     # ------------------------------------------------------
     def __init__(self, dataSource: IDataSource):
         self.__dataSource = dataSource
@@ -54,19 +52,17 @@ class Client:
 
     # ------------------------------------------------------
     def load_since(
-        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
+        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
 
         end_date = date.today()
         start_date = end_date + timedelta(days=-last_n_days)
 
-        res = self.load_date_range(pce_identifier, start_date, end_date, frequencies)
-
-        return res
+        return self.load_date_range(pce_identifier, start_date, end_date, frequencies)
 
     # ------------------------------------------------------
     def load_date_range(
-        self, pce_identifier: str, start_date: date, end_date: date, frequencies: Optional[list[Frequency]] = None
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
 
         Logger.debug("Start loading the data...")
@@ -83,7 +79,7 @@ class Client:
 
     # ------------------------------------------------------
     def load_readings_since(
-        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
+        self, pce_identifier: str, last_n_days: int = DEFAULT_LAST_N_DAYS, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         """Returns the readings of the last N days as models: the typed form of load_since()."""
 
@@ -94,7 +90,7 @@ class Client:
 
     # ------------------------------------------------------
     def load_readings_date_range(
-        self, pce_identifier: str, start_date: date, end_date: date, frequencies: Optional[list[Frequency]] = None
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         """Returns the readings of a date range as models: the typed form of load_date_range()."""
 
@@ -112,20 +108,22 @@ class Client:
 
     # ------------------------------------------------------
     def loadSince(
-        self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, lastNDays: int = DEFAULT_LAST_N_DAYS, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
         warnings.warn(
             "Client.loadSince() method will be removed in 2026-01-01. Please migrate to Client.load_since() method",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.load_since(pceIdentifier, lastNDays, frequencies)
 
     # ------------------------------------------------------
     def loadDateRange(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
         warnings.warn(
             "Client.loadDateRange() method will be removed in 2026-01-01. Please migrate to Client.load_date_range() method",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.load_date_range(pceIdentifier, startDate, endDate, frequencies)

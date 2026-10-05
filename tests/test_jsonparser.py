@@ -63,8 +63,7 @@ def no_data_record(day):
     }
 
 
-class TestJsonParser:  # pylint: disable=too-many-public-methods
-
+class TestJsonParser:
     # ------------------------------------------------------
     def test_informative_readings_use_gas_day(self):
         pce_identifier = PCE_IDENTIFIER
@@ -303,7 +302,7 @@ class TestJsonParser:  # pylint: disable=too-many-public-methods
             assert max(volumes) - min(volumes) <= 1
             assert readings[0][PropertyName.START_INDEX.value] == index_start
             assert readings[-1][PropertyName.END_INDEX.value] == index_start + volume
-            for before, after in zip(readings, readings[1:]):
+            for before, after in zip(readings, readings[1:], strict=False):
                 assert before[PropertyName.END_INDEX.value] == after[PropertyName.START_INDEX.value]
             for reading in readings:
                 assert (
@@ -407,7 +406,7 @@ class TestJsonParser:  # pylint: disable=too-many-public-methods
             assert sum(energies) == Decimal(energy_tenths) / 10
             assert max(volumes) - min(volumes) <= Decimal("0.1")
             assert Decimal(str(readings[-1][PropertyName.END_INDEX.value])) == Decimal(volume_tenths) / 10
-            for reading, volume, energy in zip(readings, volumes, energies):
+            for reading, volume, energy in zip(readings, volumes, energies, strict=True):
                 assert Decimal(str(reading[PropertyName.END_INDEX.value])) - Decimal(
                     str(reading[PropertyName.START_INDEX.value])
                 ) == Decimal(str(reading[PropertyName.VOLUME.value]))
@@ -475,7 +474,7 @@ class TestJsonParser:  # pylint: disable=too-many-public-methods
         assert sum(r[PropertyName.ENERGY.value] for r in gap) == 1194
         assert all(abs(r[PropertyName.CONVERTER_FACTOR.value] - 11.16) < 1e-9 for r in gap)
         assert all(r[PropertyName.TYPE.value] == CALCULATED_TYPE for r in gap)
-        for before, after in zip(gap, gap[1:]):
+        for before, after in zip(gap, gap[1:], strict=False):
             assert before[PropertyName.END_INDEX.value] == after[PropertyName.START_INDEX.value]
 
     # ------------------------------------------------------
@@ -544,17 +543,16 @@ class TestJsonParser:  # pylint: disable=too-many-public-methods
         assert readings[1][PropertyName.TYPE.value] == "Mesuré"
 
 
-class TestJsonWebDataSource:  # pylint: disable=too-few-public-methods
-
+class TestJsonWebDataSource:
     # ------------------------------------------------------
     def test_requested_consumption_type_is_forwarded_to_api(self):
         data_source = JsonWebDataSource("user@example.com", "password", ConsumptionType.PUBLISHED)
         api_client = Mock()
         api_client.get_pce_consumption.return_value = {}
         api_client.get_pce_meteo.return_value = None
-        data_source._api_client = api_client  # pylint: disable=protected-access
+        data_source._api_client = api_client
 
-        data_source._loadFromSession(  # pylint: disable=protected-access
+        data_source._loadFromSession(
             PCE_IDENTIFIER,
             date(2023, 7, 27),
             date(2026, 7, 25),

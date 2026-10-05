@@ -50,8 +50,7 @@ def published_record(**overrides):
     return record
 
 
-class TestGrdfRecord:  # pylint: disable=too-few-public-methods
-
+class TestGrdfRecord:
     # ------------------------------------------------------
     @pytest.mark.parametrize(
         "path", ["tests/resources/donnees_informatives.json", "tests/resources/donnees_publiees.json"]
@@ -97,8 +96,7 @@ class TestGrdfRecord:  # pylint: disable=too-few-public-methods
         assert record.energieConsomme == Decimal("3.16")
 
 
-class TestReadings:  # pylint: disable=too-few-public-methods
-
+class TestReadings:
     # ------------------------------------------------------
     def test_daily_reading_dict_form_has_the_property_names_and_no_dates(self):
         reading = DailyReading.model_validate(
@@ -144,8 +142,7 @@ class TestReadings:  # pylint: disable=too-few-public-methods
             )
 
 
-class TestPartialPeriods:  # pylint: disable=too-few-public-methods
-
+class TestPartialPeriods:
     # ------------------------------------------------------
     def test_partial_first_week_of_a_file_is_a_valid_weekly_period(self):
         reading = PeriodReading.model_validate(
@@ -160,8 +157,7 @@ class TestPartialPeriods:  # pylint: disable=too-few-public-methods
         assert reading.time_period == "Du 24/11/2020 au 29/11/2020"
 
 
-class TestParserSkipsInvalidRecords:  # pylint: disable=too-few-public-methods
-
+class TestParserSkipsInvalidRecords:
     # ------------------------------------------------------
     def test_invalid_record_is_skipped_with_a_warning(self, caplog):
         releves = [informative_record("2026-01-02"), informative_record("2026-01-03", volume=-1)]
@@ -174,8 +170,7 @@ class TestParserSkipsInvalidRecords:  # pylint: disable=too-few-public-methods
         assert any("is invalid" in record.getMessage() for record in caplog.records)
 
 
-class TestPeriodLabels:  # pylint: disable=too-few-public-methods
-
+class TestPeriodLabels:
     # ------------------------------------------------------
     def test_label_follows_the_frequency(self):
         assert period_label(Frequency.DAILY, date(2026, 1, 2), date(2026, 1, 3)) == "02/01/2026"

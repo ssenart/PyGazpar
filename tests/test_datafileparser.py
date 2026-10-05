@@ -3,7 +3,6 @@ from pygazpar.model import Frequency
 
 
 class TestDataFileParser:
-
     # ------------------------------------------------------
     def test_daily_sample(self):
         data = ExcelParser.parse("tests/resources/Donnees_informatives_PCE_DAILY.xlsx", Frequency.DAILY)

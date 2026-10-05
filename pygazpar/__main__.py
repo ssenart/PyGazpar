@@ -45,7 +45,7 @@ def load_raw(args) -> int:
             raw_data = pygazpar.RawTemperatureWebDataSource(args.username, args.password).load(
                 args.pce, start_date, end_date
             )
-    except BaseException:  # pylint: disable=broad-except
+    except BaseException:  # noqa: BLE001
         print(f"An error occured while querying PyGazpar library : {traceback.format_exc()}", file=sys.stderr)
         return 1
 
@@ -142,7 +142,7 @@ def main():
 
     try:
         data = client.load_since(args.pce, int(args.lastNDays), [args.frequency])
-    except BaseException:  # pylint: disable=broad-except
+    except BaseException:  # noqa: BLE001
         print(f"An error occured while querying PyGazpar library : {traceback.format_exc()}", file=sys.stderr)
         return 1
 

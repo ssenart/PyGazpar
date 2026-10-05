@@ -3,13 +3,12 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import date, timedelta
-from typing import Any, Callable, Optional, cast
+from typing import Any, cast
 
-from pygazpar.api_client import APIClient, ConsumptionType
+from pygazpar.api_client import APIClient, ConsumptionType, ServerError
 from pygazpar.api_client import Frequency as APIClientFrequency
-from pygazpar.api_client import ServerError
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
 from pygazpar.model import MONTHS as MONTH_NAMES
@@ -85,8 +84,7 @@ class UnknownPceError(ServerError):
 
 
 # ------------------------------------------------------------------------------------------------------------
-class IDataSource(ABC):  # pylint: disable=too-few-public-methods
-
+class IDataSource(ABC):
     @abstractmethod
     def login(self):
         pass
@@ -101,13 +99,13 @@ class IDataSource(ABC):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         pass
 
     # ------------------------------------------------------
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
         """Returns the readings as dicts, the form the datasources give to their users."""
 
@@ -117,8 +115,7 @@ class IDataSource(ABC):  # pylint: disable=too-few-public-methods
 
 
 # ------------------------------------------------------------------------------------------------------------
-class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
-
+class WebDataSource(IDataSource):
     # ------------------------------------------------------
     def __init__(self, username: str, password: str):
 
@@ -151,7 +148,7 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
         if not self._api_client.is_logged_in():
@@ -168,14 +165,13 @@ class WebDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         pass
 
 
 # ------------------------------------------------------------------------------------------------------------
-class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-methods
-
+class ExcelWebDataSource(WebDataSource):
     DATE_FORMAT = "%Y-%m-%d"
 
     FREQUENCY_VALUES = {
@@ -196,9 +192,9 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
         self.__tmpDirectory = tmpDirectory
 
     # ------------------------------------------------------
-    def _loadFromSession(  # pylint: disable=too-many-branches
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
-    ) -> ReadingsByFrequency:  # pylint: disable=too-many-branches
+    def _loadFromSession(
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+    ) -> ReadingsByFrequency:
 
         res = {}
 
@@ -222,7 +218,6 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
             frequencyList = list(set(frequencies))
 
         for frequency in frequencyList:
-
             Logger.debug(
                 f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}"
             )
@@ -265,8 +260,7 @@ class ExcelWebDataSource(WebDataSource):  # pylint: disable=too-few-public-metho
 
 
 # ------------------------------------------------------------------------------------------------------------
-class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
-
+class ExcelFileDataSource(IDataSource):
     def __init__(self, excelFile: str):
 
         self.__excelFile = excelFile
@@ -286,7 +280,11 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
 
     # ------------------------------------------------------
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self,
+        pceIdentifier: str,  # noqa: ARG002
+        startDate: date,  # noqa: ARG002
+        endDate: date,  # noqa: ARG002
+        frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
         res = {}
@@ -309,8 +307,7 @@ class ExcelFileDataSource(IDataSource):  # pylint: disable=too-few-public-method
 
 
 # ------------------------------------------------------------------------------------------------------------
-class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-methods
-
+class JsonWebDataSource(WebDataSource):
     INPUT_DATE_FORMAT = "%Y-%m-%d"
 
     OUTPUT_DATE_FORMAT = "%d/%m/%Y"
@@ -327,7 +324,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 
     # ------------------------------------------------------
     def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
@@ -349,7 +346,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
         # Get weather data.
         try:
             temperatures = self._api_client.get_pce_meteo(meteo_end_date, meteo_days, pceIdentifier)
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # noqa: BLE001
             # Not a blocking error.
             temperatures = None
 
@@ -377,7 +374,7 @@ class JsonWebDataSource(WebDataSource):  # pylint: disable=too-few-public-method
 
 
 # ------------------------------------------------------------------------------------------------------------
-class RawConsumptionWebDataSource:  # pylint: disable=too-few-public-methods
+class RawConsumptionWebDataSource:
     """Returns the GrDF consumption API response as received, without post processing.
 
     Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
@@ -405,7 +402,7 @@ class RawConsumptionWebDataSource:  # pylint: disable=too-few-public-methods
 
 
 # ------------------------------------------------------------------------------------------------------------
-class RawTemperatureWebDataSource:  # pylint: disable=too-few-public-methods
+class RawTemperatureWebDataSource:
     """Returns the GrDF temperature (meteo) API response as received, without post processing.
 
     Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
@@ -428,8 +425,7 @@ class RawTemperatureWebDataSource:  # pylint: disable=too-few-public-methods
 
 
 # ------------------------------------------------------------------------------------------------------------
-class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
-
+class JsonFileDataSource(IDataSource):
     # ------------------------------------------------------
     def __init__(self, consumptionJsonFile: str, temperatureJsonFile):
 
@@ -451,13 +447,17 @@ class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self,
+        pceIdentifier: str,
+        startDate: date,  # noqa: ARG002
+        endDate: date,  # noqa: ARG002
+        frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
         res: ReadingsByFrequency = {}
 
-        with open(self.__consumptionJsonFile, mode="r", encoding="utf-8") as consumptionJsonFile:
-            with open(self.__temperatureJsonFile, mode="r", encoding="utf-8") as temperatureJsonFile:
+        with open(self.__consumptionJsonFile, encoding="utf-8") as consumptionJsonFile:
+            with open(self.__temperatureJsonFile, encoding="utf-8") as temperatureJsonFile:
                 daily = JsonParser.readings_from_json(
                     consumptionJsonFile.read(), temperatureJsonFile.read(), pceIdentifier
                 )
@@ -484,8 +484,7 @@ class JsonFileDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
 
 # ------------------------------------------------------------------------------------------------------------
-class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
-
+class TestDataSource(IDataSource):
     __test__ = False  # Will not be discovered as a test
 
     # ------------------------------------------------------
@@ -508,7 +507,11 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
     # ------------------------------------------------------
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: Optional[list[Frequency]] = None
+        self,
+        pceIdentifier: str,  # noqa: ARG002
+        startDate: date,  # noqa: ARG002
+        endDate: date,  # noqa: ARG002
+        frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
@@ -533,7 +536,7 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
                 f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[frequency]}"
             )
 
-            with open(dataSampleFilename, mode="r", encoding="utf-8") as jsonFile:
+            with open(dataSampleFilename, encoding="utf-8") as jsonFile:
                 rows = cast(list[dict[str, Any]], json.load(jsonFile))
                 res[frequency.value] = [] if frequency == Frequency.HOURLY else readings_from_samples(frequency, rows)
 
@@ -542,12 +545,11 @@ class TestDataSource(IDataSource):  # pylint: disable=too-few-public-methods
 
 # ------------------------------------------------------------------------------------------------------------
 class FrequencyConverter:
-
     MONTHS = MONTH_NAMES
 
     # ------------------------------------------------------
     @staticmethod
-    def computeHourly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:  # pylint: disable=unused-argument
+    def computeHourly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:  # noqa: ARG004
 
         return []
 

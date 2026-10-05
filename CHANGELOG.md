@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0a4] - 2026-10-05
+
 ### Changed
 
 - Python 3.14 is tested in CI and listed as a supported version.
@@ -323,7 +325,8 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a3...HEAD
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a4...HEAD
+[1.4.0a4]: https://github.com/ssenart/PyGazpar/compare/1.4.0a3...1.4.0a4
 [1.4.0a3]: https://github.com/ssenart/PyGazpar/compare/1.4.0a2...1.4.0a3
 [0.1.25]: https://github.com/ssenart/PyGazpar/compare/0.1.24...0.1.25
 [0.1.24]: https://github.com/ssenart/PyGazpar/compare/0.1.23...0.1.24

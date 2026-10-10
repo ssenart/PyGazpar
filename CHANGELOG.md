@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0a5] - 2026-10-10
+
 Entries marked **Breaking** can break the code that uses PyGazpar. The other entries are compatible: the code written for 1.4.0a4 keeps working.
 
 ### Added
@@ -379,7 +381,8 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a4...HEAD
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a5...HEAD
+[1.4.0a5]: https://github.com/ssenart/PyGazpar/compare/1.4.0a4...1.4.0a5
 [1.4.0a4]: https://github.com/ssenart/PyGazpar/compare/1.4.0a3...1.4.0a4
 [1.4.0a3]: https://github.com/ssenart/PyGazpar/compare/1.4.0a2...1.4.0a3
 [0.1.25]: https://github.com/ssenart/PyGazpar/compare/0.1.24...0.1.25

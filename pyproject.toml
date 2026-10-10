@@ -1,6 +1,6 @@
 [project]
 name = "pygazpar"
-version = "1.4.0a4"
+version = "1.4.0a5"
 description = "Python library to download gas consumption from a GrDF (French Gas Company) account"
 license = "MIT"
 license-files = ["LICENSE"]

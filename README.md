@@ -50,8 +50,8 @@ Credentials can be omitted from the command line. PyGazpar then reads `GRDF_USER
 |---|---|
 | `-u`, `-p`, `-c` | GRDF login, password and PCE identifier. Optional when `GRDF_USERNAME`, `GRDF_PASSWORD` and `PCE_IDENTIFIER` are set. |
 | `-t` | Directory for temporary files and the log (default `/tmp`). |
-| `-f` | Frequency for the `json`, `excel` and `test` datasources: `DAILY`, `WEEKLY`, `MONTHLY` or `YEARLY` (default `DAILY`). Ignored by the raw datasources. |
-| `-d` | Number of days to load, counted back from today (default 365). |
+| `-f`, `--frequency` | Frequency for the `json`, `excel` and `test` datasources: `daily`, `weekly`, `monthly` or `yearly`, in lowercase or uppercase (default `daily`). Ignored by the raw datasources. |
+| `-d`, `--lastNDays` | Number of days to load, counted back from today (default 365). |
 | `--datasource` | `json` (default), `excel`, `test`, `raw-consumption` or `raw-temperature`. See below. |
 | `--consumption-type` | `INFORMATIVE` (default) or `PUBLISHED`. Only for `json` and `raw-consumption`. |
 | `-v` | Prints the PyGazpar version. |
@@ -138,7 +138,8 @@ import pygazpar
 
 client = pygazpar.Client(pygazpar.ExcelWebDataSource(
     username='your login',
-    password='your password')
+    password='your password',
+    tmp_directory='/tmp')
 )
 
 # Returns the list of your PCE identifiers attached to your account.
@@ -149,7 +150,7 @@ data = client.load_since(pce_identifier='12345678901234',
                         last_n_days=60,
                         frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
-See [samples/excelSample.py](samples/jsonSample.py) file for the full example.
+See [samples/excelSample.py](samples/excelSample.py) file for the full example.
 
 3. Test usage (using local static data files, do not connect to GrDF site).
 
@@ -160,9 +161,9 @@ client = pygazpar.Client(pygazpar.TestDataSource())
 
 data = client.load_since(pce_identifier='12345678901234',
                         last_n_days=10,
-                        frequencies=[pygazpar.Frequency.DAILY, Frequency.MONTHLY])
+                        frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY])
 ```
-See [samples/testSample.py](samples/jsonSample.py) file for the full example.
+See [samples/testSample.py](samples/testSample.py) file for the full example.
 
 #### Typed readings:
 
@@ -175,18 +176,32 @@ client = pygazpar.Client(pygazpar.JsonWebDataSource(username='your login', passw
 
 readings = client.load_readings_since(pce_identifier='12345678901234', last_n_days=60,
                                       frequencies=[pygazpar.Frequency.DAILY])
-for reading in readings[pygazpar.Frequency.DAILY.value]:
+for reading in readings[pygazpar.Frequency.DAILY]:
     print(reading.start_date, reading.volume_m3, reading.energy_kwh)
 ```
+
+The result is keyed by frequency. `pygazpar.Frequency` is also a string, so `readings['daily']` and `readings[pygazpar.Frequency.DAILY.value]` read the same list, and the dict form of `load_since` has the same keys in its JSON. The models are exported by `pygazpar` as `pygazpar.PeriodReading` and `pygazpar.DailyReading`.
 
 `Client` is a context manager: it logs in when the block starts, and logs out when it ends, even after an error.
 
 ```python
+import pygazpar
+
 with pygazpar.Client(pygazpar.JsonWebDataSource(username='your login', password='your password')) as client:
     readings = client.load_readings_since(pce_identifier='12345678901234', last_n_days=60)
 ```
 
-If the PCE identifier is not one of the PCEs of the account, the web sources raise `pygazpar.UnknownPceError` (a `LookupError`) instead of returning no data. The other errors are `pygazpar.ServerError` and its subclasses `LoginError` and `RateLimitError`; all of them derive from `pygazpar.PyGazparError`. A PCE of the account that has no data for the period returns no readings.
+#### Errors:
+
+If the PCE identifier is not one of the PCEs of the account, the web sources raise `pygazpar.UnknownPceError` (a `LookupError`) instead of returning no data. A PCE of the account that has no data for the period returns no readings.
+
+The other errors come from GrDF. They are `pygazpar.ServerError` and its subclasses `LoginError` (GrDF refuses the login) and `RateLimitError` (GrDF keeps refusing the calls sent back to back). Calling the API before logging in raises `pygazpar.NotLoggedInError`. All of them derive from `pygazpar.PyGazparError`.
+
+PyGazpar protects you from the usual hiccups of the GrDF web site:
+
+- A request waits at most 10 seconds to connect and 60 seconds for the answer.
+- GrDF answers HTTP 429 when calls follow each other too closely, and sometimes an HTML page instead of data. Those answers and the network errors are retried, for 10 attempts in all, waiting 3, 6, 12 and then 15 seconds between them, or the `Retry-After` delay when GrDF gives one. When the attempts are used up, the last error is raised.
+- When the session has expired, PyGazpar logs in again once and repeats the call.
 
 #### Raw sources:
 
@@ -209,7 +224,7 @@ temperatures = pygazpar.RawTemperatureWebDataSource(
 ).load('12345678901234', start_date, end_date)
 ```
 
-`consumption` is the consumption response and `temperatures` is the meteo response. Both are dictionaries, as returned by GrDF.
+`consumption` is the consumption response and `temperatures` is the meteo response. Both are dictionaries, as returned by GrDF. A raw source logs in by itself on the first `load()`, and `logout()` closes its session.
 
 #### Output:
 
@@ -313,7 +328,7 @@ The rules are checked when a reading is built:
 
 #### Temperatures:
 
-Temperatures come from GrDF's meteo data. PyGazpar asks for the period ending yesterday at the latest, and for 10 to 730 days, to avoid HTTP 500 errors. For the `json` datasource, a failed meteo request is not an error: the temperatures are `null`. The `raw-temperature` datasource raises the error instead.
+Temperatures come from GrDF's meteo data. PyGazpar asks for the period ending yesterday at the latest, and for 10 to 730 days, to avoid HTTP 500 errors. For the `json` datasource, a failed meteo request is not an error: a warning is logged and the temperatures are `null`. The `raw-temperature` datasource raises the error instead.
 
 Each daily row takes its temperature as follows:
 

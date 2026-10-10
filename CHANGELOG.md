@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The delay before a retry grows at each attempt (3, 6, 12, then 15 seconds at most) instead of staying at 3 seconds, for the 429 answers, the HTML answers and the network errors.
+- GrDF's HTTP 429 answers (too many requests sent back to back) are reported as a rate limit instead of "An unknown error occurred". The call is retried after the `Retry-After` delay when GrDF gives one, and raises a `ServerError` with status 429 when the retry limit is reached.
 - Requests to GrDF have a timeout (10 s to connect, 60 s to read) instead of waiting forever.
 - Network errors (connection errors and timeouts) are retried like the HTML answers GrDF sends instead of an error.
 - An expired session is detected (HTTP 401, or a redirection to the login page): the client logs in again once and repeats the call, instead of waiting for 10 retries.

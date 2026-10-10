@@ -11,7 +11,10 @@ from pygazpar import Frequency
 from pygazpar.api_client import (
     API_BASE_URL,
     DEFAULT_EXCEL_FILENAME,
+    MAX_RETRY_AFTER_SECONDS,
+    MAX_RETRY_DELAY_SECONDS,
     REQUEST_TIMEOUT,
+    RETRY_DELAY_SECONDS,
     APIClient,
     InternalServerError,
     ServerError,
@@ -112,6 +115,69 @@ class TestGetRobustness:
 
         assert error.value.status_code == 400
         assert session.get.call_count == 1
+
+
+class TestRateLimit:
+    # ------------------------------------------------------
+    def throttled(self, retry_after=None):
+        response = answer(status_code=429, content_type="text/html")
+        if retry_after is not None:
+            response.headers["Retry-After"] = retry_after
+        return response
+
+    # ------------------------------------------------------
+    def test_a_429_is_retried_after_the_default_delay(self, no_sleep, caplog):
+        ok = answer()
+        client, session = client_with(self.throttled(), ok)
+
+        with caplog.at_level(logging.WARNING, logger="pygazpar.api_client"):
+            assert client.get(ENDPOINT, {}) is ok
+
+        assert session.get.call_count == 2
+        no_sleep.assert_called_once_with(RETRY_DELAY_SECONDS)
+        assert "limiting the request rate" in caplog.text
+        assert "unknown error" not in caplog.text
+
+    # ------------------------------------------------------
+    @pytest.mark.parametrize(
+        "retry_after, expected", [("7", 7), ("0", 0), ("600", MAX_RETRY_AFTER_SECONDS), ("soon", RETRY_DELAY_SECONDS)]
+    )
+    def test_the_retry_after_header_is_honored_within_a_limit(self, retry_after, expected, no_sleep):
+        client, _ = client_with(self.throttled(retry_after), answer())
+
+        client.get(ENDPOINT, {})
+
+        no_sleep.assert_called_once_with(expected)
+
+    # ------------------------------------------------------
+    def test_the_delay_grows_at_each_attempt_up_to_a_limit(self, no_sleep):
+        client, session = client_with(*[self.throttled()] * 6, answer(), retry_count=10)
+
+        client.get(ENDPOINT, {})
+
+        delays = [call.args[0] for call in no_sleep.call_args_list]
+        assert delays == [3, 6, 12, MAX_RETRY_DELAY_SECONDS, MAX_RETRY_DELAY_SECONDS, MAX_RETRY_DELAY_SECONDS]
+        assert session.get.call_count == 7
+
+    # ------------------------------------------------------
+    def test_network_errors_and_html_answers_back_off_too(self, no_sleep):
+        client, _ = client_with(
+            ReadTimeout("slow"), answer(content_type="text/html"), ReadTimeout("slow"), answer(), retry_count=10
+        )
+
+        client.get(ENDPOINT, {})
+
+        assert [call.args[0] for call in no_sleep.call_args_list] == [3, 6, 12]
+
+    # ------------------------------------------------------
+    def test_a_429_at_the_retry_limit_is_a_rate_limit_error(self):
+        client, session = client_with(*[self.throttled()] * 2, retry_count=2)
+
+        with pytest.raises(ServerError) as error:
+            client.get(ENDPOINT, {})
+
+        assert error.value.status_code == 429
+        assert session.get.call_count == 2
 
 
 class TestExpiredSession:

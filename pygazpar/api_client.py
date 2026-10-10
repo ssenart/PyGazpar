@@ -34,7 +34,14 @@ DATE_FORMAT = "%Y-%m-%d"
 # (connect, read) timeouts in seconds: without them a stalled GrDF connection hangs the caller forever.
 REQUEST_TIMEOUT = (10, 60)
 
+# The delay before a retry starts here and doubles at each attempt, up to MAX_RETRY_DELAY_SECONDS.
 RETRY_DELAY_SECONDS = 3
+
+MAX_RETRY_DELAY_SECONDS = 15
+
+MAX_RETRY_AFTER_SECONDS = 60
+
+HTTP_TOO_MANY_REQUESTS = 429
 
 DEFAULT_EXCEL_FILENAME = "Donnees_informatives.xlsx"
 
@@ -185,15 +192,40 @@ class APIClient:
 
     # ------------------------------------------------------
     @staticmethod
-    def _wait_before_retry(error: Exception, attempt: int, attempts: int) -> None:
-        """Waits before the next attempt, or raises the error when the retry limit is reached."""
+    def _backoff_delay(attempt: int) -> float:
+        """Returns the seconds to wait after a failed attempt: 3, 6, 12, then 15 seconds at most."""
+
+        return min(RETRY_DELAY_SECONDS * 2 ** (attempt - 1), MAX_RETRY_DELAY_SECONDS)
+
+    # ------------------------------------------------------
+    @staticmethod
+    def _wait_before_retry(error: Exception, attempt: int, attempts: int, delay: float | None = None) -> None:
+        """Waits before the next attempt, or raises the error when the retry limit is reached.
+
+        The delay grows with the attempt number, unless the caller gives one.
+        """
 
         if attempt == attempts:
             Logger.error(f"{error}. Retry limit reached.", exc_info=error)
             raise error
 
-        Logger.warning(f"{error}. Retry in {RETRY_DELAY_SECONDS} seconds ({attempts - attempt} retries left)...")
-        time.sleep(RETRY_DELAY_SECONDS)
+        if delay is None:
+            delay = APIClient._backoff_delay(attempt)
+
+        Logger.warning(f"{error}. Retry in {delay:g} seconds ({attempts - attempt} retries left)...")
+        time.sleep(delay)
+
+    # ------------------------------------------------------
+    @staticmethod
+    def _retry_after(response: Response) -> float | None:
+        """Returns the seconds GrDF asks to wait in its Retry-After header, or None when it gives no number of seconds."""
+
+        try:
+            seconds = float(response.headers.get("Retry-After", ""))
+        except ValueError:
+            return None
+
+        return min(max(seconds, 0), MAX_RETRY_AFTER_SECONDS)
 
     # ------------------------------------------------------
     def get(self, endpoint: str, params: dict[str, Any]) -> Response:
@@ -228,6 +260,19 @@ class APIClient:
                 logged_in_again = True
                 self.logout()
                 self.login()
+                continue
+
+            if response.status_code == HTTP_TOO_MANY_REQUESTS:
+                # GrDF throttles the calls sent back to back, with an HTML body: it is not an unknown error.
+                self._wait_before_retry(
+                    ServerError(
+                        f"GrDF is limiting the request rate (endpoint: {endpoint}): {params}", HTTP_TOO_MANY_REQUESTS
+                    ),
+                    attempt,
+                    attempts,
+                    self._retry_after(response),
+                )
+                attempt += 1
                 continue
 
             if "text/html" in (response.headers.get("Content-Type") or ""):

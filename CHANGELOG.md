@@ -34,6 +34,8 @@ Compatible:
 - `Frequency` is a string too. The readings loaded by `Client`, and by the datasources, are keyed by `Frequency` instead of plain strings. Reading them with `"daily"` or `Frequency.DAILY.value` still works, and so does the JSON form, because a `Frequency` key is equal to its value.
 - The command line is unchanged (`--lastNDays` is kept), and so is the dict form of the readings.
 - The identifiers of the library follow the snake_case convention, and ruff enforces it (`N` rules).
+- Development tooling: [uv](https://docs.astral.sh/uv/) replaces Poetry. The package is built with the `uv_build` backend, the development tools are a `dev` dependency group in `pyproject.toml`, and the locked versions are in `uv.lock` (`poetry.lock` is removed). The package, its dependencies and its command line are unchanged. To work on PyGazpar, run `uv sync` instead of `poetry install`. The CI and release workflows use uv.
+- `types-openpyxl` is a development dependency, so that mypy needs no `--install-types`.
 
 ### Deprecated
 

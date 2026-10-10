@@ -2,7 +2,8 @@
 name = "pygazpar"
 version = "1.4.0a4"
 description = "Python library to download gas consumption from a GrDF (French Gas Company) account"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
@@ -16,28 +17,35 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "openpyxl (>=3.1.5,<4.0.0)",
-    "requests (>=2.32.3,<3.0.0)",
-    "python-dotenv (>=1.0.1,<2.0.0)",
-    "pydantic (>=2.10.6,<3.0.0)"
+    "openpyxl>=3.1.5,<4.0.0",
+    "requests>=2.32.3,<3.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "pydantic>=2.10.6,<3.0.0",
 ]
 
 [project.scripts]
 pygazpar = "pygazpar.__main__:main"
 
-[tool.poetry]
-requires-poetry = ">=2.0"
-include = ["CHANGELOG.md"]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.3"
-pytest-asyncio = "^1.4.0"
-mypy = "^2.4.0"
-ruff = "^0.16.10"
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3,<10.0.0",
+    "pytest-asyncio>=1.4.0,<2.0.0",
+    "mypy>=2.4.0,<3.0.0",
+    "ruff>=0.16.10,<0.17.0",
+    "types-openpyxl>=3.1.5,<4.0.0",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = ">=0.13.0"
+
+[tool.uv.build-backend]
+module-name = "pygazpar"
+module-root = ""
+source-include = ["CHANGELOG.md"]
 
 [tool.mypy]
 exclude = [ ".venv" ]

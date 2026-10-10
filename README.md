@@ -15,14 +15,14 @@ PyGazpar does not require Selenium and corresponding geckodriver to work.
 
 With the new GrDF web site, it is possible to load the consumption data far easily than before.
 
-PyGazpar uses [Poetry](https://python-poetry.org/) for dependency and package management.
+PyGazpar uses [uv](https://docs.astral.sh/uv/) for dependency and package management.
 
 ### Create your virtual environment
 
 ```bash
 $ cd /path/to/my_project_folder/
 
-$ poetry install
+$ uv sync
 ```
 
 ### PyGazpar installation
@@ -37,7 +37,16 @@ You can also download the source code and install it manually.
 ```bash
 cd /path/to/pygazpar/
 
-$ poetry install
+$ uv sync
+```
+
+`uv sync` installs PyGazpar and its development tools in a `.venv` directory, from the versions locked in `uv.lock`. Run the checks and the tests with `uv run`:
+
+```bash
+$ uv run ruff format --check .
+$ uv run ruff check .
+$ uv run mypy .
+$ uv run pytest tests
 ```
 
 ## Usage

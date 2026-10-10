@@ -26,5 +26,5 @@ Published readings cover a period (`dateDebutReleve` to `dateFinReleve`). The fi
 ## Release
 
 - [x] Version of the breaking changes: **1.4.0**. The last tag is 1.4.0a4, and the changes break 1.3.1 users: the removed `Client.loadSince()` and `Client.loadDateRange()`, the snake_case parameters and `compute_*` methods, and the GrDF model attributes. They are listed in the changelog.
-- [ ] Release 1.4.0: move the `[Unreleased]` changelog section under `[1.4.0]`, bump the version in `pyproject.toml`, tag it, and publish it to PyPI. Then move the sibling pins to `>=1.4.0` (see the Sibling projects section).
+- [ ] Release 1.4.0 with the `create-release` workflow (it bumps `pyproject.toml`, finalizes the changelog, tags and publishes to PyPI: do not bump by hand). A final version is accepted on `master` only, so merge `develop` into `master` first, or go through a `1.4.0rc1` on a `release/1.4.0` branch. Run it as a dry run first. Then move the sibling pins to `>=1.4.0` (see the Sibling projects section).
 - [ ] Remove the deprecated `tmpDirectory` keyword of `ExcelWebDataSource` in the next major version (2.0).

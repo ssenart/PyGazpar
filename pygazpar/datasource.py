@@ -1,13 +1,13 @@
-import glob
 import json
 import logging
 import os
+import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from datetime import date, timedelta
 from typing import Any, cast
 
-from pygazpar.api_client import APIClient, ConsumptionType, ServerError
+from pygazpar.api_client import DEFAULT_EXCEL_FILENAME, APIClient, ConsumptionType, ServerError
 from pygazpar.api_client import Frequency as APIClientFrequency
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
@@ -182,8 +182,6 @@ class ExcelWebDataSource(WebDataSource):
         Frequency.YEARLY: "Journalier",
     }
 
-    DATA_FILENAME = "Donnees_informatives_*.xlsx"
-
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, tmpDirectory: str):
 
@@ -197,18 +195,6 @@ class ExcelWebDataSource(WebDataSource):
     ) -> ReadingsByFrequency:
 
         res = {}
-
-        # XLSX is in the TMP directory
-        data_file_path_pattern = self.__tmpDirectory + "/" + ExcelWebDataSource.DATA_FILENAME
-
-        # We remove an eventual existing data file (from a previous run that has not deleted it).
-        file_list = glob.glob(data_file_path_pattern)
-        for filename in file_list:
-            if os.path.isfile(filename):
-                try:
-                    os.remove(filename)
-                except PermissionError:
-                    pass
 
         if frequencies is None:
             # Transform Enum in List.
@@ -230,27 +216,17 @@ class ExcelWebDataSource(WebDataSource):
                 [pceIdentifier],
             )
 
-            filename = response.filename
-            content = response.content
+            # The XLSX file lives in a private directory under the TMP directory: nothing else can collide with it, and
+            # the directory is removed even when the parsing fails. openpyxl does not close the file properly, hence
+            # ignore_cleanup_errors.
+            with tempfile.TemporaryDirectory(dir=self.__tmpDirectory, ignore_cleanup_errors=True) as directory:
+                data_file_path = os.path.join(directory, DEFAULT_EXCEL_FILENAME)
+                with open(data_file_path, "wb") as file:
+                    file.write(response.content)
 
-            with open(f"{self.__tmpDirectory}/{filename}", "wb") as file:
-                file.write(content)
-
-            # Load the XLSX file into the data structure
-            file_list = glob.glob(data_file_path_pattern)
-
-            if len(file_list) == 0:
-                Logger.warning(f"Not any data file has been found in '{self.__tmpDirectory}' directory")
-
-            for filename in file_list:
                 res[frequency.value] = ExcelParser.parse(
-                    filename, frequency if frequency != Frequency.YEARLY else Frequency.DAILY
+                    data_file_path, frequency if frequency != Frequency.YEARLY else Frequency.DAILY
                 )
-                try:
-                    # openpyxl does not close the file properly.
-                    os.remove(filename)
-                except PermissionError:
-                    pass
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
@@ -346,19 +322,12 @@ class JsonWebDataSource(WebDataSource):
         # Get weather data.
         try:
             temperatures = self._api_client.get_pce_meteo(meteo_end_date, meteo_days, pceIdentifier)
-        except Exception:  # noqa: BLE001
-            # Not a blocking error.
+        except Exception as error:  # noqa: BLE001
+            # Not a blocking error: the readings are returned without temperatures.
+            Logger.warning("The temperatures are not available, the readings have none: %s", error)
             temperatures = None
 
         Logger.debug("Json temperature data: %s", temperatures)
-
-        # Transform all the data into the target structure.
-        if data is None or len(data) == 0:
-            return res
-
-        daily = JsonParser.readings(data, temperatures, pceIdentifier)
-
-        Logger.debug("Processed daily data: %s", daily)
 
         if frequencies is None:
             # Transform Enum in List.
@@ -366,6 +335,15 @@ class JsonWebDataSource(WebDataSource):
         else:
             # Get unique values.
             frequencyList = list(set(frequencies))
+
+        # Transform all the data into the target structure.
+        if data is None or len(data) == 0:
+            # No data: every requested frequency has an empty list of readings, as with data.
+            return {frequency.value: [] for frequency in frequencyList}
+
+        daily = JsonParser.readings(data, temperatures, pceIdentifier)
+
+        Logger.debug("Processed daily data: %s", daily)
 
         for frequency in frequencyList:
             res[frequency.value] = computeByFrequency[frequency](daily)
@@ -563,7 +541,7 @@ class FrequencyConverter:
     @staticmethod
     def computeWeekly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
-        return FrequencyConverter.__aggregate(
+        return FrequencyConverter._aggregate(
             daily, Frequency.WEEKLY, lambda day: day - timedelta(days=day.weekday()), minimum_days=7
         )
 
@@ -571,19 +549,19 @@ class FrequencyConverter:
     @staticmethod
     def computeMonthly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
-        return FrequencyConverter.__aggregate(daily, Frequency.MONTHLY, lambda day: day.replace(day=1), minimum_days=28)
+        return FrequencyConverter._aggregate(daily, Frequency.MONTHLY, lambda day: day.replace(day=1), minimum_days=28)
 
     # ------------------------------------------------------
     @staticmethod
     def computeYearly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
-        return FrequencyConverter.__aggregate(
+        return FrequencyConverter._aggregate(
             daily, Frequency.YEARLY, lambda day: day.replace(month=1, day=1), minimum_days=360
         )
 
     # ------------------------------------------------------
     @staticmethod
-    def __aggregate(
+    def _aggregate(
         daily: Sequence[PeriodReading],
         frequency: Frequency,
         bucket_start: Callable[[date], date],
@@ -610,7 +588,7 @@ class FrequencyConverter:
             res.append(
                 PeriodReading(
                     start_date=start,
-                    end_date=FrequencyConverter.__period_end(frequency, start),
+                    end_date=FrequencyConverter._period_end(frequency, start),
                     frequency=frequency,
                     start_index_m3=min((r.start_index_m3 for r in rows if r.start_index_m3 is not None), default=None),
                     end_index_m3=max((r.end_index_m3 for r in rows if r.end_index_m3 is not None), default=None),
@@ -624,7 +602,7 @@ class FrequencyConverter:
 
     # ------------------------------------------------------
     @staticmethod
-    def __period_end(frequency: Frequency, start: date) -> date:
+    def _period_end(frequency: Frequency, start: date) -> date:
         """Returns the day after the last day of a period that starts on start."""
 
         if frequency == Frequency.WEEKLY:

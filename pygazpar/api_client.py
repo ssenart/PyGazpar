@@ -1,14 +1,16 @@
 import json
 import logging
+import os
 import re
 import time
-import traceback
 from datetime import date
 from decimal import Decimal
 from enum import Enum
 from typing import Any
 
 from requests import Response, Session
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout
 
 from pygazpar.grdf import (
     GrdfConsumptionResponse,
@@ -28,6 +30,13 @@ PASSWORD_SESSION_TOKEN_URL = "https://connexion.grdf.fr/idp/idx/challenge/answer
 API_BASE_URL = "https://monespace.grdf.fr/api"
 
 DATE_FORMAT = "%Y-%m-%d"
+
+# (connect, read) timeouts in seconds: without them a stalled GrDF connection hangs the caller forever.
+REQUEST_TIMEOUT = (10, 60)
+
+RETRY_DELAY_SECONDS = 3
+
+DEFAULT_EXCEL_FILENAME = "Donnees_informatives.xlsx"
 
 Logger = logging.getLogger(__name__)
 
@@ -61,6 +70,19 @@ class InternalServerError(ServerError):
 
 
 # ------------------------------------------------------
+def excel_filename(content_disposition: str | None) -> str:
+    """Returns the file name of a Content-Disposition header, without any directory part.
+
+    The name comes from the server: it is cut down to its base name before anyone uses it as a path.
+    """
+
+    match = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)"?', content_disposition or "")
+    filename = os.path.basename(match.group(1).strip().replace("\\", "/")) if match else ""
+
+    return filename if filename not in ("", ".", "..") else DEFAULT_EXCEL_FILENAME
+
+
+# ------------------------------------------------------
 class APIClient:
     # ------------------------------------------------------
     def __init__(self, username: str, password: str, retry_count: int = 10):
@@ -77,7 +99,7 @@ class APIClient:
         session = Session()
         session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-        start_response = session.get(START_URL)
+        start_response = session.get(START_URL, timeout=REQUEST_TIMEOUT)
         if start_response.status_code != 200:
             raise ServerError(
                 f"An error occurred while logging in start. Status code: {start_response.status_code} - {start_response.url}",
@@ -99,6 +121,7 @@ class APIClient:
             MAIL_SESSION_TOKEN_URL,
             data=payload,
             headers={"Accept": "application/json; okta-version=1.0.0", "Content-Type": "application/json"},
+            timeout=REQUEST_TIMEOUT,
         )
 
         if mail_response.status_code != 200:
@@ -115,6 +138,7 @@ class APIClient:
             PASSWORD_SESSION_TOKEN_URL,
             data=payload,
             headers={"Accept": "application/json; okta-version=1.0.0", "Content-Type": "application/json"},
+            timeout=REQUEST_TIMEOUT,
         )
 
         if password_response.status_code != 200:
@@ -125,7 +149,7 @@ class APIClient:
 
         success_url = password_response.json()["success"]["href"]
 
-        response_redirect = session.get(success_url)
+        response_redirect = session.get(success_url, timeout=REQUEST_TIMEOUT)
 
         if response_redirect.status_code != 200:
             raise ServerError(
@@ -148,37 +172,82 @@ class APIClient:
         self._session = None
 
     # ------------------------------------------------------
+    @staticmethod
+    def _is_session_expired(response: Response) -> bool:
+        """Tells whether GrDF refused the session: a 401, or a redirection from the API to a login page."""
+
+        if response.status_code == 401:
+            return True
+
+        is_html = "text/html" in (response.headers.get("Content-Type") or "")
+
+        return is_html and not response.url.startswith(API_BASE_URL)
+
+    # ------------------------------------------------------
+    @staticmethod
+    def _wait_before_retry(error: Exception, attempt: int, attempts: int) -> None:
+        """Waits before the next attempt, or raises the error when the retry limit is reached."""
+
+        if attempt == attempts:
+            Logger.error(f"{error}. Retry limit reached.", exc_info=error)
+            raise error
+
+        Logger.warning(f"{error}. Retry in {RETRY_DELAY_SECONDS} seconds ({attempts - attempt} retries left)...")
+        time.sleep(RETRY_DELAY_SECONDS)
+
+    # ------------------------------------------------------
     def get(self, endpoint: str, params: dict[str, Any]) -> Response:
+        """Calls an endpoint of the API.
+
+        The call is retried on network errors and on the HTML answers GrDF sends instead of an error. When the session
+        has expired, the client logs in again, once, and repeats the call.
+        """
 
         if self._session is None:
             raise ConnectionError("You must login first")
 
-        retry = self._retry_count
-        while retry > 0:
+        attempts = max(self._retry_count, 1)
+        logged_in_again = False
+        attempt = 1
+        while True:
+            session = self._session
+            if session is None:
+                raise ConnectionError("You must login first")
+
             try:
-                response = self._session.get(f"{API_BASE_URL}{endpoint}", params=params)
+                response = session.get(f"{API_BASE_URL}{endpoint}", params=params, timeout=REQUEST_TIMEOUT)
+            except (RequestsConnectionError, Timeout) as networkError:
+                self._wait_before_retry(networkError, attempt, attempts)
+                attempt += 1
+                continue
 
-                if "text/html" in response.headers.get("Content-Type"):  # type: ignore
-                    raise InternalServerError(
+            if self._is_session_expired(response):
+                if logged_in_again:
+                    raise ServerError(f"The session expired again right after logging in (endpoint: {endpoint})", 401)
+                Logger.warning("The session has expired. Logging in again...")
+                logged_in_again = True
+                self.logout()
+                self.login()
+                continue
+
+            if "text/html" in (response.headers.get("Content-Type") or ""):
+                self._wait_before_retry(
+                    InternalServerError(
                         f"An unknown error occurred. Please check your query parameters (endpoint: {endpoint}): {params}"
-                    )
+                    ),
+                    attempt,
+                    attempts,
+                )
+                attempt += 1
+                continue
 
-                if response.status_code != 200:
-                    raise ServerError(
-                        f"HTTP error on enpoint '{endpoint}': Status code: {response.status_code} - {response.text}. Query parameters: {params}",
-                        response.status_code,
-                    )
+            if response.status_code != 200:
+                raise ServerError(
+                    f"HTTP error on enpoint '{endpoint}': Status code: {response.status_code} - {response.text}. Query parameters: {params}",
+                    response.status_code,
+                )
 
-                break
-            except InternalServerError as internalServerError:
-                if retry == 1:
-                    Logger.error(f"{internalServerError}. Retry limit reached: {traceback.format_exc()}")
-                    raise internalServerError
-                retry -= 1
-                Logger.warning(f"{internalServerError}. Retry in 3 seconds ({retry} retries left)...")
-                time.sleep(3)
-
-        return response
+            return response
 
     # ------------------------------------------------------
     def get_pce_list(self, details: bool = False) -> list[GrdfPce]:
@@ -189,7 +258,7 @@ class APIClient:
         return GrdfPceList.model_validate(res).root
 
     # ------------------------------------------------------
-    def __consumption_json(
+    def _consumption_json(
         self,
         consumption_type: ConsumptionType,
         start_date: date,
@@ -212,7 +281,7 @@ class APIClient:
     ) -> dict[str, Any]:
         """Returns the consumption response as the API sent it, once checked against its shape."""
 
-        res = self.__consumption_json(consumption_type, start_date, end_date, pce_list, None)
+        res = self._consumption_json(consumption_type, start_date, end_date, pce_list, None)
 
         if type(res) is list and len(res) == 0:
             return dict[str, Any]()
@@ -227,7 +296,7 @@ class APIClient:
     ) -> dict[str, GrdfPceConsumption]:
         """Returns the consumption of each PCE, keyed by PCE identifier. Its records are validated by the parser."""
 
-        res = self.__consumption_json(consumption_type, start_date, end_date, pce_list, Decimal)
+        res = self._consumption_json(consumption_type, start_date, end_date, pce_list, Decimal)
 
         if type(res) is list and len(res) == 0:
             return {}
@@ -252,12 +321,12 @@ class APIClient:
             {"dateDebut": start, "dateFin": end, "frequence": frequency.value, "pceList[]": ",".join(pce_list)},
         )
 
-        filename = response.headers["Content-Disposition"].split("filename=")[1]
+        filename = excel_filename(response.headers.get("Content-Disposition"))
 
         return GrdfExcelSheet(filename=filename, content=response.content)
 
     # ------------------------------------------------------
-    def __meteo_json(self, end_date: date, days: int, pce: str) -> Any:
+    def _meteo_json(self, end_date: date, days: int, pce: str) -> Any:
 
         end = end_date.strftime(DATE_FORMAT)
 
@@ -267,7 +336,7 @@ class APIClient:
     def get_pce_meteo_raw(self, end_date: date, days: int, pce: str) -> dict[str, Any]:
         """Returns the meteo response as the API sent it, once checked against its shape."""
 
-        res = self.__meteo_json(end_date, days, pce)
+        res = self._meteo_json(end_date, days, pce)
 
         if type(res) is list and len(res) == 0:
             return dict[str, Any]()
@@ -280,7 +349,7 @@ class APIClient:
     def get_pce_meteo(self, end_date: date, days: int, pce: str) -> dict[date, float | None]:
         """Returns the temperature of each day, keyed by date."""
 
-        res = self.__meteo_json(end_date, days, pce)
+        res = self._meteo_json(end_date, days, pce)
 
         if type(res) is list and len(res) == 0:
             return {}

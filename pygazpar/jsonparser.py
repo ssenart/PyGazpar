@@ -40,14 +40,14 @@ class JsonParser:
         """Returns one reading per day, from the JSON of the consumption and of the temperatures."""
 
         # Decimal numbers are read from the JSON text, so that the splits of volumes and energies stay exact.
-        consumption = JsonParser.__consumption_of(json.loads(jsonStr, parse_float=Decimal))
-        temperatures = JsonParser.__temperatures_of(json.loads(temperaturesStr))
+        consumption = JsonParser._consumption_of(json.loads(jsonStr, parse_float=Decimal))
+        temperatures = JsonParser._temperatures_of(json.loads(temperaturesStr))
 
         return JsonParser.readings(consumption, temperatures, pceIdentifier)
 
     # ------------------------------------------------------
     @staticmethod
-    def __consumption_of(data: Any) -> dict[str, GrdfPceConsumption]:
+    def _consumption_of(data: Any) -> dict[str, GrdfPceConsumption]:
         """Returns the consumption of a JSON document, empty when GrDF sends an empty list."""
 
         if type(data) is list and len(data) == 0:
@@ -57,7 +57,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __temperatures_of(data: Any) -> dict[date, float | None] | None:
+    def _temperatures_of(data: Any) -> dict[date, float | None] | None:
         """Returns the temperatures of a JSON document, or None when there are none."""
 
         if data is None or (type(data) is list and len(data) == 0):
@@ -91,28 +91,26 @@ class JsonParser:
         last_coefficient: Decimal | None = None
         # Days without consumption wait for the next period: a gap rebuilt from the indexes covers them when it can.
         pending: list[tuple[date, date, GrdfRecord]] = []
-        for start, end, record in JsonParser.__periods(
-            JsonParser.__validated(consumption_by_pce[pceIdentifier].releves)
-        ):
-            consumption = JsonParser.__consumption(record)
+        for start, end, record in JsonParser._periods(JsonParser._validated(consumption_by_pce[pceIdentifier].releves)):
+            consumption = JsonParser._consumption(record)
             if consumption is None:
                 pending.append((start, end, record))
                 continue
             volume, energy, coefficient = consumption
 
-            gap = JsonParser.__gap(last_end, last_index, last_coefficient, start, record.indexDebut, coefficient)
+            gap = JsonParser._gap(last_end, last_index, last_coefficient, start, record.indexDebut, coefficient)
             if gap is None:
                 for no_data in pending:
-                    res.extend(JsonParser.__no_data_rows(*no_data, temperatures, data_timestamp))
+                    res.extend(JsonParser._no_data_rows(*no_data, temperatures, data_timestamp))
             else:
-                res.extend(JsonParser.__spread_derived(*gap, temperatures, data_timestamp))
+                res.extend(JsonParser._spread_derived(*gap, temperatures, data_timestamp))
             pending = []
 
             if record.journeeGaziere is not None:
-                res.append(JsonParser.__measured_row(start, record, coefficient, temperatures, data_timestamp))
+                res.append(JsonParser._measured_row(start, record, coefficient, temperatures, data_timestamp))
             else:
                 res.extend(
-                    JsonParser.__spread_derived(
+                    JsonParser._spread_derived(
                         start,
                         end,
                         record.indexDebut,
@@ -127,7 +125,7 @@ class JsonParser:
             last_end, last_index, last_coefficient = end, record.indexFin, coefficient
 
         for no_data in pending:
-            res.extend(JsonParser.__no_data_rows(*no_data, temperatures, data_timestamp))
+            res.extend(JsonParser._no_data_rows(*no_data, temperatures, data_timestamp))
 
         Logger.debug("Daily data read successfully from Json")
 
@@ -135,7 +133,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __validated(releves: list[dict[str, Any]]) -> list[GrdfRecord]:
+    def _validated(releves: list[dict[str, Any]]) -> list[GrdfRecord]:
         """Returns the records that are valid. An invalid record is reported and ignored."""
 
         records = []
@@ -149,7 +147,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __periods(records: list[GrdfRecord]) -> list[tuple[date, date, GrdfRecord]]:
+    def _periods(records: list[GrdfRecord]) -> list[tuple[date, date, GrdfRecord]]:
         """Returns the periods as (first day, day after the last day, record), in chronological order."""
 
         periods = []
@@ -165,7 +163,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __consumption(record: GrdfRecord) -> tuple[Decimal, Decimal, Decimal] | None:
+    def _consumption(record: GrdfRecord) -> tuple[Decimal, Decimal, Decimal] | None:
         """Returns the volume, energy and coefficient of a record, or None for a day without consumption."""
 
         if record.volumeBrutConsomme is None or record.energieConsomme is None or record.coeffConversion is None:
@@ -175,7 +173,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __gap(
+    def _gap(
         last_end: date | None,
         last_index: Decimal | None,
         last_coefficient: Decimal | None,
@@ -215,7 +213,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __spread_derived(
+    def _spread_derived(
         start: date,
         end: date,
         index_start: Decimal | None,
@@ -233,20 +231,20 @@ class JsonParser:
         from the meteo data.
         """
 
-        (start_units, end_units), index_scale = JsonParser.__to_units(index_start, index_end)
-        (volume_units,), volume_scale = JsonParser.__to_units(volume)
-        (energy_units,), energy_scale = JsonParser.__to_units(energy)
+        (start_units, end_units), index_scale = JsonParser._to_units(index_start, index_end)
+        (volume_units,), volume_scale = JsonParser._to_units(volume)
+        (energy_units,), energy_scale = JsonParser._to_units(energy)
 
         days = (end - start).days
-        volume_bounds = JsonParser.__bounds(0, volume_units, days)
-        index_bounds = JsonParser.__bounds(start_units, end_units, days)
+        volume_bounds = JsonParser._bounds(0, volume_units, days)
+        index_bounds = JsonParser._bounds(start_units, end_units, days)
 
         # Volume is the reference: energy follows it, so each day gets the share of the energy that matches its share
         # of the volume. Without volume, energy is spread evenly over the days.
         if volume_units != 0:
             energy_bounds = [energy_units * bound // volume_units for bound in volume_bounds]
         else:
-            energy_bounds = JsonParser.__bounds(0, energy_units, days)
+            energy_bounds = JsonParser._bounds(0, energy_units, days)
 
         res = []
         for i in range(days):
@@ -256,16 +254,16 @@ class JsonParser:
                     PropertyName.START_DATE.value: day,
                     PropertyName.END_DATE.value: day + timedelta(days=1),
                     PropertyName.FREQUENCY.value: Frequency.DAILY,
-                    PropertyName.START_INDEX.value: JsonParser.__to_output(Decimal(index_bounds[i]) / index_scale),
-                    PropertyName.END_INDEX.value: JsonParser.__to_output(Decimal(index_bounds[i + 1]) / index_scale),
-                    PropertyName.VOLUME.value: JsonParser.__to_output(
+                    PropertyName.START_INDEX.value: JsonParser._to_output(Decimal(index_bounds[i]) / index_scale),
+                    PropertyName.END_INDEX.value: JsonParser._to_output(Decimal(index_bounds[i + 1]) / index_scale),
+                    PropertyName.VOLUME.value: JsonParser._to_output(
                         Decimal(volume_bounds[i + 1] - volume_bounds[i]) / volume_scale
                     ),
-                    PropertyName.ENERGY.value: JsonParser.__to_output(
+                    PropertyName.ENERGY.value: JsonParser._to_output(
                         Decimal(energy_bounds[i + 1] - energy_bounds[i]) / energy_scale
                     ),
                     PropertyName.CONVERTER_FACTOR.value: float(coefficient),
-                    PropertyName.TEMPERATURE.value: JsonParser.__meteo_of(temperatures, day),
+                    PropertyName.TEMPERATURE.value: JsonParser._meteo_of(temperatures, day),
                     PropertyName.TYPE.value: CALCULATED_TYPE,
                     PropertyName.TIMESTAMP.value: data_timestamp,
                 }
@@ -276,7 +274,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __measured_row(
+    def _measured_row(
         start: date, record: GrdfRecord, coefficient: Decimal, temperatures: Any, data_timestamp: str
     ) -> DailyReading:
         """Returns the row of a measured one-day record, with the values GrDF reports."""
@@ -287,13 +285,13 @@ class JsonParser:
                 PropertyName.START_DATE.value: start,
                 PropertyName.END_DATE.value: start + timedelta(days=1),
                 PropertyName.FREQUENCY.value: Frequency.DAILY,
-                PropertyName.START_INDEX.value: JsonParser.__to_output(record.indexDebut),
-                PropertyName.END_INDEX.value: JsonParser.__to_output(record.indexFin),
-                PropertyName.VOLUME.value: JsonParser.__to_output(record.volumeBrutConsomme),
-                PropertyName.ENERGY.value: JsonParser.__to_output(record.energieConsomme),
+                PropertyName.START_INDEX.value: JsonParser._to_output(record.indexDebut),
+                PropertyName.END_INDEX.value: JsonParser._to_output(record.indexFin),
+                PropertyName.VOLUME.value: JsonParser._to_output(record.volumeBrutConsomme),
+                PropertyName.ENERGY.value: JsonParser._to_output(record.energieConsomme),
                 PropertyName.CONVERTER_FACTOR.value: float(coefficient),
                 PropertyName.TEMPERATURE.value: (
-                    float(temperature) if temperature is not None else JsonParser.__meteo_of(temperatures, start)
+                    float(temperature) if temperature is not None else JsonParser._meteo_of(temperatures, start)
                 ),
                 PropertyName.TYPE.value: record.qualificationReleve,
                 PropertyName.TIMESTAMP.value: data_timestamp,
@@ -302,7 +300,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __no_data_rows(
+    def _no_data_rows(
         start: date, end: date, record: GrdfRecord, temperatures: Any, data_timestamp: str
     ) -> list[DailyReading]:
         """Returns one row per day of a record without consumption, typed as GrDF qualifies it."""
@@ -320,7 +318,7 @@ class JsonParser:
                     PropertyName.VOLUME.value: None,
                     PropertyName.ENERGY.value: None,
                     PropertyName.CONVERTER_FACTOR.value: None,
-                    PropertyName.TEMPERATURE.value: JsonParser.__meteo_of(temperatures, day),
+                    PropertyName.TEMPERATURE.value: JsonParser._meteo_of(temperatures, day),
                     PropertyName.TYPE.value: record.qualificationReleve,
                     PropertyName.TIMESTAMP.value: data_timestamp,
                 }
@@ -331,21 +329,21 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __meteo_of(temperatures: dict[date, float | None] | None, day: date) -> float | None:
+    def _meteo_of(temperatures: dict[date, float | None] | None, day: date) -> float | None:
         """Returns the meteo temperature of a day, or None when there is none."""
 
         return temperatures.get(day) if temperatures else None
 
     # ------------------------------------------------------
     @staticmethod
-    def __bounds(start: int, end: int, days: int) -> list[int]:
+    def _bounds(start: int, end: int, days: int) -> list[int]:
         """Returns days + 1 bounds from start to end, so that consecutive differences sum exactly to end - start."""
 
         return [start + (end - start) * i // days for i in range(days + 1)]
 
     # ------------------------------------------------------
     @staticmethod
-    def __to_units(*values: Any) -> tuple[list[int], int]:
+    def _to_units(*values: Any) -> tuple[list[int], int]:
         """Returns the values as whole units of their most precise decimal place, and the number of units per unit."""
 
         decimals = [Decimal(str(value)) for value in values]
@@ -355,7 +353,7 @@ class JsonParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __to_output(value: Decimal | None) -> int | float | None:
+    def _to_output(value: Decimal | None) -> int | float | None:
         """Keeps whole numbers as int, and returns other values as float, at their published precision."""
 
         if value is None:

@@ -34,7 +34,7 @@ def fake_response(status_code, body):
     return response
 
 
-def answer(url, params=None):  # noqa: ARG001
+def answer(url, params=None, timeout=None):  # noqa: ARG001
     """Answers the way GrDF does: the account has one PCE. An unknown PCE gets no consumption, and a refusal for its temperatures."""
 
     if url.endswith("/e-conso/pce"):

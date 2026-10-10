@@ -29,10 +29,10 @@ class ExcelParser:
     def parse(dataFilename: str, dataReadingFrequency: Frequency) -> Sequence[PeriodReading]:
 
         parseByFrequency: dict[Frequency, Any] = {
-            Frequency.HOURLY: ExcelParser.__parseHourly,
-            Frequency.DAILY: ExcelParser.__parseDaily,
-            Frequency.WEEKLY: ExcelParser.__parseWeekly,
-            Frequency.MONTHLY: ExcelParser.__parseMonthly,
+            Frequency.HOURLY: ExcelParser._parseHourly,
+            Frequency.DAILY: ExcelParser._parseDaily,
+            Frequency.WEEKLY: ExcelParser._parseWeekly,
+            Frequency.MONTHLY: ExcelParser._parseMonthly,
         }
 
         Logger.debug(f"Loading Excel data file '{dataFilename}'...")
@@ -51,7 +51,7 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __number(cell: Cell | MergedCell) -> int | float | None:
+    def _number(cell: Cell | MergedCell) -> int | float | None:
         """Returns the number of a cell, written with a comma or with a point, or None when the cell is empty."""
 
         value = cell.value
@@ -66,7 +66,7 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __text(cell: Cell | MergedCell) -> str | None:
+    def _text(cell: Cell | MergedCell) -> str | None:
         """Returns the text of a cell, without surrounding spaces, or None when the cell is empty."""
 
         value = cell.value
@@ -77,12 +77,12 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # noqa: ARG004
+    def _parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # noqa: ARG004
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseDaily(worksheet: Worksheet) -> list[PeriodReading]:
+    def _parseDaily(worksheet: Worksheet) -> list[PeriodReading]:
 
         res: list[PeriodReading] = []
 
@@ -103,15 +103,15 @@ class ExcelParser:
                             PropertyName.START_DATE.value: start_date,
                             PropertyName.END_DATE.value: end_date,
                             PropertyName.FREQUENCY.value: Frequency.DAILY,
-                            PropertyName.START_INDEX.value: ExcelParser.__number(worksheet.cell(column=3, row=rownum)),
-                            PropertyName.END_INDEX.value: ExcelParser.__number(worksheet.cell(column=4, row=rownum)),
-                            PropertyName.VOLUME.value: ExcelParser.__number(worksheet.cell(column=5, row=rownum)),
-                            PropertyName.ENERGY.value: ExcelParser.__number(worksheet.cell(column=6, row=rownum)),
-                            PropertyName.CONVERTER_FACTOR.value: ExcelParser.__number(
+                            PropertyName.START_INDEX.value: ExcelParser._number(worksheet.cell(column=3, row=rownum)),
+                            PropertyName.END_INDEX.value: ExcelParser._number(worksheet.cell(column=4, row=rownum)),
+                            PropertyName.VOLUME.value: ExcelParser._number(worksheet.cell(column=5, row=rownum)),
+                            PropertyName.ENERGY.value: ExcelParser._number(worksheet.cell(column=6, row=rownum)),
+                            PropertyName.CONVERTER_FACTOR.value: ExcelParser._number(
                                 worksheet.cell(column=7, row=rownum)
                             ),
-                            PropertyName.TEMPERATURE.value: ExcelParser.__number(worksheet.cell(column=8, row=rownum)),
-                            PropertyName.TYPE.value: ExcelParser.__text(worksheet.cell(column=9, row=rownum)),
+                            PropertyName.TEMPERATURE.value: ExcelParser._number(worksheet.cell(column=8, row=rownum)),
+                            PropertyName.TYPE.value: ExcelParser._text(worksheet.cell(column=9, row=rownum)),
                             PropertyName.TIMESTAMP.value: data_timestamp,
                         }
                     )
@@ -125,17 +125,17 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseWeekly(worksheet: Worksheet) -> list[PeriodReading]:
-        return ExcelParser.__parsePeriods(worksheet, Frequency.WEEKLY)
+    def _parseWeekly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser._parsePeriods(worksheet, Frequency.WEEKLY)
 
     # ------------------------------------------------------
     @staticmethod
-    def __parseMonthly(worksheet: Worksheet) -> list[PeriodReading]:
-        return ExcelParser.__parsePeriods(worksheet, Frequency.MONTHLY)
+    def _parseMonthly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser._parsePeriods(worksheet, Frequency.MONTHLY)
 
     # ------------------------------------------------------
     @staticmethod
-    def __parsePeriods(worksheet: Worksheet, frequency: Frequency) -> list[PeriodReading]:
+    def _parsePeriods(worksheet: Worksheet, frequency: Frequency) -> list[PeriodReading]:
         """Reads the weekly or monthly rows: a label, the volume and the energy of the period."""
 
         res: list[PeriodReading] = []
@@ -157,8 +157,8 @@ class ExcelParser:
                             PropertyName.START_DATE.value: start_date,
                             PropertyName.END_DATE.value: end_date,
                             PropertyName.FREQUENCY.value: frequency,
-                            PropertyName.VOLUME.value: ExcelParser.__number(worksheet.cell(column=3, row=rownum)),
-                            PropertyName.ENERGY.value: ExcelParser.__number(worksheet.cell(column=4, row=rownum)),
+                            PropertyName.VOLUME.value: ExcelParser._number(worksheet.cell(column=3, row=rownum)),
+                            PropertyName.ENERGY.value: ExcelParser._number(worksheet.cell(column=4, row=rownum)),
                             PropertyName.TIMESTAMP.value: data_timestamp,
                         }
                     )

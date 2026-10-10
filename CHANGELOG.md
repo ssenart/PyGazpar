@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Requests to GrDF have a timeout (10 s to connect, 60 s to read) instead of waiting forever.
+- Network errors (connection errors and timeouts) are retried like the HTML answers GrDF sends instead of an error.
+- An expired session is detected (HTTP 401, or a redirection to the login page): the client logs in again once and repeats the call, instead of waiting for 10 retries.
+- `APIClient.get()` no longer crashes on an answer without `Content-Type`, nor with a retry count of 0.
+- `ExcelWebDataSource` downloads each file into its own private directory under the TMP directory, removed after the parsing. It no longer deletes the `Donnees_informatives_*.xlsx` files of others, and the file name sent by GrDF is never used as a path.
+- `JsonWebDataSource` logs a warning when the temperatures are not available, and returns an empty list for each requested frequency when GrDF has no data, instead of an empty dict.
+
 ## [1.4.0a4] - 2026-10-05
 
 ### Changed

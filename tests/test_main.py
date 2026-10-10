@@ -8,6 +8,7 @@ import pytest
 from pygazpar import __main__ as cli
 from pygazpar.api_client import APIClient, ConsumptionType
 from pygazpar.grdf import GrdfPce
+from pygazpar.model import Frequency
 
 PCE = "12345678901234"
 
@@ -126,3 +127,28 @@ class TestRawDatasourcesOnTheCommandLine:
             assert cli.main() == 0
 
         assert json.loads(capsys.readouterr().out) == meteo
+
+
+class TestFrequencyOption:
+    # ------------------------------------------------------
+    @pytest.mark.parametrize("text", ["daily", "DAILY", "Daily"])
+    def test_a_frequency_is_read_in_any_case(self, text):
+
+        assert cli.frequency_of(text) is Frequency.DAILY
+
+    # ------------------------------------------------------
+    def test_an_unknown_frequency_is_a_usage_error(self):
+
+        with pytest.raises(argparse.ArgumentTypeError, match="invalid frequency"):
+            cli.frequency_of("fortnightly")
+
+    # ------------------------------------------------------
+    @pytest.mark.parametrize("option", ["daily", "DAILY"])
+    def test_the_command_line_accepts_the_frequency(self, option, tmp_path, capsys):
+
+        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "test", "-f", option]
+
+        with mock.patch.object(cli, "load_dotenv"), mock.patch.object(sys, "argv", argv):
+            assert cli.main() == 0
+
+        assert list(json.loads(capsys.readouterr().out.split("\n", 2)[2])) == ["daily"]

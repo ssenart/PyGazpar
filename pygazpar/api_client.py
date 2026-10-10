@@ -77,6 +77,32 @@ class InternalServerError(ServerError):
 
 
 # ------------------------------------------------------
+def login_error(response: Response) -> str:
+    """Returns the reason of a refused login: the messages of the identity provider, without the rest of its answer.
+
+    The answer holds the state handle of the login, which is a token: it must not reach the logs or the exceptions.
+    """
+
+    try:
+        body = response.json()
+    except ValueError:
+        return "no reason given"
+
+    if not isinstance(body, dict):
+        return "no reason given"
+
+    messages = body.get("messages")
+    values = messages.get("value", []) if isinstance(messages, dict) else []
+    reasons = [
+        value["message"] for value in values if isinstance(value, dict) and isinstance(value.get("message"), str)
+    ]
+    if not reasons and isinstance(body.get("errorSummary"), str):
+        reasons = [body["errorSummary"]]
+
+    return "; ".join(reasons) or "no reason given"
+
+
+# ------------------------------------------------------
 def excel_filename(content_disposition: str | None) -> str:
     """Returns the file name of a Content-Disposition header, without any directory part.
 
@@ -133,7 +159,7 @@ class APIClient:
 
         if mail_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {mail_response.text}",
+                f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {login_error(mail_response)}",
                 mail_response.status_code,
             )
 
@@ -150,7 +176,7 @@ class APIClient:
 
         if password_response.status_code != 200:
             raise ServerError(
-                f"An error occurred while logging in password. Status code: {password_response.status_code} - {password_response.text}",
+                f"An error occurred while logging in password. Status code: {password_response.status_code} - {login_error(password_response)}",
                 password_response.status_code,
             )
 

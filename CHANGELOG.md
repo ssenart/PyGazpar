@@ -17,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The `pandas` dependency, which nothing used. `numpy`, `python-dateutil`, `pytz`, `six` and `tzdata` go with it.
 - `Client.loadSince()` and `Client.loadDateRange()`, deprecated since they were replaced by `Client.load_since()` and `Client.load_date_range()`. Their announced removal date, 2026-01-01, had passed.
 
 ### Fixed
 
+- The command line accepts `-f daily` as well as `-f DAILY`, as its help says. It used to fail with a `KeyError` traceback on the lowercase names.
+- A refused login reports the messages of the identity provider only. The exception, and the logs, no longer carry the login state token that was in the answer.
+- The command line logs the number of readings loaded, not the number of frequencies.
 - The delay before a retry grows at each attempt (3, 6, 12, then 15 seconds at most) instead of staying at 3 seconds, for the 429 answers, the HTML answers and the network errors.
 - GrDF's HTTP 429 answers (too many requests sent back to back) are reported as a rate limit instead of "An unknown error occurred". The call is retried after the `Retry-After` delay when GrDF gives one, and raises a `ServerError` with status 429 when the retry limit is reached.
 - Requests to GrDF have a timeout (10 s to connect, 60 s to read) instead of waiting forever.

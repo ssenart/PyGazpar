@@ -20,6 +20,16 @@ def consumption_type_of(args) -> pygazpar.ConsumptionType:
     return pygazpar.ConsumptionType[args.consumption_type or "INFORMATIVE"]
 
 
+def frequency_of(text: str) -> pygazpar.Frequency:
+    """Returns the frequency named on the command line, in lowercase or in uppercase: daily, DAILY."""
+    try:
+        return pygazpar.Frequency(text.lower())
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid frequency: {text!r} (choose from {', '.join(map(str, pygazpar.Frequency))})"
+        ) from None
+
+
 def fill_credentials_from_env(args, parser: argparse.ArgumentParser) -> None:
     """Fills the credentials missing from the command line with GRDF_USERNAME, GRDF_PASSWORD and PCE_IDENTIFIER."""
     args.username = args.username or os.environ.get("GRDF_USERNAME")
@@ -65,10 +75,10 @@ def main():
         "-f",
         "--frequency",
         required=False,
-        type=lambda frequency: pygazpar.Frequency[frequency],
+        type=frequency_of,
         choices=list(pygazpar.Frequency),
-        default="DAILY",
-        help="Meter reading frequency (DAILY, WEEKLY, MONTHLY, YEARLY)",
+        default=pygazpar.Frequency.DAILY,
+        help="Meter reading frequency (hourly, daily, weekly, monthly, yearly; default: daily)",
     )
     parser.add_argument(
         "-d",
@@ -147,7 +157,7 @@ def main():
         print(f"An error occured while querying PyGazpar library : {traceback.format_exc()}", file=sys.stderr)
         return 1
 
-    Logger.info(f"Data loaded: {len(data)} records")
+    Logger.info(f"Data loaded: {sum(len(readings) for readings in data.values())} records")
     Logger.debug(f"Data: {data}")
     print(json.dumps(data, indent=2))
 

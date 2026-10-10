@@ -19,6 +19,7 @@ from pygazpar.api_client import (
     InternalServerError,
     ServerError,
     excel_filename,
+    login_error,
 )
 from pygazpar.datasource import ExcelWebDataSource, JsonWebDataSource
 from pygazpar.grdf import GrdfExcelSheet
@@ -224,6 +225,45 @@ class TestExpiredSession:
 
         assert old_session.get.call_count == 1
         assert new_session.get.call_count == 1
+
+
+class TestLoginError:
+    # ------------------------------------------------------
+    def test_the_messages_are_kept_and_the_token_is_not(self):
+        response = mock.Mock()
+        response.json.return_value = {
+            "version": "1.0.0",
+            "stateHandle": "02.id.SECRET-TOKEN",
+            "messages": {"type": "array", "value": [{"message": "Authentication failed", "class": "ERROR"}]},
+        }
+
+        reason = login_error(response)
+
+        assert reason == "Authentication failed"
+        assert "SECRET-TOKEN" not in reason
+
+    # ------------------------------------------------------
+    def test_the_error_summary_is_the_fallback(self):
+        response = mock.Mock()
+        response.json.return_value = {"errorSummary": "Bad request", "stateHandle": "SECRET-TOKEN"}
+
+        assert login_error(response) == "Bad request"
+
+    # ------------------------------------------------------
+    @pytest.mark.parametrize("body", [{}, [], "text", None])
+    def test_an_answer_without_reason_gives_a_neutral_text(self, body):
+        response = mock.Mock()
+        response.json.return_value = body
+
+        assert login_error(response) == "no reason given"
+
+    # ------------------------------------------------------
+    def test_an_answer_that_is_not_json_is_not_echoed(self):
+        response = mock.Mock()
+        response.json.side_effect = ValueError("not json")
+        response.text = "<html>SECRET-TOKEN</html>"
+
+        assert "SECRET-TOKEN" not in login_error(response)
 
 
 class TestExcelFilename:

@@ -21,7 +21,20 @@ class Client:
         self._data_source = data_source
 
     # ------------------------------------------------------
-    def login(self):
+    def __enter__(self) -> "Client":
+        """Logs in, so that a with block logs out whatever happens: with Client(data_source) as client:"""
+
+        self.login()
+
+        return self
+
+    # ------------------------------------------------------
+    def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None:
+
+        self.logout()
+
+    # ------------------------------------------------------
+    def login(self) -> None:
 
         try:
             self._data_source.login()
@@ -30,7 +43,7 @@ class Client:
             raise
 
     # ------------------------------------------------------
-    def logout(self):
+    def logout(self) -> None:
 
         try:
             self._data_source.logout()

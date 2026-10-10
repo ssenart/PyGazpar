@@ -6,19 +6,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Entries marked **Breaking** can break the code that uses PyGazpar. The other entries are compatible: the code written for 1.4.0a4 keeps working.
+
+### Added
+
+- `Client` is a context manager: `with Client(data_source) as client:` logs in, and logs out at the end of the block.
+- The errors have a common base, `PyGazparError`, in the new `pygazpar.errors` module. Two new `ServerError` subclasses tell the causes apart: `LoginError` when GrDF refuses the login, and `RateLimitError` when it keeps refusing the calls sent back to back (HTTP 429). `NotLoggedInError` is raised when a call comes before `login()`, and is still a `ConnectionError`. All of them are exported by `pygazpar`, and the errors that existed are still importable from `pygazpar.api_client` and `pygazpar.datasource`.
+- `pygazpar` exports `PeriodReading`, `DailyReading`, `IDataSource` and `RawWebDataSource`.
+- `RawConsumptionWebDataSource` and `RawTemperatureWebDataSource` share the `RawWebDataSource` base, and gain `login()` and `logout()`.
+- `ExcelWebDataSource` takes its TMP directory as `tmp_directory`. The former `tmpDirectory` keyword still works (see Deprecated).
+
 ### Changed
 
-- The identifiers follow the snake_case convention, and ruff enforces it (`N` rules). Breaking for callers that use these names:
-  - Keyword parameters: `pceIdentifier`, `startDate` and `endDate` of `IDataSource.readings()` and `IDataSource.load()` are now `pce_identifier`, `start_date` and `end_date`. `ExcelWebDataSource(tmpDirectory=...)` is now `tmp_directory`, the old keyword still works with a `DeprecationWarning`. The same goes for the `excelFile`, `consumptionJsonFile` and `temperatureJsonFile` parameters of the file datasources.
-  - Methods: `FrequencyConverter.computeHourly()`, `computeDaily()`, `computeWeekly()`, `computeMonthly()` and `computeYearly()` are now `compute_hourly()`, `compute_daily()`, `compute_weekly()`, `compute_monthly()` and `compute_yearly()`; `JsonParser.readings_from_json()` takes `json_str` and `temperatures_str`.
-  - `GrdfRecord`, `GrdfPce` and `GrdfPceConsumption` attributes: `indexDebut` is now `index_debut`, `idObject` is `id_object`, and so on. They still read the GrDF camelCase keys (aliases).
-  - The command line is unchanged (`--lastNDays` is kept), and so is the dict form of the readings.
-- Private methods and attributes start with a single underscore instead of two.
+Breaking:
+
+- **Breaking:** `UnknownPceError` is a `LookupError`, not a `ServerError`: `except ServerError` no longer catches it. `ServerError` is no longer a `SystemError`.
+- **Breaking:** the GrDF frequency enum of `pygazpar.api_client` is now `GrdfFrequency`, so it no longer shares its name with `pygazpar.Frequency`. `from pygazpar.api_client import Frequency` fails.
+- **Breaking:** the keyword parameters of `IDataSource.readings()` and `IDataSource.load()` are now `pce_identifier`, `start_date` and `end_date` (they were `pceIdentifier`, `startDate` and `endDate`). The same goes for the datasources that override them. Positional calls are not affected, and neither is `Client`.
+- **Breaking:** the keyword parameters of the constructors are snake_case: `Client(data_source=...)` (it was `dataSource`), `ExcelFileDataSource(excel_file=...)` (`excelFile`), and `JsonFileDataSource(consumption_json_file=..., temperature_json_file=...)` (`consumptionJsonFile`, `temperatureJsonFile`). Only `ExcelWebDataSource(tmpDirectory=...)` keeps its former name for now. Positional calls are not affected.
+- **Breaking:** `FrequencyConverter.computeHourly()`, `computeDaily()`, `computeWeekly()`, `computeMonthly()` and `computeYearly()` are now `compute_hourly()`, `compute_daily()`, `compute_weekly()`, `compute_monthly()` and `compute_yearly()`. `JsonParser.readings_from_json()` takes `json_str` and `temperatures_str`.
+- **Breaking:** the attributes of `GrdfRecord`, `GrdfPce` and `GrdfPceConsumption` are snake_case: `indexDebut` is now `index_debut`, `idObject` is `id_object`, and so on. They still read the GrDF camelCase keys, and validating a GrDF payload works as before.
+- **Breaking:** when GrDF has no data for the period, `JsonWebDataSource` returns an empty list for each requested frequency, instead of an empty dict. Code that tests `if not data` should test the lists.
+- **Breaking, internal:** the private methods and attributes start with a single underscore instead of two, and `_loadFromSession` is `_load_from_session`. Only the code that subclasses the datasources, or reaches into private members, is affected.
+
+Compatible:
+
+- `Frequency` is a string too. The readings loaded by `Client`, and by the datasources, are keyed by `Frequency` instead of plain strings. Reading them with `"daily"` or `Frequency.DAILY.value` still works, and so does the JSON form, because a `Frequency` key is equal to its value.
+- The command line is unchanged (`--lastNDays` is kept), and so is the dict form of the readings.
+- The identifiers of the library follow the snake_case convention, and ruff enforces it (`N` rules).
+
+### Deprecated
+
+- `ExcelWebDataSource(tmpDirectory=...)`: use `tmp_directory`. The old keyword still works, with a `DeprecationWarning`, and will be removed in 2.0.
 
 ### Removed
 
-- The `pandas` dependency, which nothing used. `numpy`, `python-dateutil`, `pytz`, `six` and `tzdata` go with it.
-- `Client.loadSince()` and `Client.loadDateRange()`, deprecated since they were replaced by `Client.load_since()` and `Client.load_date_range()`. Their announced removal date, 2026-01-01, had passed.
+- **Breaking:** `Client.loadSince()` and `Client.loadDateRange()`, deprecated since they were replaced by `Client.load_since()` and `Client.load_date_range()`. Their announced removal date, 2026-01-01, had passed.
+- The `pandas` dependency, which nothing used. `numpy`, `python-dateutil`, `pytz`, `six` and `tzdata` go with it. Code that imports one of them without declaring it must add it to its own dependencies.
 
 ### Fixed
 
@@ -26,13 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A refused login reports the messages of the identity provider only. The exception, and the logs, no longer carry the login state token that was in the answer.
 - The command line logs the number of readings loaded, not the number of frequencies.
 - The delay before a retry grows at each attempt (3, 6, 12, then 15 seconds at most) instead of staying at 3 seconds, for the 429 answers, the HTML answers and the network errors.
-- GrDF's HTTP 429 answers (too many requests sent back to back) are reported as a rate limit instead of "An unknown error occurred". The call is retried after the `Retry-After` delay when GrDF gives one, and raises a `ServerError` with status 429 when the retry limit is reached.
+- GrDF's HTTP 429 answers (too many requests sent back to back) are reported as a rate limit instead of "An unknown error occurred". The call is retried after the `Retry-After` delay when GrDF gives one, and raises a `RateLimitError` (a `ServerError` with status 429) when the retry limit is reached.
 - Requests to GrDF have a timeout (10 s to connect, 60 s to read) instead of waiting forever.
 - Network errors (connection errors and timeouts) are retried like the HTML answers GrDF sends instead of an error.
 - An expired session is detected (HTTP 401, or a redirection to the login page): the client logs in again once and repeats the call, instead of waiting for 10 retries.
 - `APIClient.get()` no longer crashes on an answer without `Content-Type`, nor with a retry count of 0.
 - `ExcelWebDataSource` downloads each file into its own private directory under the TMP directory, removed after the parsing. It no longer deletes the `Donnees_informatives_*.xlsx` files of others, and the file name sent by GrDF is never used as a path.
-- `JsonWebDataSource` logs a warning when the temperatures are not available, and returns an empty list for each requested frequency when GrDF has no data, instead of an empty dict.
+- `JsonWebDataSource` logs a warning when the temperatures are not available.
 
 ## [1.4.0a4] - 2026-10-05
 

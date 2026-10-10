@@ -179,7 +179,14 @@ for reading in readings[pygazpar.Frequency.DAILY.value]:
     print(reading.start_date, reading.volume_m3, reading.energy_kwh)
 ```
 
-If the PCE identifier is not one of the PCEs of the account, the web sources raise `pygazpar.datasource.UnknownPceError` (a `ServerError`) instead of returning no data. A PCE of the account that has no data for the period returns no readings.
+`Client` is a context manager: it logs in when the block starts, and logs out when it ends, even after an error.
+
+```python
+with pygazpar.Client(pygazpar.JsonWebDataSource(username='your login', password='your password')) as client:
+    readings = client.load_readings_since(pce_identifier='12345678901234', last_n_days=60)
+```
+
+If the PCE identifier is not one of the PCEs of the account, the web sources raise `pygazpar.UnknownPceError` (a `LookupError`) instead of returning no data. The other errors are `pygazpar.ServerError` and its subclasses `LoginError` and `RateLimitError`; all of them derive from `pygazpar.PyGazparError`. A PCE of the account that has no data for the period returns no readings.
 
 #### Raw sources:
 

@@ -49,7 +49,9 @@ class PropertyName(Enum):
 
 
 # ------------------------------------------------------------------------------------------------------------
-class Frequency(Enum):
+class Frequency(str, Enum):
+    """The frequency of the readings. It is a string too, so that a result keyed by Frequency is read with "daily" as well."""
+
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"

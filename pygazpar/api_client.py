@@ -12,6 +12,14 @@ from requests import Response, Session
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
 
+from pygazpar.errors import (  # noqa: F401
+    InternalServerError,
+    LoginError,
+    NotLoggedInError,
+    PyGazparError,
+    RateLimitError,
+    ServerError,
+)
 from pygazpar.grdf import (
     GrdfConsumptionResponse,
     GrdfExcelSheet,
@@ -55,25 +63,14 @@ class ConsumptionType(str, Enum):
 
 
 # ------------------------------------------------------
-class Frequency(str, Enum):
+class GrdfFrequency(str, Enum):
+    """The frequencies as GrDF names them in its API (French), not to be confused with pygazpar.Frequency."""
+
     HOURLY = "Horaire"
     DAILY = "Journalier"
     WEEKLY = "Hebdomadaire"
     MONTHLY = "Mensuel"
     YEARLY = "Annuel"
-
-
-# ------------------------------------------------------
-class ServerError(SystemError):
-    def __init__(self, message: str, status_code: int):
-        super().__init__(message)
-        self.status_code = status_code
-
-
-# ------------------------------------------------------
-class InternalServerError(ServerError):
-    def __init__(self, message: str):
-        super().__init__(message, 500)
 
 
 # ------------------------------------------------------
@@ -134,7 +131,7 @@ class APIClient:
 
         start_response = session.get(START_URL, timeout=REQUEST_TIMEOUT)
         if start_response.status_code != 200:
-            raise ServerError(
+            raise LoginError(
                 f"An error occurred while logging in start. Status code: {start_response.status_code} - {start_response.url}",
                 start_response.status_code,
             )
@@ -158,7 +155,7 @@ class APIClient:
         )
 
         if mail_response.status_code != 200:
-            raise ServerError(
+            raise LoginError(
                 f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {login_error(mail_response)}",
                 mail_response.status_code,
             )
@@ -175,7 +172,7 @@ class APIClient:
         )
 
         if password_response.status_code != 200:
-            raise ServerError(
+            raise LoginError(
                 f"An error occurred while logging in password. Status code: {password_response.status_code} - {login_error(password_response)}",
                 password_response.status_code,
             )
@@ -185,7 +182,7 @@ class APIClient:
         response_redirect = session.get(success_url, timeout=REQUEST_TIMEOUT)
 
         if response_redirect.status_code != 200:
-            raise ServerError(
+            raise LoginError(
                 f"An error occurred while logging in response_redirect. Status code: {response_redirect.status_code} - {response_redirect.url}",
                 response_redirect.status_code,
             )
@@ -262,7 +259,7 @@ class APIClient:
         """
 
         if self._session is None:
-            raise ConnectionError("You must login first")
+            raise NotLoggedInError("You must login first")
 
         attempts = max(self._retry_count, 1)
         logged_in_again = False
@@ -270,7 +267,7 @@ class APIClient:
         while True:
             session = self._session
             if session is None:
-                raise ConnectionError("You must login first")
+                raise NotLoggedInError("You must login first")
 
             try:
                 response = session.get(f"{API_BASE_URL}{endpoint}", params=params, timeout=REQUEST_TIMEOUT)
@@ -281,7 +278,7 @@ class APIClient:
 
             if self._is_session_expired(response):
                 if logged_in_again:
-                    raise ServerError(f"The session expired again right after logging in (endpoint: {endpoint})", 401)
+                    raise LoginError(f"The session expired again right after logging in (endpoint: {endpoint})", 401)
                 Logger.warning("The session has expired. Logging in again...")
                 logged_in_again = True
                 self.logout()
@@ -291,9 +288,7 @@ class APIClient:
             if response.status_code == HTTP_TOO_MANY_REQUESTS:
                 # GrDF throttles the calls sent back to back, with an HTML body: it is not an unknown error.
                 self._wait_before_retry(
-                    ServerError(
-                        f"GrDF is limiting the request rate (endpoint: {endpoint}): {params}", HTTP_TOO_MANY_REQUESTS
-                    ),
+                    RateLimitError(f"GrDF is limiting the request rate (endpoint: {endpoint}): {params}"),
                     attempt,
                     attempts,
                     self._retry_after(response),
@@ -380,7 +375,7 @@ class APIClient:
         consumption_type: ConsumptionType,
         start_date: date,
         end_date: date,
-        frequency: Frequency,
+        frequency: GrdfFrequency,
         pce_list: list[str],
     ) -> GrdfExcelSheet:
 

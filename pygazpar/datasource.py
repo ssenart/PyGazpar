@@ -8,8 +8,8 @@ from collections.abc import Callable, Sequence
 from datetime import date, timedelta
 from typing import Any, cast
 
-from pygazpar.api_client import DEFAULT_EXCEL_FILENAME, APIClient, ConsumptionType, ServerError
-from pygazpar.api_client import Frequency as APIClientFrequency
+from pygazpar.api_client import DEFAULT_EXCEL_FILENAME, APIClient, ConsumptionType, GrdfFrequency
+from pygazpar.errors import UnknownPceError
 from pygazpar.excelparser import ExcelParser
 from pygazpar.jsonparser import JsonParser
 from pygazpar.model import MONTHS as MONTH_NAMES
@@ -28,9 +28,9 @@ MeterReading = dict[str, Any]
 
 MeterReadings = list[MeterReading]
 
-MeterReadingsByFrequency = dict[str, MeterReadings]
+MeterReadingsByFrequency = dict[Frequency, MeterReadings]
 
-ReadingsByFrequency = dict[str, Sequence[PeriodReading]]
+ReadingsByFrequency = dict[Frequency, Sequence[PeriodReading]]
 
 
 def as_dicts(readings: Sequence[PeriodReading]) -> MeterReadings:
@@ -74,24 +74,13 @@ def meteo_window(start_date: date, end_date: date) -> tuple[date, int]:
 
 
 # ------------------------------------------------------------------------------------------------------------
-class UnknownPceError(ServerError):
-    """Raised when the PCE identifier is not one of the PCEs of the account.
-
-    The status code is the one GrDF sends when it refuses an unknown PCE for the temperatures.
-    """
-
-    def __init__(self, pce_identifier: str):
-        super().__init__(f"The PCE {pce_identifier} does not exist in this account.", 400)
-
-
-# ------------------------------------------------------------------------------------------------------------
 class IDataSource(ABC):
     @abstractmethod
-    def login(self):
+    def login(self) -> None:
         pass
 
     @abstractmethod
-    def logout(self):
+    def logout(self) -> None:
         pass
 
     @abstractmethod
@@ -124,13 +113,13 @@ class WebDataSource(IDataSource):
         self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
-    def login(self):
+    def login(self) -> None:
 
         if not self._api_client.is_logged_in():
             self._api_client.login()
 
     # ------------------------------------------------------
-    def logout(self):
+    def logout(self) -> None:
 
         if self._api_client.is_logged_in():
             self._api_client.logout()
@@ -214,7 +203,7 @@ class ExcelWebDataSource(WebDataSource):
         self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
-        res = {}
+        res: ReadingsByFrequency = {}
 
         if frequencies is None:
             # Transform Enum in List.
@@ -232,7 +221,7 @@ class ExcelWebDataSource(WebDataSource):
                 ConsumptionType.INFORMATIVE,
                 start_date,
                 end_date,
-                APIClientFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]),
+                GrdfFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]),
                 [pce_identifier],
             )
 
@@ -244,13 +233,13 @@ class ExcelWebDataSource(WebDataSource):
                 with open(data_file_path, "wb") as file:
                     file.write(response.content)
 
-                res[frequency.value] = ExcelParser.parse(
+                res[frequency] = ExcelParser.parse(
                     data_file_path, frequency if frequency != Frequency.YEARLY else Frequency.DAILY
                 )
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
-                res[frequency.value] = FrequencyConverter.compute_yearly(res[frequency.value])
+                res[frequency] = FrequencyConverter.compute_yearly(res[frequency])
 
         return res
 
@@ -262,11 +251,11 @@ class ExcelFileDataSource(IDataSource):
         self._excel_file = excel_file
 
     # ------------------------------------------------------
-    def login(self):
+    def login(self) -> None:
         pass
 
     # ------------------------------------------------------
-    def logout(self):
+    def logout(self) -> None:
         pass
 
     # ------------------------------------------------------
@@ -283,7 +272,7 @@ class ExcelFileDataSource(IDataSource):
         frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
-        res = {}
+        res: ReadingsByFrequency = {}
 
         if frequencies is None:
             # Transform Enum in List.
@@ -294,10 +283,10 @@ class ExcelFileDataSource(IDataSource):
 
         for frequency in frequency_list:
             if frequency != Frequency.YEARLY:
-                res[frequency.value] = ExcelParser.parse(self._excel_file, frequency)
+                res[frequency] = ExcelParser.parse(self._excel_file, frequency)
             else:
                 daily = ExcelParser.parse(self._excel_file, Frequency.DAILY)
-                res[frequency.value] = FrequencyConverter.compute_yearly(daily)
+                res[frequency] = FrequencyConverter.compute_yearly(daily)
 
         return res
 
@@ -323,7 +312,7 @@ class JsonWebDataSource(WebDataSource):
         self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
-        res = dict[str, Any]()
+        res: ReadingsByFrequency = {}
 
         compute_by_frequency = {
             Frequency.HOURLY: FrequencyConverter.compute_hourly,
@@ -359,49 +348,24 @@ class JsonWebDataSource(WebDataSource):
         # Transform all the data into the target structure.
         if data is None or len(data) == 0:
             # No data: every requested frequency has an empty list of readings, as with data.
-            return {frequency.value: [] for frequency in frequency_list}
+            return {frequency: [] for frequency in frequency_list}
 
         daily = JsonParser.readings(data, temperatures, pce_identifier)
 
         Logger.debug("Processed daily data: %s", daily)
 
         for frequency in frequency_list:
-            res[frequency.value] = compute_by_frequency[frequency](daily)
+            res[frequency] = compute_by_frequency[frequency](daily)
 
         return res
 
 
 # ------------------------------------------------------------------------------------------------------------
-class RawConsumptionWebDataSource:
-    """Returns the GrDF consumption API response as received, without post processing.
+class RawWebDataSource(ABC):
+    """Returns a GrDF API response as received, without post processing.
 
-    Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
-    """
-
-    # ------------------------------------------------------
-    def __init__(
-        self,
-        username: str,
-        password: str,
-        consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
-    ):
-        self._api_client = APIClient(username, password)
-        self._consumption_type = consumption_type
-
-    # ------------------------------------------------------
-    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
-
-        if not self._api_client.is_logged_in():
-            self._api_client.login()
-
-        return self._api_client.get_pce_consumption_raw(self._consumption_type, start_date, end_date, [pce_identifier])
-
-
-# ------------------------------------------------------------------------------------------------------------
-class RawTemperatureWebDataSource:
-    """Returns the GrDF temperature (meteo) API response as received, without post processing.
-
-    Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency.
+    Not an IDataSource: load() returns the raw payload, not a MeterReadingsByFrequency. Like the IDataSource, it logs in
+    when it needs to, and can be logged out.
     """
 
     # ------------------------------------------------------
@@ -410,10 +374,53 @@ class RawTemperatureWebDataSource:
         self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
-    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+    def login(self) -> None:
 
         if not self._api_client.is_logged_in():
             self._api_client.login()
+
+    # ------------------------------------------------------
+    def logout(self) -> None:
+
+        if self._api_client.is_logged_in():
+            self._api_client.logout()
+
+    # ------------------------------------------------------
+    @abstractmethod
+    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+        pass
+
+
+# ------------------------------------------------------------------------------------------------------------
+class RawConsumptionWebDataSource(RawWebDataSource):
+    """Returns the GrDF consumption API response as received."""
+
+    # ------------------------------------------------------
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
+    ):
+        super().__init__(username, password)
+        self._consumption_type = consumption_type
+
+    # ------------------------------------------------------
+    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+
+        self.login()
+
+        return self._api_client.get_pce_consumption_raw(self._consumption_type, start_date, end_date, [pce_identifier])
+
+
+# ------------------------------------------------------------------------------------------------------------
+class RawTemperatureWebDataSource(RawWebDataSource):
+    """Returns the GrDF temperature (meteo) API response as received."""
+
+    # ------------------------------------------------------
+    def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
+
+        self.login()
 
         meteo_end_date, meteo_days = meteo_window(start_date, end_date)
 
@@ -423,17 +430,17 @@ class RawTemperatureWebDataSource:
 # ------------------------------------------------------------------------------------------------------------
 class JsonFileDataSource(IDataSource):
     # ------------------------------------------------------
-    def __init__(self, consumption_json_file: str, temperature_json_file):
+    def __init__(self, consumption_json_file: str, temperature_json_file: str):
 
         self._consumption_json_file = consumption_json_file
         self._temperature_json_file = temperature_json_file
 
     # ------------------------------------------------------
-    def login(self):
+    def login(self) -> None:
         pass
 
     # ------------------------------------------------------
-    def logout(self):
+    def logout(self) -> None:
         pass
 
     # ------------------------------------------------------
@@ -474,7 +481,7 @@ class JsonFileDataSource(IDataSource):
             frequency_list = list(set(frequencies))
 
         for frequency in frequency_list:
-            res[frequency.value] = compute_by_frequency[frequency](daily)
+            res[frequency] = compute_by_frequency[frequency](daily)
 
         return res
 
@@ -484,16 +491,16 @@ class TestDataSource(IDataSource):
     __test__ = False  # Will not be discovered as a test
 
     # ------------------------------------------------------
-    def __init__(self):
+    def __init__(self) -> None:
 
         pass
 
     # ------------------------------------------------------
-    def login(self):
+    def login(self) -> None:
         pass
 
     # ------------------------------------------------------
-    def logout(self):
+    def logout(self) -> None:
         pass
 
     # ------------------------------------------------------
@@ -510,7 +517,7 @@ class TestDataSource(IDataSource):
         frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
-        res = dict[str, Any]()
+        res: ReadingsByFrequency = {}
 
         data_sample_filename_by_frequency = {
             Frequency.HOURLY: "hourly_data_sample.json",
@@ -534,7 +541,7 @@ class TestDataSource(IDataSource):
 
             with open(data_sample_filename, encoding="utf-8") as json_file:
                 rows = cast(list[dict[str, Any]], json.load(json_file))
-                res[frequency.value] = [] if frequency == Frequency.HOURLY else readings_from_samples(frequency, rows)
+                res[frequency] = [] if frequency == Frequency.HOURLY else readings_from_samples(frequency, rows)
 
         return res
 

@@ -1,0 +1,6 @@
+# Text files are stored with LF line endings, whatever the platform of the contributor.
+* text=auto eol=lf
+
+# Binary files are left alone.
+*.xlsx binary
+*.png binary

@@ -7,7 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, RootModel, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 
 
 class GrdfRecord(BaseModel):
@@ -16,18 +16,18 @@ class GrdfRecord(BaseModel):
     Unknown fields are kept, so that a new field from GrDF does not make the record invalid.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    journeeGaziere: date | None = None
-    dateDebutReleve: datetime | None = None
-    dateFinReleve: datetime | None = None
-    indexDebut: Decimal | None = None
-    indexFin: Decimal | None = None
-    volumeBrutConsomme: Decimal | None = None
-    energieConsomme: Decimal | None = None
-    coeffConversion: Decimal | None = None
+    journee_gaziere: date | None = Field(default=None, alias="journeeGaziere")
+    date_debut_releve: datetime | None = Field(default=None, alias="dateDebutReleve")
+    date_fin_releve: datetime | None = Field(default=None, alias="dateFinReleve")
+    index_debut: Decimal | None = Field(default=None, alias="indexDebut")
+    index_fin: Decimal | None = Field(default=None, alias="indexFin")
+    volume_brut_consomme: Decimal | None = Field(default=None, alias="volumeBrutConsomme")
+    energie_consomme: Decimal | None = Field(default=None, alias="energieConsomme")
+    coeff_conversion: Decimal | None = Field(default=None, alias="coeffConversion")
     temperature: Decimal | None = None
-    qualificationReleve: str | None = None
+    qualification_releve: str | None = Field(default=None, alias="qualificationReleve")
 
     @model_validator(mode="after")
     def check_consistency(self) -> "GrdfRecord":
@@ -37,24 +37,26 @@ class GrdfRecord(BaseModel):
         consumption and periods that end before they start are rejected too.
         """
 
-        if self.journeeGaziere is None:
+        if self.journee_gaziere is None:
             values = (
-                self.indexDebut,
-                self.indexFin,
-                self.volumeBrutConsomme,
-                self.energieConsomme,
-                self.coeffConversion,
+                self.index_debut,
+                self.index_fin,
+                self.volume_brut_consomme,
+                self.energie_consomme,
+                self.coeff_conversion,
             )
             if any(value is None for value in values):
                 raise ValueError("a published period needs its indexes, volume, energy and coefficient")
 
-        for name in ("volumeBrutConsomme", "energieConsomme"):
-            value = getattr(self, name)
+        for name, value in (
+            ("volumeBrutConsomme", self.volume_brut_consomme),
+            ("energieConsomme", self.energie_consomme),
+        ):
             if value is not None and value < 0:
                 raise ValueError(f"{name} is negative: {value}")
 
-        if self.dateDebutReleve is not None and self.dateFinReleve is not None:
-            if self.dateFinReleve.date() <= self.dateDebutReleve.date():
+        if self.date_debut_releve is not None and self.date_fin_releve is not None:
+            if self.date_fin_releve.date() <= self.date_debut_releve.date():
                 raise ValueError("the period is empty")
 
         return self
@@ -63,9 +65,9 @@ class GrdfRecord(BaseModel):
 class GrdfPce(BaseModel):
     """One PCE of the account, as the PCE list returns it. Unknown fields are kept."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    idObject: str
+    id_object: str = Field(alias="idObject")
 
 
 class GrdfPceList(RootModel[list[GrdfPce]]):
@@ -75,9 +77,9 @@ class GrdfPceList(RootModel[list[GrdfPce]]):
 class GrdfPceConsumption(BaseModel):
     """The consumption of one PCE. Its records are validated one by one by the parser."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    idPce: str | None = None
+    id_pce: str | None = Field(default=None, alias="idPce")
     frequence: str | None = None
     releves: list[Any]
 

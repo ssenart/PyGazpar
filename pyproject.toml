@@ -49,5 +49,9 @@ line-length = 120
 
 [tool.ruff.lint]
 # E501 is ignored: ruff format owns the line length, and long strings are left as they are.
-select = ["E", "F", "W", "I", "B", "UP", "ARG", "RET", "BLE"]
+select = ["E", "F", "W", "I", "N", "B", "UP", "ARG", "RET", "BLE"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# The samples are scripts named after what they show.
+"samples/*" = ["N999"]

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import tempfile
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from datetime import date, timedelta
@@ -79,8 +80,8 @@ class UnknownPceError(ServerError):
     The status code is the one GrDF sends when it refuses an unknown PCE for the temperatures.
     """
 
-    def __init__(self, pceIdentifier: str):
-        super().__init__(f"The PCE {pceIdentifier} does not exist in this account.", 400)
+    def __init__(self, pce_identifier: str):
+        super().__init__(f"The PCE {pce_identifier} does not exist in this account.", 400)
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -99,18 +100,19 @@ class IDataSource(ABC):
 
     @abstractmethod
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         pass
 
     # ------------------------------------------------------
     def load(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> MeterReadingsByFrequency:
         """Returns the readings as dicts, the form the datasources give to their users."""
 
         return {
-            key: as_dicts(value) for key, value in self.readings(pceIdentifier, startDate, endDate, frequencies).items()
+            key: as_dicts(value)
+            for key, value in self.readings(pce_identifier, start_date, end_date, frequencies).items()
         }
 
 
@@ -144,28 +146,28 @@ class WebDataSource(IDataSource):
         if pce_list is None:
             return []
 
-        return [pce.idObject for pce in pce_list]
+        return [pce.id_object for pce in pce_list]
 
     # ------------------------------------------------------
     def readings(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
         if not self._api_client.is_logged_in():
             self._api_client.login()
 
-        if pceIdentifier not in self.get_pce_identifiers():
-            raise UnknownPceError(pceIdentifier)
+        if pce_identifier not in self.get_pce_identifiers():
+            raise UnknownPceError(pce_identifier)
 
-        res = self._loadFromSession(pceIdentifier, startDate, endDate, frequencies)
+        res = self._load_from_session(pce_identifier, start_date, end_date, frequencies)
 
         Logger.debug("The data update terminates normally")
 
         return res
 
     @abstractmethod
-    def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+    def _load_from_session(
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
         pass
 
@@ -183,43 +185,61 @@ class ExcelWebDataSource(WebDataSource):
     }
 
     # ------------------------------------------------------
-    def __init__(self, username: str, password: str, tmpDirectory: str):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        tmp_directory: str | None = None,
+        *,
+        tmpDirectory: str | None = None,  # noqa: N803
+    ):
 
         super().__init__(username, password)
 
-        self.__tmpDirectory = tmpDirectory
+        if tmpDirectory is not None:
+            warnings.warn(
+                "The tmpDirectory parameter is deprecated. Please migrate to the tmp_directory parameter",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            tmp_directory = tmp_directory or tmpDirectory
+
+        if tmp_directory is None:
+            raise TypeError("ExcelWebDataSource needs a tmp_directory")
+
+        self._tmp_directory = tmp_directory
 
     # ------------------------------------------------------
-    def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+    def _load_from_session(
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
         res = {}
 
         if frequencies is None:
             # Transform Enum in List.
-            frequencyList = list(Frequency)
+            frequency_list = list(Frequency)
         else:
             # Get distinct values.
-            frequencyList = list(set(frequencies))
+            frequency_list = list(set(frequencies))
 
-        for frequency in frequencyList:
+        for frequency in frequency_list:
             Logger.debug(
-                f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {startDate.strftime(ExcelWebDataSource.DATE_FORMAT)} to {endDate.strftime(ExcelWebDataSource.DATE_FORMAT)}"
+                f"Loading data of frequency {ExcelWebDataSource.FREQUENCY_VALUES[frequency]} from {start_date.strftime(ExcelWebDataSource.DATE_FORMAT)} to {end_date.strftime(ExcelWebDataSource.DATE_FORMAT)}"
             )
 
             response = self._api_client.get_pce_consumption_excelsheet(
                 ConsumptionType.INFORMATIVE,
-                startDate,
-                endDate,
+                start_date,
+                end_date,
                 APIClientFrequency(ExcelWebDataSource.FREQUENCY_VALUES[frequency]),
-                [pceIdentifier],
+                [pce_identifier],
             )
 
             # The XLSX file lives in a private directory under the TMP directory: nothing else can collide with it, and
             # the directory is removed even when the parsing fails. openpyxl does not close the file properly, hence
             # ignore_cleanup_errors.
-            with tempfile.TemporaryDirectory(dir=self.__tmpDirectory, ignore_cleanup_errors=True) as directory:
+            with tempfile.TemporaryDirectory(dir=self._tmp_directory, ignore_cleanup_errors=True) as directory:
                 data_file_path = os.path.join(directory, DEFAULT_EXCEL_FILENAME)
                 with open(data_file_path, "wb") as file:
                     file.write(response.content)
@@ -230,16 +250,16 @@ class ExcelWebDataSource(WebDataSource):
 
             # We compute yearly from daily data.
             if frequency == Frequency.YEARLY:
-                res[frequency.value] = FrequencyConverter.computeYearly(res[frequency.value])
+                res[frequency.value] = FrequencyConverter.compute_yearly(res[frequency.value])
 
         return res
 
 
 # ------------------------------------------------------------------------------------------------------------
 class ExcelFileDataSource(IDataSource):
-    def __init__(self, excelFile: str):
+    def __init__(self, excel_file: str):
 
-        self.__excelFile = excelFile
+        self._excel_file = excel_file
 
     # ------------------------------------------------------
     def login(self):
@@ -257,9 +277,9 @@ class ExcelFileDataSource(IDataSource):
     # ------------------------------------------------------
     def readings(
         self,
-        pceIdentifier: str,  # noqa: ARG002
-        startDate: date,  # noqa: ARG002
-        endDate: date,  # noqa: ARG002
+        pce_identifier: str,  # noqa: ARG002
+        start_date: date,  # noqa: ARG002
+        end_date: date,  # noqa: ARG002
         frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
@@ -267,17 +287,17 @@ class ExcelFileDataSource(IDataSource):
 
         if frequencies is None:
             # Transform Enum in List.
-            frequencyList = list(Frequency)
+            frequency_list = list(Frequency)
         else:
             # Get unique values.
-            frequencyList = list(set(frequencies))
+            frequency_list = list(set(frequencies))
 
-        for frequency in frequencyList:
+        for frequency in frequency_list:
             if frequency != Frequency.YEARLY:
-                res[frequency.value] = ExcelParser.parse(self.__excelFile, frequency)
+                res[frequency.value] = ExcelParser.parse(self._excel_file, frequency)
             else:
-                daily = ExcelParser.parse(self.__excelFile, Frequency.DAILY)
-                res[frequency.value] = FrequencyConverter.computeYearly(daily)
+                daily = ExcelParser.parse(self._excel_file, Frequency.DAILY)
+                res[frequency.value] = FrequencyConverter.compute_yearly(daily)
 
         return res
 
@@ -296,32 +316,32 @@ class JsonWebDataSource(WebDataSource):
         consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
     ):
         super().__init__(username, password)
-        self.__consumption_type = consumption_type
+        self._consumption_type = consumption_type
 
     # ------------------------------------------------------
-    def _loadFromSession(
-        self, pceIdentifier: str, startDate: date, endDate: date, frequencies: list[Frequency] | None = None
+    def _load_from_session(
+        self, pce_identifier: str, start_date: date, end_date: date, frequencies: list[Frequency] | None = None
     ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
 
-        computeByFrequency = {
-            Frequency.HOURLY: FrequencyConverter.computeHourly,
-            Frequency.DAILY: FrequencyConverter.computeDaily,
-            Frequency.WEEKLY: FrequencyConverter.computeWeekly,
-            Frequency.MONTHLY: FrequencyConverter.computeMonthly,
-            Frequency.YEARLY: FrequencyConverter.computeYearly,
+        compute_by_frequency = {
+            Frequency.HOURLY: FrequencyConverter.compute_hourly,
+            Frequency.DAILY: FrequencyConverter.compute_daily,
+            Frequency.WEEKLY: FrequencyConverter.compute_weekly,
+            Frequency.MONTHLY: FrequencyConverter.compute_monthly,
+            Frequency.YEARLY: FrequencyConverter.compute_yearly,
         }
 
-        data = self._api_client.get_pce_consumption(self.__consumption_type, startDate, endDate, [pceIdentifier])
+        data = self._api_client.get_pce_consumption(self._consumption_type, start_date, end_date, [pce_identifier])
 
         Logger.debug("Json meter data: %s", data)
 
-        meteo_end_date, meteo_days = meteo_window(startDate, endDate)
+        meteo_end_date, meteo_days = meteo_window(start_date, end_date)
 
         # Get weather data.
         try:
-            temperatures = self._api_client.get_pce_meteo(meteo_end_date, meteo_days, pceIdentifier)
+            temperatures = self._api_client.get_pce_meteo(meteo_end_date, meteo_days, pce_identifier)
         except Exception as error:  # noqa: BLE001
             # Not a blocking error: the readings are returned without temperatures.
             Logger.warning("The temperatures are not available, the readings have none: %s", error)
@@ -331,22 +351,22 @@ class JsonWebDataSource(WebDataSource):
 
         if frequencies is None:
             # Transform Enum in List.
-            frequencyList = list(Frequency)
+            frequency_list = list(Frequency)
         else:
             # Get unique values.
-            frequencyList = list(set(frequencies))
+            frequency_list = list(set(frequencies))
 
         # Transform all the data into the target structure.
         if data is None or len(data) == 0:
             # No data: every requested frequency has an empty list of readings, as with data.
-            return {frequency.value: [] for frequency in frequencyList}
+            return {frequency.value: [] for frequency in frequency_list}
 
-        daily = JsonParser.readings(data, temperatures, pceIdentifier)
+        daily = JsonParser.readings(data, temperatures, pce_identifier)
 
         Logger.debug("Processed daily data: %s", daily)
 
-        for frequency in frequencyList:
-            res[frequency.value] = computeByFrequency[frequency](daily)
+        for frequency in frequency_list:
+            res[frequency.value] = compute_by_frequency[frequency](daily)
 
         return res
 
@@ -365,18 +385,16 @@ class RawConsumptionWebDataSource:
         password: str,
         consumption_type: ConsumptionType = ConsumptionType.INFORMATIVE,
     ):
-        self.__api_client = APIClient(username, password)
-        self.__consumption_type = consumption_type
+        self._api_client = APIClient(username, password)
+        self._consumption_type = consumption_type
 
     # ------------------------------------------------------
     def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
 
-        if not self.__api_client.is_logged_in():
-            self.__api_client.login()
+        if not self._api_client.is_logged_in():
+            self._api_client.login()
 
-        return self.__api_client.get_pce_consumption_raw(
-            self.__consumption_type, start_date, end_date, [pce_identifier]
-        )
+        return self._api_client.get_pce_consumption_raw(self._consumption_type, start_date, end_date, [pce_identifier])
 
 
 # ------------------------------------------------------------------------------------------------------------
@@ -389,26 +407,26 @@ class RawTemperatureWebDataSource:
     # ------------------------------------------------------
     def __init__(self, username: str, password: str):
 
-        self.__api_client = APIClient(username, password)
+        self._api_client = APIClient(username, password)
 
     # ------------------------------------------------------
     def load(self, pce_identifier: str, start_date: date, end_date: date) -> dict[str, Any]:
 
-        if not self.__api_client.is_logged_in():
-            self.__api_client.login()
+        if not self._api_client.is_logged_in():
+            self._api_client.login()
 
         meteo_end_date, meteo_days = meteo_window(start_date, end_date)
 
-        return self.__api_client.get_pce_meteo_raw(meteo_end_date, meteo_days, pce_identifier)
+        return self._api_client.get_pce_meteo_raw(meteo_end_date, meteo_days, pce_identifier)
 
 
 # ------------------------------------------------------------------------------------------------------------
 class JsonFileDataSource(IDataSource):
     # ------------------------------------------------------
-    def __init__(self, consumptionJsonFile: str, temperatureJsonFile):
+    def __init__(self, consumption_json_file: str, temperature_json_file):
 
-        self.__consumptionJsonFile = consumptionJsonFile
-        self.__temperatureJsonFile = temperatureJsonFile
+        self._consumption_json_file = consumption_json_file
+        self._temperature_json_file = temperature_json_file
 
     # ------------------------------------------------------
     def login(self):
@@ -426,37 +444,37 @@ class JsonFileDataSource(IDataSource):
     # ------------------------------------------------------
     def readings(
         self,
-        pceIdentifier: str,
-        startDate: date,  # noqa: ARG002
-        endDate: date,  # noqa: ARG002
+        pce_identifier: str,
+        start_date: date,  # noqa: ARG002
+        end_date: date,  # noqa: ARG002
         frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
         res: ReadingsByFrequency = {}
 
-        with open(self.__consumptionJsonFile, encoding="utf-8") as consumptionJsonFile:
-            with open(self.__temperatureJsonFile, encoding="utf-8") as temperatureJsonFile:
+        with open(self._consumption_json_file, encoding="utf-8") as consumption_json_file:
+            with open(self._temperature_json_file, encoding="utf-8") as temperature_json_file:
                 daily = JsonParser.readings_from_json(
-                    consumptionJsonFile.read(), temperatureJsonFile.read(), pceIdentifier
+                    consumption_json_file.read(), temperature_json_file.read(), pce_identifier
                 )
 
-        computeByFrequency = {
-            Frequency.HOURLY: FrequencyConverter.computeHourly,
-            Frequency.DAILY: FrequencyConverter.computeDaily,
-            Frequency.WEEKLY: FrequencyConverter.computeWeekly,
-            Frequency.MONTHLY: FrequencyConverter.computeMonthly,
-            Frequency.YEARLY: FrequencyConverter.computeYearly,
+        compute_by_frequency = {
+            Frequency.HOURLY: FrequencyConverter.compute_hourly,
+            Frequency.DAILY: FrequencyConverter.compute_daily,
+            Frequency.WEEKLY: FrequencyConverter.compute_weekly,
+            Frequency.MONTHLY: FrequencyConverter.compute_monthly,
+            Frequency.YEARLY: FrequencyConverter.compute_yearly,
         }
 
         if frequencies is None:
             # Transform Enum in List.
-            frequencyList = list(Frequency)
+            frequency_list = list(Frequency)
         else:
             # Get unique values.
-            frequencyList = list(set(frequencies))
+            frequency_list = list(set(frequencies))
 
-        for frequency in frequencyList:
-            res[frequency.value] = computeByFrequency[frequency](daily)
+        for frequency in frequency_list:
+            res[frequency.value] = compute_by_frequency[frequency](daily)
 
         return res
 
@@ -486,15 +504,15 @@ class TestDataSource(IDataSource):
     # ------------------------------------------------------
     def readings(
         self,
-        pceIdentifier: str,  # noqa: ARG002
-        startDate: date,  # noqa: ARG002
-        endDate: date,  # noqa: ARG002
+        pce_identifier: str,  # noqa: ARG002
+        start_date: date,  # noqa: ARG002
+        end_date: date,  # noqa: ARG002
         frequencies: list[Frequency] | None = None,
     ) -> ReadingsByFrequency:
 
         res = dict[str, Any]()
 
-        dataSampleFilenameByFrequency = {
+        data_sample_filename_by_frequency = {
             Frequency.HOURLY: "hourly_data_sample.json",
             Frequency.DAILY: "daily_data_sample.json",
             Frequency.WEEKLY: "weekly_data_sample.json",
@@ -504,18 +522,18 @@ class TestDataSource(IDataSource):
 
         if frequencies is None:
             # Transform Enum in List.
-            frequencyList = list(Frequency)
+            frequency_list = list(Frequency)
         else:
             # Get unique values.
-            frequencyList = list(set(frequencies))
+            frequency_list = list(set(frequencies))
 
-        for frequency in frequencyList:
-            dataSampleFilename = (
-                f"{os.path.dirname(os.path.abspath(__file__))}/resources/{dataSampleFilenameByFrequency[frequency]}"
+        for frequency in frequency_list:
+            data_sample_filename = (
+                f"{os.path.dirname(os.path.abspath(__file__))}/resources/{data_sample_filename_by_frequency[frequency]}"
             )
 
-            with open(dataSampleFilename, encoding="utf-8") as jsonFile:
-                rows = cast(list[dict[str, Any]], json.load(jsonFile))
+            with open(data_sample_filename, encoding="utf-8") as json_file:
+                rows = cast(list[dict[str, Any]], json.load(json_file))
                 res[frequency.value] = [] if frequency == Frequency.HOURLY else readings_from_samples(frequency, rows)
 
         return res
@@ -527,19 +545,19 @@ class FrequencyConverter:
 
     # ------------------------------------------------------
     @staticmethod
-    def computeHourly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:  # noqa: ARG004
+    def compute_hourly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:  # noqa: ARG004
 
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def computeDaily(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+    def compute_daily(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
         return list(daily)
 
     # ------------------------------------------------------
     @staticmethod
-    def computeWeekly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+    def compute_weekly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
         return FrequencyConverter._aggregate(
             daily, Frequency.WEEKLY, lambda day: day - timedelta(days=day.weekday()), minimum_days=7
@@ -547,13 +565,13 @@ class FrequencyConverter:
 
     # ------------------------------------------------------
     @staticmethod
-    def computeMonthly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+    def compute_monthly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
         return FrequencyConverter._aggregate(daily, Frequency.MONTHLY, lambda day: day.replace(day=1), minimum_days=28)
 
     # ------------------------------------------------------
     @staticmethod
-    def computeYearly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
+    def compute_yearly(daily: Sequence[PeriodReading]) -> list[PeriodReading]:
 
         return FrequencyConverter._aggregate(
             daily, Frequency.YEARLY, lambda day: day.replace(month=1, day=1), minimum_days=360

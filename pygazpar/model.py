@@ -222,5 +222,5 @@ class DailyReading(PeriodReading):
     """One day of consumption, with the converter factor, the temperature and the GrDF type of the day."""
 
     converter_factor_kwh_m3: float | None = Field(default=None, alias=CONVERTER_FACTOR_KEY)
-    temperature_degC: float | None = Field(default=None, alias=TEMPERATURE_KEY)
+    temperature_degC: float | None = Field(default=None, alias=TEMPERATURE_KEY)  # noqa: N815 (the name of the output key)
     type_: str | None = Field(default=None, alias=TYPE_KEY)

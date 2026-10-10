@@ -35,7 +35,7 @@ def fill_credentials_from_env(args, parser: argparse.ArgumentParser) -> None:
 def load_raw(args) -> int:
     """Prints the GrDF API response of a raw datasource as received, bypassing the Client."""
     end_date = date.today()
-    start_date = end_date - timedelta(days=int(args.lastNDays))
+    start_date = end_date - timedelta(days=int(args.last_n_days))
     try:
         if args.datasource == "raw-consumption":
             raw_data = pygazpar.RawConsumptionWebDataSource(
@@ -73,6 +73,7 @@ def main():
     parser.add_argument(
         "-d",
         "--lastNDays",
+        dest="last_n_days",
         required=False,
         type=int,
         default=365,
@@ -114,20 +115,20 @@ def main():
         os.mkdir(args.tmpdir)
 
     # We remove the pygazpar log file.
-    pygazparLogFile = f"{args.tmpdir}/pygazpar.log"
-    if os.path.isfile(pygazparLogFile):
-        os.remove(pygazparLogFile)
+    pygazpar_log_file = f"{args.tmpdir}/pygazpar.log"
+    if os.path.isfile(pygazpar_log_file):
+        os.remove(pygazpar_log_file)
 
     # Setup logging.
     logging.basicConfig(
-        filename=f"{pygazparLogFile}", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+        filename=f"{pygazpar_log_file}", level=logging.DEBUG, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
     )
 
     Logger.info(f"PyGazpar version: {pygazpar.__version__}")
     Logger.info(f"Running on Python version: {sys.version}")
     Logger.info(f"--tmpdir {args.tmpdir}")
     Logger.info(f"--frequency {args.frequency}")
-    Logger.info(f"--lastNDays {args.lastNDays}")
+    Logger.info(f"--lastNDays {args.last_n_days}")
     Logger.info(f"--datasource {args.datasource}")
 
     if args.datasource in RAW_DATASOURCES:
@@ -141,7 +142,7 @@ def main():
         client = pygazpar.Client(pygazpar.TestDataSource())
 
     try:
-        data = client.load_since(args.pce, int(args.lastNDays), [args.frequency])
+        data = client.load_since(args.pce, int(args.last_n_days), [args.frequency])
     except BaseException:  # noqa: BLE001
         print(f"An error occured while querying PyGazpar library : {traceback.format_exc()}", file=sys.stderr)
         return 1

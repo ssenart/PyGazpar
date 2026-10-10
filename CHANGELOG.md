@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The identifiers follow the snake_case convention, and ruff enforces it (`N` rules). Breaking for callers that use these names:
+  - Keyword parameters: `pceIdentifier`, `startDate` and `endDate` of `IDataSource.readings()` and `IDataSource.load()` are now `pce_identifier`, `start_date` and `end_date`. `ExcelWebDataSource(tmpDirectory=...)` is now `tmp_directory`, the old keyword still works with a `DeprecationWarning`. The same goes for the `excelFile`, `consumptionJsonFile` and `temperatureJsonFile` parameters of the file datasources.
+  - Methods: `FrequencyConverter.computeHourly()`, `computeDaily()`, `computeWeekly()`, `computeMonthly()` and `computeYearly()` are now `compute_hourly()`, `compute_daily()`, `compute_weekly()`, `compute_monthly()` and `compute_yearly()`; `JsonParser.readings_from_json()` takes `json_str` and `temperatures_str`.
+  - `GrdfRecord`, `GrdfPce` and `GrdfPceConsumption` attributes: `indexDebut` is now `index_debut`, `idObject` is `id_object`, and so on. They still read the GrDF camelCase keys (aliases).
+  - The command line is unchanged (`--lastNDays` is kept), and so is the dict form of the readings.
+- Private methods and attributes start with a single underscore instead of two.
+
+### Removed
+
+- `Client.loadSince()` and `Client.loadDateRange()`, deprecated since they were replaced by `Client.load_since()` and `Client.load_date_range()`. Their announced removal date, 2026-01-01, had passed.
+
 ### Fixed
 
 - Requests to GrDF have a timeout (10 s to connect, 60 s to read) instead of waiting forever.

@@ -26,24 +26,24 @@ Logger = logging.getLogger(__name__)
 class JsonParser:
     # ------------------------------------------------------
     @staticmethod
-    def parse(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[dict[str, Any]]:
+    def parse(json_str: str, temperatures_str: str, pce_identifier: str) -> list[dict[str, Any]]:
         """Returns one row per day, as dicts. See readings_from_json() for the models."""
 
         return [
             reading.model_dump(by_alias=True)
-            for reading in JsonParser.readings_from_json(jsonStr, temperaturesStr, pceIdentifier)
+            for reading in JsonParser.readings_from_json(json_str, temperatures_str, pce_identifier)
         ]
 
     # ------------------------------------------------------
     @staticmethod
-    def readings_from_json(jsonStr: str, temperaturesStr: str, pceIdentifier: str) -> list[DailyReading]:
+    def readings_from_json(json_str: str, temperatures_str: str, pce_identifier: str) -> list[DailyReading]:
         """Returns one reading per day, from the JSON of the consumption and of the temperatures."""
 
         # Decimal numbers are read from the JSON text, so that the splits of volumes and energies stay exact.
-        consumption = JsonParser._consumption_of(json.loads(jsonStr, parse_float=Decimal))
-        temperatures = JsonParser._temperatures_of(json.loads(temperaturesStr))
+        consumption = JsonParser._consumption_of(json.loads(json_str, parse_float=Decimal))
+        temperatures = JsonParser._temperatures_of(json.loads(temperatures_str))
 
-        return JsonParser.readings(consumption, temperatures, pceIdentifier)
+        return JsonParser.readings(consumption, temperatures, pce_identifier)
 
     # ------------------------------------------------------
     @staticmethod
@@ -70,7 +70,7 @@ class JsonParser:
     def readings(
         consumption_by_pce: dict[str, GrdfPceConsumption],
         temperatures: dict[date, float | None] | None,
-        pceIdentifier: str,
+        pce_identifier: str,
     ) -> list[DailyReading]:
         """Returns one reading per day.
 
@@ -80,7 +80,7 @@ class JsonParser:
 
         res: list[DailyReading] = []
 
-        if pceIdentifier not in consumption_by_pce:
+        if pce_identifier not in consumption_by_pce:
             return res
 
         # Timestamp of the data.
@@ -91,14 +91,16 @@ class JsonParser:
         last_coefficient: Decimal | None = None
         # Days without consumption wait for the next period: a gap rebuilt from the indexes covers them when it can.
         pending: list[tuple[date, date, GrdfRecord]] = []
-        for start, end, record in JsonParser._periods(JsonParser._validated(consumption_by_pce[pceIdentifier].releves)):
+        for start, end, record in JsonParser._periods(
+            JsonParser._validated(consumption_by_pce[pce_identifier].releves)
+        ):
             consumption = JsonParser._consumption(record)
             if consumption is None:
                 pending.append((start, end, record))
                 continue
             volume, energy, coefficient = consumption
 
-            gap = JsonParser._gap(last_end, last_index, last_coefficient, start, record.indexDebut, coefficient)
+            gap = JsonParser._gap(last_end, last_index, last_coefficient, start, record.index_debut, coefficient)
             if gap is None:
                 for no_data in pending:
                     res.extend(JsonParser._no_data_rows(*no_data, temperatures, data_timestamp))
@@ -106,15 +108,15 @@ class JsonParser:
                 res.extend(JsonParser._spread_derived(*gap, temperatures, data_timestamp))
             pending = []
 
-            if record.journeeGaziere is not None:
+            if record.journee_gaziere is not None:
                 res.append(JsonParser._measured_row(start, record, coefficient, temperatures, data_timestamp))
             else:
                 res.extend(
                     JsonParser._spread_derived(
                         start,
                         end,
-                        record.indexDebut,
-                        record.indexFin,
+                        record.index_debut,
+                        record.index_fin,
                         volume,
                         energy,
                         coefficient,
@@ -122,7 +124,7 @@ class JsonParser:
                         data_timestamp,
                     )
                 )
-            last_end, last_index, last_coefficient = end, record.indexFin, coefficient
+            last_end, last_index, last_coefficient = end, record.index_fin, coefficient
 
         for no_data in pending:
             res.extend(JsonParser._no_data_rows(*no_data, temperatures, data_timestamp))
@@ -152,12 +154,12 @@ class JsonParser:
 
         periods = []
         for record in records:
-            if record.journeeGaziere is not None:
-                periods.append((record.journeeGaziere, record.journeeGaziere + timedelta(days=1), record))
-            elif record.dateDebutReleve is None or record.dateFinReleve is None:
+            if record.journee_gaziere is not None:
+                periods.append((record.journee_gaziere, record.journee_gaziere + timedelta(days=1), record))
+            elif record.date_debut_releve is None or record.date_fin_releve is None:
                 Logger.warning("Reading ignored because it has no start or end date")
             else:
-                periods.append((record.dateDebutReleve.date(), record.dateFinReleve.date(), record))
+                periods.append((record.date_debut_releve.date(), record.date_fin_releve.date(), record))
 
         return sorted(periods, key=lambda period: period[0])
 
@@ -166,10 +168,10 @@ class JsonParser:
     def _consumption(record: GrdfRecord) -> tuple[Decimal, Decimal, Decimal] | None:
         """Returns the volume, energy and coefficient of a record, or None for a day without consumption."""
 
-        if record.volumeBrutConsomme is None or record.energieConsomme is None or record.coeffConversion is None:
+        if record.volume_brut_consomme is None or record.energie_consomme is None or record.coeff_conversion is None:
             return None
 
-        return record.volumeBrutConsomme, record.energieConsomme, record.coeffConversion
+        return record.volume_brut_consomme, record.energie_consomme, record.coeff_conversion
 
     # ------------------------------------------------------
     @staticmethod
@@ -285,15 +287,15 @@ class JsonParser:
                 PropertyName.START_DATE.value: start,
                 PropertyName.END_DATE.value: start + timedelta(days=1),
                 PropertyName.FREQUENCY.value: Frequency.DAILY,
-                PropertyName.START_INDEX.value: JsonParser._to_output(record.indexDebut),
-                PropertyName.END_INDEX.value: JsonParser._to_output(record.indexFin),
-                PropertyName.VOLUME.value: JsonParser._to_output(record.volumeBrutConsomme),
-                PropertyName.ENERGY.value: JsonParser._to_output(record.energieConsomme),
+                PropertyName.START_INDEX.value: JsonParser._to_output(record.index_debut),
+                PropertyName.END_INDEX.value: JsonParser._to_output(record.index_fin),
+                PropertyName.VOLUME.value: JsonParser._to_output(record.volume_brut_consomme),
+                PropertyName.ENERGY.value: JsonParser._to_output(record.energie_consomme),
                 PropertyName.CONVERTER_FACTOR.value: float(coefficient),
                 PropertyName.TEMPERATURE.value: (
                     float(temperature) if temperature is not None else JsonParser._meteo_of(temperatures, start)
                 ),
-                PropertyName.TYPE.value: record.qualificationReleve,
+                PropertyName.TYPE.value: record.qualification_releve,
                 PropertyName.TIMESTAMP.value: data_timestamp,
             }
         )
@@ -319,7 +321,7 @@ class JsonParser:
                     PropertyName.ENERGY.value: None,
                     PropertyName.CONVERTER_FACTOR.value: None,
                     PropertyName.TEMPERATURE.value: JsonParser._meteo_of(temperatures, day),
-                    PropertyName.TYPE.value: record.qualificationReleve,
+                    PropertyName.TYPE.value: record.qualification_releve,
                     PropertyName.TIMESTAMP.value: data_timestamp,
                 }
             )

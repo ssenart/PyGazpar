@@ -26,26 +26,26 @@ Logger = logging.getLogger(__name__)
 class ExcelParser:
     # ------------------------------------------------------
     @staticmethod
-    def parse(dataFilename: str, dataReadingFrequency: Frequency) -> Sequence[PeriodReading]:
+    def parse(data_filename: str, data_reading_frequency: Frequency) -> Sequence[PeriodReading]:
 
-        parseByFrequency: dict[Frequency, Any] = {
-            Frequency.HOURLY: ExcelParser._parseHourly,
-            Frequency.DAILY: ExcelParser._parseDaily,
-            Frequency.WEEKLY: ExcelParser._parseWeekly,
-            Frequency.MONTHLY: ExcelParser._parseMonthly,
+        parse_by_frequency: dict[Frequency, Any] = {
+            Frequency.HOURLY: ExcelParser._parse_hourly,
+            Frequency.DAILY: ExcelParser._parse_daily,
+            Frequency.WEEKLY: ExcelParser._parse_weekly,
+            Frequency.MONTHLY: ExcelParser._parse_monthly,
         }
 
-        Logger.debug(f"Loading Excel data file '{dataFilename}'...")
+        Logger.debug(f"Loading Excel data file '{data_filename}'...")
 
-        workbook = load_workbook(filename=dataFilename)
+        workbook = load_workbook(filename=data_filename)
 
         worksheet = workbook.active
 
-        res = parseByFrequency[dataReadingFrequency](worksheet)  # type: ignore
+        res = parse_by_frequency[data_reading_frequency](worksheet)  # type: ignore
 
         workbook.close()
 
-        Logger.debug("Processed Excel %s data: %s", dataReadingFrequency, res)
+        Logger.debug("Processed Excel %s data: %s", data_reading_frequency, res)
 
         return res
 
@@ -77,21 +77,21 @@ class ExcelParser:
 
     # ------------------------------------------------------
     @staticmethod
-    def _parseHourly(worksheet: Worksheet) -> list[PeriodReading]:  # noqa: ARG004
+    def _parse_hourly(worksheet: Worksheet) -> list[PeriodReading]:  # noqa: ARG004
         return []
 
     # ------------------------------------------------------
     @staticmethod
-    def _parseDaily(worksheet: Worksheet) -> list[PeriodReading]:
+    def _parse_daily(worksheet: Worksheet) -> list[PeriodReading]:
 
         res: list[PeriodReading] = []
 
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet["B"])
-        for rownum in range(minRowNum, maxRowNum + 1):
+        min_row_num = FIRST_DATA_LINE_NUMBER
+        max_row_num = len(worksheet["B"])
+        for rownum in range(min_row_num, max_row_num + 1):
             label = worksheet.cell(column=2, row=rownum)
             if label.value is None:
                 continue
@@ -119,23 +119,23 @@ class ExcelParser:
             except (ValueError, ValidationError) as error:
                 Logger.warning(f"Excel row #{rownum} ignored: {error}")
 
-        Logger.debug(f"Daily data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"Daily data read successfully between row #{min_row_num} and row #{max_row_num}")
 
         return res
 
     # ------------------------------------------------------
     @staticmethod
-    def _parseWeekly(worksheet: Worksheet) -> list[PeriodReading]:
-        return ExcelParser._parsePeriods(worksheet, Frequency.WEEKLY)
+    def _parse_weekly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser._parse_periods(worksheet, Frequency.WEEKLY)
 
     # ------------------------------------------------------
     @staticmethod
-    def _parseMonthly(worksheet: Worksheet) -> list[PeriodReading]:
-        return ExcelParser._parsePeriods(worksheet, Frequency.MONTHLY)
+    def _parse_monthly(worksheet: Worksheet) -> list[PeriodReading]:
+        return ExcelParser._parse_periods(worksheet, Frequency.MONTHLY)
 
     # ------------------------------------------------------
     @staticmethod
-    def _parsePeriods(worksheet: Worksheet, frequency: Frequency) -> list[PeriodReading]:
+    def _parse_periods(worksheet: Worksheet, frequency: Frequency) -> list[PeriodReading]:
         """Reads the weekly or monthly rows: a label, the volume and the energy of the period."""
 
         res: list[PeriodReading] = []
@@ -143,9 +143,9 @@ class ExcelParser:
         # Timestamp of the data.
         data_timestamp = datetime.now().isoformat()
 
-        minRowNum = FIRST_DATA_LINE_NUMBER
-        maxRowNum = len(worksheet["B"])
-        for rownum in range(minRowNum, maxRowNum + 1):
+        min_row_num = FIRST_DATA_LINE_NUMBER
+        max_row_num = len(worksheet["B"])
+        for rownum in range(min_row_num, max_row_num + 1):
             label = worksheet.cell(column=2, row=rownum)
             if label.value is None:
                 continue
@@ -166,6 +166,6 @@ class ExcelParser:
             except (ValueError, ValidationError) as error:
                 Logger.warning(f"Excel row #{rownum} ignored: {error}")
 
-        Logger.debug(f"{frequency} data read successfully between row #{minRowNum} and row #{maxRowNum}")
+        Logger.debug(f"{frequency} data read successfully between row #{min_row_num} and row #{max_row_num}")
 
         return res

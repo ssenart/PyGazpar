@@ -16,7 +16,7 @@ def main():
     password = os.environ["GRDF_PASSWORD"]
     pce_identifier = os.environ["PCE_IDENTIFIER"]
 
-    client = pygazpar.Client(pygazpar.ExcelWebDataSource(username=username, password=password, tmpDirectory="tmp"))
+    client = pygazpar.Client(pygazpar.ExcelWebDataSource(username=username, password=password, tmp_directory="tmp"))
 
     data = client.load_since(
         pce_identifier=pce_identifier,

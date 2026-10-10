@@ -552,7 +552,7 @@ class TestJsonWebDataSource:
         api_client.get_pce_meteo.return_value = None
         data_source._api_client = api_client
 
-        data_source._loadFromSession(
+        data_source._load_from_session(
             PCE_IDENTIFIER,
             date(2023, 7, 27),
             date(2026, 7, 25),

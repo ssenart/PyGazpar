@@ -198,7 +198,7 @@ class TestExcelWebDataSourceTmpDirectory:
             mock.patch.object(data_source._api_client, "get_pce_consumption_excelsheet", return_value=sheet),
             mock.patch("pygazpar.datasource.ExcelParser.parse", side_effect=parse),
         ):
-            result = data_source._loadFromSession("PCE", date(2025, 1, 1), date(2025, 1, 7), [Frequency.DAILY])
+            result = data_source._load_from_session("PCE", date(2025, 1, 1), date(2025, 1, 7), [Frequency.DAILY])
 
         assert result == {"daily": []}
         assert seen and seen[0] != str(tmp_path)
@@ -214,7 +214,7 @@ class TestExcelWebDataSourceTmpDirectory:
             mock.patch("pygazpar.datasource.ExcelParser.parse", side_effect=ValueError("bad file")),
         ):
             with pytest.raises(ValueError):
-                data_source._loadFromSession("PCE", date(2025, 1, 1), date(2025, 1, 7), [Frequency.DAILY])
+                data_source._load_from_session("PCE", date(2025, 1, 1), date(2025, 1, 7), [Frequency.DAILY])
 
         assert os.listdir(tmp_path) == []
 
@@ -228,7 +228,7 @@ class TestJsonWebDataSourceResults:
             mock.patch.object(data_source._api_client, "get_pce_consumption", return_value={}),
             mock.patch.object(data_source._api_client, "get_pce_meteo", return_value={}),
         ):
-            result = data_source._loadFromSession(
+            result = data_source._load_from_session(
                 "PCE", date(2010, 1, 1), date(2010, 1, 7), [Frequency.DAILY, Frequency.MONTHLY]
             )
 
@@ -243,7 +243,21 @@ class TestJsonWebDataSourceResults:
             mock.patch.object(data_source._api_client, "get_pce_meteo", side_effect=ServerError("meteo down", 500)),
             caplog.at_level(logging.WARNING, logger="pygazpar.datasource"),
         ):
-            data_source._loadFromSession("PCE", date(2010, 1, 1), date(2010, 1, 7), [Frequency.DAILY])
+            data_source._load_from_session("PCE", date(2010, 1, 1), date(2010, 1, 7), [Frequency.DAILY])
 
         assert "temperatures are not available" in caplog.text
         assert "meteo down" in caplog.text
+
+
+class TestExcelWebDataSourceConstructor:
+    # ------------------------------------------------------
+    def test_the_legacy_tmp_directory_keyword_still_works_with_a_warning(self):
+        with pytest.warns(DeprecationWarning, match="tmp_directory"):
+            data_source = ExcelWebDataSource("user", "password", tmpDirectory="tmp")
+
+        assert data_source._tmp_directory == "tmp"
+
+    # ------------------------------------------------------
+    def test_a_tmp_directory_is_required(self):
+        with pytest.raises(TypeError, match="tmp_directory"):
+            ExcelWebDataSource("user", "password")

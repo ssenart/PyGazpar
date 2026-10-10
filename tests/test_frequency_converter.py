@@ -31,14 +31,14 @@ class TestFrequencyConverter:
     # ------------------------------------------------------
     def test_incomplete_first_month_is_dropped_and_last_month_is_kept(self):
 
-        monthly = FrequencyConverter.computeMonthly(daily_readings(date(2026, 1, 20), 27))
+        monthly = FrequencyConverter.compute_monthly(daily_readings(date(2026, 1, 20), 27))
 
         assert [(reading.time_period, reading.volume_m3) for reading in monthly] == [("Février 2026", 15)]
 
     # ------------------------------------------------------
     def test_weeks_follow_the_calendar_across_the_year_boundary(self):
 
-        weekly = FrequencyConverter.computeWeekly(daily_readings(date(2019, 12, 30), 14))
+        weekly = FrequencyConverter.compute_weekly(daily_readings(date(2019, 12, 30), 14))
 
         assert [reading.time_period for reading in weekly] == [
             "Du 30/12/2019 au 05/01/2020",

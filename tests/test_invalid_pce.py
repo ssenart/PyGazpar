@@ -160,7 +160,7 @@ class TestUnknownPceWithTheRealApi:
 
     # ------------------------------------------------------
     def test_load_date_range_returns_no_readings_for_a_known_pce_without_data(self):
-        known_pce = self._client.get_pce_list()[0].idObject
+        known_pce = self._client.get_pce_list()[0].id_object
 
         data = Client(JsonWebDataSource(self._username, self._password)).load_date_range(
             known_pce, date(2010, 1, 1), date(2010, 1, 7), [Frequency.DAILY, Frequency.MONTHLY]

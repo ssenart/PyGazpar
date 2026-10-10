@@ -92,8 +92,8 @@ class TestGrdfRecord:
 
         record = GrdfRecord.model_validate(json.loads(text, parse_float=Decimal))
 
-        assert record.volumeBrutConsomme == Decimal("0.28")
-        assert record.energieConsomme == Decimal("3.16")
+        assert record.volume_brut_consomme == Decimal("0.28")
+        assert record.energie_consomme == Decimal("3.16")
 
 
 class TestReadings:

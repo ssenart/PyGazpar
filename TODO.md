@@ -20,7 +20,7 @@ Published readings cover a period (`dateDebutReleve` to `dateFinReleve`). The fi
 
 ## Naming
 
-- [ ] Rename the legacy camelCase identifiers to snake_case. Public parameter names such as `pceIdentifier` need a deprecation path, because callers may pass them by keyword.
+- [x] Rename the legacy camelCase identifiers to snake_case (the `N` ruff rules enforce it). `ExcelWebDataSource(tmpDirectory=...)` still works with a `DeprecationWarning`: remove it in the next major version.
 
 ## Release
 

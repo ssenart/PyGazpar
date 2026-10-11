@@ -122,6 +122,21 @@ def login_diagnostic_body(response: Response) -> str:
 
 
 # ------------------------------------------------------
+def find_remediation(body: dict[str, Any], name: str) -> dict[str, Any] | None:
+    """Returns the IDX remediation of the given name in a login step's answer, or None if GrDF does not offer it.
+
+    Per Okta's Identity Engine (IDX) protocol, a response's "remediation" value lists the possible next steps by
+    name (e.g. "challenge-authenticator", "select-authenticator-authenticate"), each with its own href to call
+    next. A compliant client is meant to read this list rather than assume a fixed sequence of steps.
+    """
+
+    remediation = body.get("remediation")
+    values = remediation.get("value", []) if isinstance(remediation, dict) else []
+
+    return next((value for value in values if isinstance(value, dict) and value.get("name") == name), None)
+
+
+# ------------------------------------------------------
 def excel_filename(content_disposition: str | None) -> str:
     """Returns the file name of a Content-Disposition header, without any directory part.
 
@@ -184,7 +199,31 @@ class APIClient:
                 mail_response.status_code,
             )
 
-        state_handle = mail_response.json().get("stateHandle")
+        mail_body = mail_response.json()
+        state_handle = mail_body.get("stateHandle")
+
+        # Per the IDX protocol, GrDF/Okta should be offering the password challenge as a "challenge-authenticator"
+        # remediation here, at a href of its own choosing. pygazpar still uses the fixed URL below either way: this
+        # only checks, and logs, whether the generic, spec-compliant reading agrees with that assumption. See
+        # https://github.com/ssenart/gazpar2haws/issues/118.
+        challenge = find_remediation(mail_body, "challenge-authenticator")
+        if challenge is None:
+            offered = [
+                value.get("name") for value in mail_body.get("remediation", {}).get("value", []) if isinstance(value, dict)
+            ]
+            Logger.warning(
+                "GrDF did not offer a 'challenge-authenticator' step after identify (offered instead: %s).",
+                offered or "none",
+            )
+        elif challenge.get("href") != PASSWORD_SESSION_TOKEN_URL:
+            Logger.warning(
+                "The 'challenge-authenticator' step's href (%s) differs from the fixed password challenge URL "
+                "pygazpar uses (%s).",
+                challenge.get("href"),
+                PASSWORD_SESSION_TOKEN_URL,
+            )
+        else:
+            Logger.debug("The 'challenge-authenticator' step matches the fixed password challenge URL, as expected.")
 
         payload = json.dumps({"credentials": {"passcode": self._password}, "stateHandle": state_handle})
 

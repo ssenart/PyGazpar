@@ -13,12 +13,14 @@ from pygazpar.api_client import (
     DEFAULT_EXCEL_FILENAME,
     MAX_RETRY_AFTER_SECONDS,
     MAX_RETRY_DELAY_SECONDS,
+    PASSWORD_SESSION_TOKEN_URL,
     REQUEST_TIMEOUT,
     RETRY_DELAY_SECONDS,
     APIClient,
     InternalServerError,
     ServerError,
     excel_filename,
+    find_remediation,
     login_diagnostic_body,
     login_error,
 )
@@ -288,6 +290,42 @@ class TestLoginDiagnosticBody:
         response.json.side_effect = ValueError("not json")
 
         assert login_diagnostic_body(response) == "no JSON body"
+
+
+class TestFindRemediation:
+    # ------------------------------------------------------
+    def test_returns_the_matching_remediation_by_name(self):
+        body = {
+            "stateHandle": "02.id.SECRET-TOKEN",
+            "remediation": {
+                "type": "array",
+                "value": [
+                    {"rel": ["create-form"], "name": "select-authenticator-authenticate", "href": "https://x/select"},
+                    {
+                        "rel": ["create-form"],
+                        "name": "challenge-authenticator",
+                        "href": PASSWORD_SESSION_TOKEN_URL,
+                        "method": "POST",
+                    },
+                ],
+            },
+        }
+
+        challenge = find_remediation(body, "challenge-authenticator")
+
+        assert challenge is not None
+        assert challenge["href"] == PASSWORD_SESSION_TOKEN_URL
+
+    # ------------------------------------------------------
+    def test_returns_none_when_the_remediation_is_not_offered(self):
+        body = {"remediation": {"value": [{"name": "select-authenticator-authenticate"}]}}
+
+        assert find_remediation(body, "challenge-authenticator") is None
+
+    # ------------------------------------------------------
+    @pytest.mark.parametrize("body", [{}, {"remediation": {}}, {"remediation": {"value": "not a list"}}])
+    def test_tolerates_a_missing_or_malformed_remediation(self, body):
+        assert find_remediation(body, "challenge-authenticator") is None
 
 
 class TestExcelFilename:

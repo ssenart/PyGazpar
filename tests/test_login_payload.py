@@ -53,3 +53,17 @@ class TestLoginPayload:
         identifier_body, _ = login_with_a_mocked_session("plain")
 
         assert json.loads(identifier_body) == {"identifier": USERNAME, "stateHandle": "STATE"}
+
+    # ------------------------------------------------------
+    def test_the_identify_step_answer_is_logged_without_its_state_handle(self, caplog):
+        """Whatever GrDF/Okta asks for next (plainly a password challenge, or a different remediation) must reach
+        the logs, since the identify step always succeeds in the reported cases - only the next step fails. The
+        state handle is a token and must not leak into the logs."""
+
+        with caplog.at_level("DEBUG", logger="pygazpar.api_client"):
+            login_with_a_mocked_session("plain")
+
+        identify_logs = [record.message for record in caplog.records if "GrDF identify response body" in record.message]
+
+        assert len(identify_logs) == 1
+        assert "HANDLE" not in identify_logs[0]

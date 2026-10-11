@@ -100,9 +100,12 @@ def login_error(response: Response) -> str:
 
 
 # ------------------------------------------------------
-def login_error_diagnostic(response: Response) -> str:
-    """Returns the refused login's answer, without its state handle, to tell a wrong password from an extra
-    authentication step (e.g. an Okta remediation asking for a second factor).
+def login_diagnostic_body(response: Response) -> str:
+    """Returns an IDX step's answer, without its state handle, to see what GrDF/Okta actually asked for.
+
+    The identify step's answer says what it expects next (plainly a password challenge, or an Okta remediation
+    asking to pick or answer a different authenticator); a refused challenge says why it was refused. Either can
+    tell a wrong password apart from an extra authentication step.
 
     Temporary: logged at DEBUG only, to investigate https://github.com/ssenart/gazpar2haws/issues/118.
     """
@@ -173,6 +176,8 @@ class APIClient:
             timeout=REQUEST_TIMEOUT,
         )
 
+        Logger.debug("GrDF identify response body: %s", login_diagnostic_body(mail_response))
+
         if mail_response.status_code != 200:
             raise LoginError(
                 f"An error occurred while logging in mail. Status code: {mail_response.status_code} - {login_error(mail_response)}",
@@ -191,7 +196,7 @@ class APIClient:
         )
 
         if password_response.status_code != 200:
-            Logger.debug("GrDF password challenge error body: %s", login_error_diagnostic(password_response))
+            Logger.debug("GrDF password challenge error body: %s", login_diagnostic_body(password_response))
             raise LoginError(
                 f"An error occurred while logging in password. Status code: {password_response.status_code} - {login_error(password_response)}",
                 password_response.status_code,

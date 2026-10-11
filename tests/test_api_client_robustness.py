@@ -19,8 +19,8 @@ from pygazpar.api_client import (
     InternalServerError,
     ServerError,
     excel_filename,
+    login_diagnostic_body,
     login_error,
-    login_error_diagnostic,
 )
 from pygazpar.datasource import ExcelWebDataSource, JsonWebDataSource
 from pygazpar.grdf import GrdfExcelSheet
@@ -267,7 +267,7 @@ class TestLoginError:
         assert "SECRET-TOKEN" not in login_error(response)
 
 
-class TestLoginErrorDiagnostic:
+class TestLoginDiagnosticBody:
     # ------------------------------------------------------
     def test_the_state_handle_is_dropped_and_the_rest_is_kept(self):
         response = mock.Mock()
@@ -277,7 +277,7 @@ class TestLoginErrorDiagnostic:
             "remediation": {"value": [{"name": "select-authenticator-authenticate"}]},
         }
 
-        body = login_error_diagnostic(response)
+        body = login_diagnostic_body(response)
 
         assert "SECRET-TOKEN" not in body
         assert "select-authenticator-authenticate" in body
@@ -287,7 +287,7 @@ class TestLoginErrorDiagnostic:
         response = mock.Mock()
         response.json.side_effect = ValueError("not json")
 
-        assert login_error_diagnostic(response) == "no JSON body"
+        assert login_diagnostic_body(response) == "no JSON body"
 
 
 class TestExcelFilename:

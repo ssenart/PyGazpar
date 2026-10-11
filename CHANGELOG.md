@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A refused login now logs, at DEBUG, the identity provider's answer with its state handle removed. Temporary, to tell apart a wrong password from an extra authentication step GrDF may now require (see [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118)).
+- The identify step's answer, and a refused challenge's answer, are now logged at DEBUG with the state handle removed. The identify step always succeeds in the reported cases, but its answer is where GrDF/Okta states what it expects next; logging it even on success lets a working account's flow be compared to a failing one's. Temporary, to investigate [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118).
 
 ## [1.4.0a5] - 2026-10-10
 

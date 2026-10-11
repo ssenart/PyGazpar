@@ -100,6 +100,27 @@ def login_error(response: Response) -> str:
 
 
 # ------------------------------------------------------
+def _redact_idx_secrets(node: Any) -> Any:
+    """Recursively redacts the state handle and any field Okta marks secret, wherever they appear in an IDX body.
+
+    The state handle is not only a top-level "stateHandle" key: each remediation repeats it as its own form field,
+    shaped like {"name": "stateHandle", "value": "<the token>", ...}. Both shapes are redacted, recursively, since
+    a remediation can nest further remediations and form fields arbitrarily deep.
+    """
+
+    if isinstance(node, dict):
+        redacted = {key: ("<redacted>" if key == "stateHandle" else _redact_idx_secrets(val)) for key, val in node.items()}
+        if redacted.get("name") == "stateHandle" or redacted.get("secret") is True:
+            redacted["value"] = "<redacted>"
+        return redacted
+
+    if isinstance(node, list):
+        return [_redact_idx_secrets(item) for item in node]
+
+    return node
+
+
+# ------------------------------------------------------
 def login_diagnostic_body(response: Response) -> str:
     """Returns an IDX step's answer, without its state handle, to see what GrDF/Okta actually asked for.
 
@@ -115,10 +136,7 @@ def login_diagnostic_body(response: Response) -> str:
     except ValueError:
         return "no JSON body"
 
-    if isinstance(body, dict):
-        body.pop("stateHandle", None)
-
-    return json.dumps(body)
+    return json.dumps(_redact_idx_secrets(body))
 
 
 # ------------------------------------------------------

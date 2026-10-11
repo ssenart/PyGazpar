@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The identify step's answer, and a refused challenge's answer, are now logged at DEBUG with the state handle removed. The identify step always succeeds in the reported cases, but its answer is where GrDF/Okta states what it expects next; logging it even on success lets a working account's flow be compared to a failing one's. Temporary, to investigate [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118).
 
+### Security
+
+- The DEBUG diagnostic above only removed a top-level `stateHandle` key. GrDF's real answer has no such key: it repeats the state handle as a form field, once per remediation (`{"name": "stateHandle", "value": "<token>"}`), so none of it was actually redacted - confirmed against a real account before this fix shipped in a release. The redaction is now recursive and also clears any field Okta marks `"secret": true`.
+
 ## [1.4.0a5] - 2026-10-10
 
 Entries marked **Breaking** can break the code that uses PyGazpar. The other entries are compatible: the code written for 1.4.0a4 keeps working.

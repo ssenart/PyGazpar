@@ -285,6 +285,50 @@ class TestLoginDiagnosticBody:
         assert "select-authenticator-authenticate" in body
 
     # ------------------------------------------------------
+    def test_the_state_handle_repeated_inside_a_remediation_is_also_dropped(self):
+        """The real GrDF/Okta answer has no top-level "stateHandle" key at all: it repeats the token as a form
+        field, shaped {"name": "stateHandle", "value": "<token>"}, once per remediation. A redaction that only
+        pops a top-level key misses this entirely - this is exactly the shape that leaked in production."""
+
+        response = mock.Mock()
+        response.json.return_value = {
+            "version": "1.0.0",
+            "remediation": {
+                "value": [
+                    {
+                        "name": "challenge-authenticator",
+                        "href": "https://connexion.grdf.fr/idp/idx/challenge/answer",
+                        "value": [
+                            {"name": "credentials", "form": {"value": [{"name": "passcode", "secret": True}]}},
+                            {"name": "stateHandle", "value": "02.id.SECRET-TOKEN", "visible": False},
+                        ],
+                    },
+                ],
+            },
+            "cancel": {
+                "name": "cancel",
+                "value": [{"name": "stateHandle", "value": "02.id.SECRET-TOKEN", "visible": False}],
+            },
+        }
+
+        body = login_diagnostic_body(response)
+
+        assert "SECRET-TOKEN" not in body
+        assert "challenge-authenticator" in body
+        assert "credentials" in body
+
+    # ------------------------------------------------------
+    def test_a_field_marked_secret_is_redacted_even_if_populated(self):
+        response = mock.Mock()
+        response.json.return_value = {
+            "remediation": {
+                "value": [{"name": "credentials", "secret": True, "value": "SECRET-PASSCODE-ECHO"}],
+            },
+        }
+
+        assert "SECRET-PASSCODE-ECHO" not in login_diagnostic_body(response)
+
+    # ------------------------------------------------------
     def test_an_answer_that_is_not_json_is_reported_as_such(self):
         response = mock.Mock()
         response.json.side_effect = ValueError("not json")

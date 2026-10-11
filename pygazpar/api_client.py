@@ -109,7 +109,9 @@ def _redact_idx_secrets(node: Any) -> Any:
     """
 
     if isinstance(node, dict):
-        redacted = {key: ("<redacted>" if key == "stateHandle" else _redact_idx_secrets(val)) for key, val in node.items()}
+        redacted = {
+            key: ("<redacted>" if key == "stateHandle" else _redact_idx_secrets(val)) for key, val in node.items()
+        }
         if redacted.get("name") == "stateHandle" or redacted.get("secret") is True:
             redacted["value"] = "<redacted>"
         return redacted
@@ -227,7 +229,9 @@ class APIClient:
         challenge = find_remediation(mail_body, "challenge-authenticator")
         if challenge is None:
             offered = [
-                value.get("name") for value in mail_body.get("remediation", {}).get("value", []) if isinstance(value, dict)
+                value.get("name")
+                for value in mail_body.get("remediation", {}).get("value", [])
+                if isinstance(value, dict)
             ]
             Logger.warning(
                 "GrDF did not offer a 'challenge-authenticator' step after identify (offered instead: %s).",

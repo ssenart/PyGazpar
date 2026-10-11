@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A refused login now logs, at DEBUG, the identity provider's answer with its state handle removed. Temporary, to tell apart a wrong password from an extra authentication step GrDF may now require (see [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118)).
+
 ## [1.4.0a5] - 2026-10-10
 
 Entries marked **Breaking** can break the code that uses PyGazpar. The other entries are compatible: the code written for 1.4.0a4 keeps working.

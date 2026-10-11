@@ -100,6 +100,25 @@ def login_error(response: Response) -> str:
 
 
 # ------------------------------------------------------
+def login_error_diagnostic(response: Response) -> str:
+    """Returns the refused login's answer, without its state handle, to tell a wrong password from an extra
+    authentication step (e.g. an Okta remediation asking for a second factor).
+
+    Temporary: logged at DEBUG only, to investigate https://github.com/ssenart/gazpar2haws/issues/118.
+    """
+
+    try:
+        body = response.json()
+    except ValueError:
+        return "no JSON body"
+
+    if isinstance(body, dict):
+        body.pop("stateHandle", None)
+
+    return json.dumps(body)
+
+
+# ------------------------------------------------------
 def excel_filename(content_disposition: str | None) -> str:
     """Returns the file name of a Content-Disposition header, without any directory part.
 
@@ -172,6 +191,7 @@ class APIClient:
         )
 
         if password_response.status_code != 200:
+            Logger.debug("GrDF password challenge error body: %s", login_error_diagnostic(password_response))
             raise LoginError(
                 f"An error occurred while logging in password. Status code: {password_response.status_code} - {login_error(password_response)}",
                 password_response.status_code,

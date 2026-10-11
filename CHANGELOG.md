@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0a6] - 2026-10-11
+
 ### Added
 
 - The identify step's answer, and a refused challenge's answer, are now logged at DEBUG with the state handle removed. The identify step always succeeds in the reported cases, but its answer is where GrDF/Okta states what it expects next; logging it even on success lets a working account's flow be compared to a failing one's. Temporary, to investigate [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118).
@@ -389,7 +391,8 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a5...HEAD
+[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a6...HEAD
+[1.4.0a6]: https://github.com/ssenart/PyGazpar/compare/1.4.0a5...1.4.0a6
 [1.4.0a5]: https://github.com/ssenart/PyGazpar/compare/1.4.0a4...1.4.0a5
 [1.4.0a4]: https://github.com/ssenart/PyGazpar/compare/1.4.0a3...1.4.0a4
 [1.4.0a3]: https://github.com/ssenart/PyGazpar/compare/1.4.0a2...1.4.0a3

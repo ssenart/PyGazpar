@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The identify step's answer, and a refused challenge's answer, are now logged at DEBUG with the state handle removed. The identify step always succeeds in the reported cases, but its answer is where GrDF/Okta states what it expects next; logging it even on success lets a working account's flow be compared to a failing one's. Temporary, to investigate [gazpar2haws#118](https://github.com/ssenart/gazpar2haws/issues/118).
+- `find_remediation()` reads a login step's answer the way Okta's IDX protocol actually works: a server-declared list of named next steps, each with its own href, rather than the fixed two-step sequence `login()` assumes. `login()` uses it, at the identify step, to log a warning if GrDF stops offering the password challenge as a `challenge-authenticator` remediation at the URL it hardcodes, or offers it at a different href - without changing what it actually does yet. Also temporary, same investigation.
+- A real GrDF identify response, anonymized, is now a test fixture (`tests/resources/okta_identify_response.json`), so the two items above are tested against the actual protocol GrDF speaks rather than a guess at its shape.
 
 ### Security
 

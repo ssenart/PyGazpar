@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "expiresAt": "2026-10-11T17:04:34.000Z",
+  "intent": "LOGIN",
+  "remediation": {
+    "type": "array",
+    "value": [
+      {
+        "rel": ["create-form"],
+        "name": "challenge-authenticator",
+        "relatesTo": ["$.currentAuthenticatorEnrollment"],
+        "href": "https://connexion.grdf.fr/idp/idx/challenge/answer",
+        "method": "POST",
+        "produces": "application/ion+json; okta-version=1.0.0",
+        "value": [
+          {
+            "name": "credentials",
+            "type": "object",
+            "form": {"value": [{"name": "passcode", "label": "Password", "secret": true}]},
+            "required": true
+          },
+          {
+            "name": "stateHandle",
+            "required": true,
+            "value": "02.id.FIXTURE-STATE-HANDLE-0000000000000000000000000000000000000000000000000000000000000000",
+            "visible": false,
+            "mutable": false
+          }
+        ],
+        "accepts": "application/json; okta-version=1.0.0"
+      },
+      {
+        "rel": ["create-form"],
+        "name": "select-authenticator-authenticate",
+        "href": "https://connexion.grdf.fr/idp/idx/challenge",
+        "method": "POST",
+        "produces": "application/ion+json; okta-version=1.0.0",
+        "value": [
+          {
+            "name": "authenticator",
+            "type": "object",
+            "options": [
+              {
+                "label": "Password",
+                "value": {
+                  "form": {
+                    "value": [
+                      {"name": "id", "required": true, "value": "aut4f8ddboFUNSAss417", "mutable": false},
+                      {"name": "methodType", "required": false, "value": "password", "mutable": false}
+                    ]
+                  }
+                },
+                "relatesTo": "$.authenticatorEnrollments.value[0]"
+              }
+            ]
+          },
+          {
+            "name": "stateHandle",
+            "required": true,
+            "value": "02.id.FIXTURE-STATE-HANDLE-0000000000000000000000000000000000000000000000000000000000000000",
+            "visible": false,
+            "mutable": false
+          }
+        ],
+        "accepts": "application/json; okta-version=1.0.0"
+      }
+    ]
+  },
+  "currentAuthenticatorEnrollment": {
+    "type": "object",
+    "value": {
+      "recover": {
+        "rel": ["create-form"],
+        "name": "recover",
+        "href": "https://connexion.grdf.fr/idp/idx/recover",
+        "method": "POST",
+        "produces": "application/ion+json; okta-version=1.0.0",
+        "value": [
+          {
+            "name": "stateHandle",
+            "required": true,
+            "value": "02.id.FIXTURE-STATE-HANDLE-0000000000000000000000000000000000000000000000000000000000000000",
+            "visible": false,
+            "mutable": false
+          }
+        ],
+        "accepts": "application/json; okta-version=1.0.0"
+      },
+      "type": "password",
+      "key": "okta_password",
+      "displayName": "Password",
+      "methods": [{"type": "password"}]
+    }
+  },
+  "authenticators": {
+    "type": "array",
+    "value": [
+      {
+        "type": "password",
+        "key": "okta_password",
+        "id": "aut4f8ddboFUNSAss417",
+        "displayName": "Password",
+        "methods": [{"type": "password"}],
+        "allowedFor": "none"
+      }
+    ]
+  },
+  "authenticatorEnrollments": {
+    "type": "array",
+    "value": [
+      {"type": "password", "key": "okta_password", "displayName": "Password", "methods": [{"type": "password"}]}
+    ]
+  },
+  "user": {
+    "type": "object",
+    "value": {"identifier": "user@example.com"}
+  },
+  "cancel": {
+    "rel": ["create-form"],
+    "name": "cancel",
+    "href": "https://connexion.grdf.fr/idp/idx/cancel",
+    "method": "POST",
+    "produces": "application/ion+json; okta-version=1.0.0",
+    "value": [
+      {
+        "name": "stateHandle",
+        "required": true,
+        "value": "02.id.FIXTURE-STATE-HANDLE-0000000000000000000000000000000000000000000000000000000000000000",
+        "visible": false,
+        "mutable": false
+      }
+    ],
+    "accepts": "application/json; okta-version=1.0.0"
+  },
+  "app": {
+    "type": "object",
+    "value": {"name": "oidc_client", "label": "Mon espace GRDF", "id": "0oa95ese18blzdg3p417"}
+  },
+  "authentication": {
+    "type": "object",
+    "value": {
+      "protocol": "OAUTH2.0",
+      "issuer": {
+        "id": "aus5y2ta2uEHjCWIR417",
+        "name": "Conception",
+        "uri": "https://connexion.grdf.fr/oauth2/aus5y2ta2uEHjCWIR417"
+      },
+      "request": {
+        "max_age": -1,
+        "scope": "openid profile email",
+        "display": "page",
+        "response_type": "code",
+        "redirect_uri": "https://monespace.grdf.fr/_codexch",
+        "state": "/",
+        "nonce": "FIXTURE-NONCE-0000000000000000000000000000",
+        "response_mode": "query"
+      }
+    }
+  }
+}

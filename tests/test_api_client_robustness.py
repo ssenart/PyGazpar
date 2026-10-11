@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from datetime import date
@@ -370,6 +371,59 @@ class TestFindRemediation:
     @pytest.mark.parametrize("body", [{}, {"remediation": {}}, {"remediation": {"value": "not a list"}}])
     def test_tolerates_a_missing_or_malformed_remediation(self, body):
         assert find_remediation(body, "challenge-authenticator") is None
+
+
+class TestRealGrdfIdentifyResponse:
+    """tests/resources/okta_identify_response.json is GrDF's real identify-step answer for a working account
+    (captured 2026-10-11, investigating gazpar2haws#118), with the state handle, the account's email and the
+    OAuth nonce replaced by fixture values of the same shape. Everything else - every remediation, field name
+    and nesting level - is real. It exists so pygazpar's reading of the IDX protocol is tested against the
+    actual protocol GrDF speaks, not against a guess at its shape."""
+
+    # ------------------------------------------------------
+    @staticmethod
+    def _load():
+        with open("tests/resources/okta_identify_response.json", encoding="utf-8") as sample_file:
+            return json.load(sample_file)
+
+    # ------------------------------------------------------
+    def test_the_challenge_authenticator_remediation_matches_the_fixed_password_url(self):
+        """This is what login() relies on: for this account, GrDF offers the password challenge at exactly the
+        href pygazpar hardcodes - so the hardcoded flow is correct for it, not merely lucky."""
+
+        challenge = find_remediation(self._load(), "challenge-authenticator")
+
+        assert challenge is not None
+        assert challenge["href"] == PASSWORD_SESSION_TOKEN_URL
+
+    # ------------------------------------------------------
+    def test_a_select_authenticator_remediation_is_also_offered_alongside_it(self):
+        """GrDF offers both remediations at once here: the direct password challenge pygazpar uses, and an
+        authenticator-selection step it does not need because this account has only password enrolled."""
+
+        assert find_remediation(self._load(), "select-authenticator-authenticate") is not None
+
+    # ------------------------------------------------------
+    def test_only_password_is_enrolled(self):
+        """No second factor is enrolled on this account, which is consistent with it never being asked for one."""
+
+        enrollments = self._load()["authenticatorEnrollments"]["value"]
+
+        assert [e["type"] for e in enrollments] == ["password"]
+
+    # ------------------------------------------------------
+    def test_the_repeated_state_handle_does_not_survive_the_diagnostic_log(self):
+        """The real answer has no top-level "stateHandle" key: it repeats the token as its own form field, once
+        per remediation (4 times in this fixture). A redaction that only drops a top-level key - what shipped
+        before this was caught - would leave all four untouched."""
+
+        response = mock.Mock()
+        response.json.return_value = self._load()
+
+        body = login_diagnostic_body(response)
+
+        assert "FIXTURE-STATE-HANDLE" not in body
+        assert "challenge-authenticator" in body
 
 
 class TestExcelFilename:

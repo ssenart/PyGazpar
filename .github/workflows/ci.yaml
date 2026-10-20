@@ -89,22 +89,22 @@ jobs:
       #----------------------------------------------
       # Install project
       - name: Install project
-        run: uv sync --locked
+        run: uv sync --locked --extra cli
 
       #----------------------------------------------
       # Check the formatting
       - name: Ruff format
-        run: uv run --locked ruff format --check .
+        run: uv run --locked --extra cli ruff format --check .
 
       #----------------------------------------------
       # Lint the code
       - name: Ruff check
-        run: uv run --locked ruff check .
+        run: uv run --locked --extra cli ruff check .
 
       #----------------------------------------------
       # Check the types
       - name: Mypy
-        run: uv run --locked mypy .
+        run: uv run --locked --extra cli mypy .
 
   #----------------------------------------------
   # Test
@@ -141,12 +141,12 @@ jobs:
       #----------------------------------------------
       # Install project
       - name: Install project
-        run: uv sync --locked
+        run: uv sync --locked --extra cli
 
       #----------------------------------------------
       # Run the tests
       - name: Test with pytest
-        run: uv run --locked pytest tests
+        run: uv run --locked --extra cli pytest tests
         env:
           GRDF_USERNAME: ${{ secrets.GRDF_USERNAME }}
           GRDF_PASSWORD: ${{ secrets.GRDF_PASSWORD }}

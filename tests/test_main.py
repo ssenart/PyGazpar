@@ -1,154 +1,30 @@
-import argparse
-import json
+import builtins
 import sys
 from unittest import mock
 
 import pytest
 
-from pygazpar import __main__ as cli
-from pygazpar.api_client import APIClient, ConsumptionType
-from pygazpar.grdf import GrdfPce
-from pygazpar.model import Frequency
-
-PCE = "12345678901234"
+from pygazpar import __main__ as entry_point
 
 
-class TestCredentialsFromEnvironment:
+class TestEntryPoint:
     # ------------------------------------------------------
-    def test_missing_credentials_are_read_from_environment(self, monkeypatch):
+    def test_the_missing_cli_extra_is_explained(self, capsys):
+        real_import = builtins.__import__
 
-        monkeypatch.setenv("GRDF_USERNAME", "user@example.com")
-        monkeypatch.setenv("GRDF_PASSWORD", "secret")
-        monkeypatch.setenv("PCE_IDENTIFIER", PCE)
-        args = argparse.Namespace(username=None, password=None, pce=None)
-
-        cli.fill_credentials_from_env(args, mock.Mock())
-
-        assert (args.username, args.password, args.pce) == ("user@example.com", "secret", PCE)
-
-    # ------------------------------------------------------
-    def test_command_line_takes_precedence_over_environment(self, monkeypatch):
-
-        monkeypatch.setenv("GRDF_USERNAME", "from-env@example.com")
-        monkeypatch.setenv("GRDF_PASSWORD", "from-env")
-        monkeypatch.setenv("PCE_IDENTIFIER", "0000")
-        args = argparse.Namespace(username="from-flag@example.com", password="from-flag", pce=PCE)
-
-        cli.fill_credentials_from_env(args, mock.Mock())
-
-        assert (args.username, args.password, args.pce) == ("from-flag@example.com", "from-flag", PCE)
-
-    # ------------------------------------------------------
-    def test_missing_credentials_are_an_error(self, monkeypatch):
-
-        monkeypatch.delenv("GRDF_USERNAME", raising=False)
-        monkeypatch.delenv("GRDF_PASSWORD", raising=False)
-        monkeypatch.delenv("PCE_IDENTIFIER", raising=False)
-        args = argparse.Namespace(username=None, password=None, pce=None)
-        parser = mock.Mock()
-
-        cli.fill_credentials_from_env(args, parser)
-
-        parser.error.assert_called_once()
-
-
-class TestConsumptionTypeOption:
-    # ------------------------------------------------------
-    def test_json_datasource_forwards_published_consumption_type(self, tmp_path):
-
-        argv = [
-            "pygazpar",
-            "-u",
-            "user@example.com",
-            "-p",
-            "secret",
-            "-c",
-            PCE,
-            "-t",
-            str(tmp_path),
-            "--datasource",
-            "json",
-            "--consumption-type",
-            "PUBLISHED",
-        ]
+        def import_without_typer(name, *args, **kwargs):
+            if name.split(".")[0] in ("typer", "rich"):
+                raise ModuleNotFoundError(f"No module named {name!r}", name=name)
+            return real_import(name, *args, **kwargs)
 
         with (
-            mock.patch.object(cli, "load_dotenv"),
-            mock.patch.object(sys, "argv", argv),
-            mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_list", return_value=[GrdfPce.model_validate({"idObject": PCE})]),
-            mock.patch.object(APIClient, "get_pce_consumption", return_value={}) as get_consumption,
-        ):
-            assert cli.main() == 0
-
-        assert get_consumption.call_args.args[0] == ConsumptionType.PUBLISHED
-
-    # ------------------------------------------------------
-    def test_consumption_type_is_rejected_for_other_datasources(self, tmp_path):
-
-        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "test"]
-        argv += ["--consumption-type", "PUBLISHED"]
-
-        with (
-            mock.patch.object(cli, "load_dotenv"),
-            mock.patch.object(sys, "argv", argv),
+            mock.patch.dict(sys.modules, {key: None for key in list(sys.modules) if key.startswith("pygazpar.cli")}),
+            mock.patch.object(builtins, "__import__", import_without_typer),
             pytest.raises(SystemExit) as exit_info,
         ):
-            cli.main()
+            for key in [key for key in sys.modules if key.startswith("pygazpar.cli")]:
+                del sys.modules[key]
+            entry_point.main()
 
-        assert exit_info.value.code == 2
-
-
-class TestRawDatasourcesOnTheCommandLine:
-    # ------------------------------------------------------
-    def test_raw_consumption_prints_the_response_as_json(self, tmp_path, capsys):
-        payload = {PCE: {"idPce": PCE, "frequence": None, "releves": []}}
-        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "raw-consumption"]
-
-        with (
-            mock.patch.object(sys, "argv", argv),
-            mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_consumption_raw", return_value=payload),
-        ):
-            assert cli.main() == 0
-
-        assert json.loads(capsys.readouterr().out) == payload
-
-    # ------------------------------------------------------
-    def test_raw_temperature_prints_the_response_as_json(self, tmp_path, capsys):
-        meteo = {"2026-01-02": 5.5}
-        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "raw-temperature"]
-
-        with (
-            mock.patch.object(sys, "argv", argv),
-            mock.patch.object(APIClient, "login"),
-            mock.patch.object(APIClient, "get_pce_meteo_raw", return_value=meteo),
-        ):
-            assert cli.main() == 0
-
-        assert json.loads(capsys.readouterr().out) == meteo
-
-
-class TestFrequencyOption:
-    # ------------------------------------------------------
-    @pytest.mark.parametrize("text", ["daily", "DAILY", "Daily"])
-    def test_a_frequency_is_read_in_any_case(self, text):
-
-        assert cli.frequency_of(text) is Frequency.DAILY
-
-    # ------------------------------------------------------
-    def test_an_unknown_frequency_is_a_usage_error(self):
-
-        with pytest.raises(argparse.ArgumentTypeError, match="invalid frequency"):
-            cli.frequency_of("fortnightly")
-
-    # ------------------------------------------------------
-    @pytest.mark.parametrize("option", ["daily", "DAILY"])
-    def test_the_command_line_accepts_the_frequency(self, option, tmp_path, capsys):
-
-        argv = ["pygazpar", "-u", "u", "-p", "p", "-c", PCE, "-t", str(tmp_path), "--datasource", "test", "-f", option]
-
-        with mock.patch.object(cli, "load_dotenv"), mock.patch.object(sys, "argv", argv):
-            assert cli.main() == 0
-
-        assert list(json.loads(capsys.readouterr().out.split("\n", 2)[2])) == ["daily"]
+        assert exit_info.value.code == 1
+        assert "pygazpar[cli]" in capsys.readouterr().err

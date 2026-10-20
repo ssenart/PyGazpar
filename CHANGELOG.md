@@ -162,98 +162,98 @@ Compared with 1.3.1:
 
 ### Fixed
 
-[#88](https://github.com/ssenart/PyGazpar/issues/88) : 500 - NGINX / OpenID Connect login failure.
+[#88](https://github.com/ssenart/pygazpar/issues/88) : 500 - NGINX / OpenID Connect login failure.
 
 ## [1.3.0] - 2025-02-15
 
 ### Added
 
-[#84](https://github.com/ssenart/PyGazpar/issues/84) : Add a function to retrieve list of PCE ids.
+[#84](https://github.com/ssenart/pygazpar/issues/84) : Add a function to retrieve list of PCE ids.
 
 ### Changed
 
-[#85](https://github.com/ssenart/PyGazpar/issues/85) : Move to Poetry dependency/package management tool.
+[#85](https://github.com/ssenart/pygazpar/issues/85) : Move to Poetry dependency/package management tool.
 
-## [1.2.8](https://github.com/ssenart/PyGazpar/compare/1.2.8...1.2.7) - 2025-01-11
+## [1.2.8](https://github.com/ssenart/pygazpar/compare/1.2.8...1.2.7) - 2025-01-11
 
 ### Added
-- [#81](https://github.com/ssenart/PyGazpar/issues/81): Add meter/temperature debug log messages to help investigation in case of errors.
+- [#81](https://github.com/ssenart/pygazpar/issues/81): Add meter/temperature debug log messages to help investigation in case of errors.
 
-## [1.2.7](https://github.com/ssenart/PyGazpar/compare/1.2.7...1.2.6) - 2025-01-06
-
-### Fixed
-- [#79](https://github.com/ssenart/PyGazpar/issues/79): Fix some unittests that wrongly failed because of the new year.
-
-## [1.2.6](https://github.com/ssenart/PyGazpar/compare/1.2.6...1.2.5) - 2025-01-03
+## [1.2.7](https://github.com/ssenart/pygazpar/compare/1.2.7...1.2.6) - 2025-01-06
 
 ### Fixed
-- [#77](https://github.com/ssenart/PyGazpar/issues/77): Some error may occur while requesting data from GrDF API.
+- [#79](https://github.com/ssenart/pygazpar/issues/79): Fix some unittests that wrongly failed because of the new year.
 
-## [1.2.5](https://github.com/ssenart/PyGazpar/compare/1.2.5...1.2.4) - 2024-12-21
-
-### Fixed
-- [#75](https://github.com/ssenart/PyGazpar/issues/75): Fix an error when no temperature data is available.
-
-## [1.2.4](https://github.com/ssenart/PyGazpar/compare/1.2.4...1.2.3) - 2024-10-09
+## [1.2.6](https://github.com/ssenart/pygazpar/compare/1.2.6...1.2.5) - 2025-01-03
 
 ### Fixed
-- [#72](https://github.com/ssenart/PyGazpar/issues/72): Remove the warning message "UserWarning: Boolean Series key will be reindexed to match DataFrame index. df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df["count"] < 7]])".
+- [#77](https://github.com/ssenart/pygazpar/issues/77): Some error may occur while requesting data from GrDF API.
 
-## [1.2.3](https://github.com/ssenart/PyGazpar/compare/1.2.3...1.2.1) - 2024-10-05
+## [1.2.5](https://github.com/ssenart/pygazpar/compare/1.2.5...1.2.4) - 2024-12-21
+
+### Fixed
+- [#75](https://github.com/ssenart/pygazpar/issues/75): Fix an error when no temperature data is available.
+
+## [1.2.4](https://github.com/ssenart/pygazpar/compare/1.2.4...1.2.3) - 2024-10-09
+
+### Fixed
+- [#72](https://github.com/ssenart/pygazpar/issues/72): Remove the warning message "UserWarning: Boolean Series key will be reindexed to match DataFrame index. df = pd.concat([df[(df["count"] >= 7)], df.tail(1)[df["count"] < 7]])".
+
+## [1.2.3](https://github.com/ssenart/pygazpar/compare/1.2.3...1.2.1) - 2024-10-05
 
 ### Added
-- [#70](https://github.com/ssenart/PyGazpar/issues/70): Add Python 3.12 support.
+- [#70](https://github.com/ssenart/pygazpar/issues/70): Add Python 3.12 support.
 
-## [1.2.2](https://github.com/ssenart/PyGazpar/compare/1.2.1...1.2.2) - 2024-05-08
-
-### Fixed
-- [#65](https://github.com/ssenart/PyGazpar/issues/65): [Bug] PermissionError happens when loading data from Excel file.
-
-## [1.2.1](https://github.com/ssenart/PyGazpar/compare/1.2.0...1.2.1) - 2024-05-04
+## [1.2.2](https://github.com/ssenart/pygazpar/compare/1.2.1...1.2.2) - 2024-05-08
 
 ### Fixed
-- [#64](https://github.com/ssenart/PyGazpar/issues/64): [Issue] Captcha failed issue.
+- [#65](https://github.com/ssenart/pygazpar/issues/65): [Bug] PermissionError happens when loading data from Excel file.
 
-- [#63](https://github.com/ssenart/PyGazpar/issues/63): [Bug] If the latest received consumption is Sunday, then the last weekly period is duplicated.
+## [1.2.1](https://github.com/ssenart/pygazpar/compare/1.2.0...1.2.1) - 2024-05-04
 
-## [1.2.0](https://github.com/ssenart/PyGazpar/compare/1.1.6...1.2.0) - 2022-12-16
+### Fixed
+- [#64](https://github.com/ssenart/pygazpar/issues/64): [Issue] Captcha failed issue.
+
+- [#63](https://github.com/ssenart/pygazpar/issues/63): [Bug] If the latest received consumption is Sunday, then the last weekly period is duplicated.
+
+## [1.2.0](https://github.com/ssenart/pygazpar/compare/1.1.6...1.2.0) - 2022-12-16
 
 ### Changed
-- [#59](https://github.com/ssenart/PyGazpar/issues/59): [Feature] Support both Excel and Json data source format from GrDF site.
+- [#59](https://github.com/ssenart/pygazpar/issues/59): [Feature] Support both Excel and Json data source format from GrDF site.
 
-- [#60](https://github.com/ssenart/PyGazpar/issues/60): [Feature] Permit to load data at multiple frequencies with one method call.
+- [#60](https://github.com/ssenart/pygazpar/issues/60): [Feature] Permit to load data at multiple frequencies with one method call.
 
 ### Fixed
-- [#47](https://github.com/ssenart/PyGazpar/issues/47): [Bug] No temperature field available.
+- [#47](https://github.com/ssenart/pygazpar/issues/47): [Bug] No temperature field available.
 
-- [#58](https://github.com/ssenart/PyGazpar/issues/58): [Issue] No data update - GrDF web site is half broken - Download button does not work anymore.
+- [#58](https://github.com/ssenart/pygazpar/issues/58): [Issue] No data update - GrDF web site is half broken - Download button does not work anymore.
 
-## [1.1.6](https://github.com/ssenart/PyGazpar/compare/1.1.5...1.1.6) - 2022-11-16
+## [1.1.6](https://github.com/ssenart/pygazpar/compare/1.1.5...1.1.6) - 2022-11-16
 ### Fixed
-- [#55](https://github.com/ssenart/PyGazpar/issues/55): Problème de connexion.
+- [#55](https://github.com/ssenart/pygazpar/issues/55): Problème de connexion.
 
-## [1.1.5](https://github.com/ssenart/PyGazpar/compare/1.1.4...1.1.5) - 2022-07-11
+## [1.1.5](https://github.com/ssenart/pygazpar/compare/1.1.4...1.1.5) - 2022-07-11
 ### Fixed
-- [#49](https://github.com/ssenart/PyGazpar/issues/49): Authentication failure.
+- [#49](https://github.com/ssenart/pygazpar/issues/49): Authentication failure.
 
-## [1.1.4](https://github.com/ssenart/PyGazpar/compare/1.1.2...1.1.4) - 2022-01-18
+## [1.1.4](https://github.com/ssenart/pygazpar/compare/1.1.2...1.1.4) - 2022-01-18
 ### Changed
-- [#43](https://github.com/ssenart/PyGazpar/issues/43): Downloaded Excel file name has changed from Donnees_informatives_PCE_$dateDebut_$dateFin.xlsx to Donnees_informatives_$numeroPCE_$dateDebut_$dateFin.xlsx.
+- [#43](https://github.com/ssenart/pygazpar/issues/43): Downloaded Excel file name has changed from Donnees_informatives_PCE_$dateDebut_$dateFin.xlsx to Donnees_informatives_$numeroPCE_$dateDebut_$dateFin.xlsx.
 
-## [1.1.2](https://github.com/ssenart/PyGazpar/compare/1.1.1...1.1.2) - 2022-01-08
+## [1.1.2](https://github.com/ssenart/pygazpar/compare/1.1.1...1.1.2) - 2022-01-08
 ### Fixed
-- [#39](https://github.com/ssenart/PyGazpar/issues/39): NameError: name 'Frequency' is not defined (thanks [nicolas-r](https://github.com/nicolas-r)).
+- [#39](https://github.com/ssenart/pygazpar/issues/39): NameError: name 'Frequency' is not defined (thanks [nicolas-r](https://github.com/nicolas-r)).
 - Numéro PCE pas forcément un nombre: Le numéro PCE de mon compteur commence par un 0 et lorsque j'essaie de récupérer mes relevés avec PyGazpar, une erreur de l'API est renvoyée. Le numéro PCE ne doit donc pas être converti en int lorsque il est passé en paramètre mais doit être une string (thanks  [maelgangloff](https://github.com/maelgangloff)).
 
-## [1.1.1](https://github.com/ssenart/PyGazpar/compare/1.1.0...1.1.1) - 2021-12-02
+## [1.1.1](https://github.com/ssenart/pygazpar/compare/1.1.0...1.1.1) - 2021-12-02
 ### Changed
 - Exact same version as 1.1.0 except that 1.1.0 has not been published on Pypi repository.
 
-## [1.1.0](https://github.com/ssenart/PyGazpar/compare/1.0.2...1.1.0) - 2021-12-02
+## [1.1.0](https://github.com/ssenart/pygazpar/compare/1.0.2...1.1.0) - 2021-12-02
 ### Changed
 - Remove Selenium usage and use simple Web request for login and data retrieval.
 
-## [1.0.2](https://github.com/ssenart/PyGazpar/compare/1.0.1...1.0.2) - 2021-11-25
+## [1.0.2](https://github.com/ssenart/pygazpar/compare/1.0.1...1.0.2) - 2021-11-25
 ### Fixed
 - Fix broken command line pygazpar caused by adding the new lastNDays parameter.
 - Fix the error : ValueError: could not convert string to float: 'Index de début de période (m3)'. It occurs because the records in the Excel file now starts at line 10 instead of line 8 before (thanks to [DEFAYArnaud](https://github.com/DEFAYArnaud) for having spotted the issue and bringing the fix).
@@ -261,20 +261,20 @@ Compared with 1.3.1:
 ### Changed
 - In the Excel file, if a cell is empty, then no corresponding key will be inserted in the result dictionary (before we inserted a key with an empty string).
 
-## [1.0.1](https://github.com/ssenart/PyGazpar/compare/1.0.0...1.0.1) - 2021-11-24
+## [1.0.1](https://github.com/ssenart/pygazpar/compare/1.0.0...1.0.1) - 2021-11-24
 ### Fixed
 - Fix typo warning from Pylance preventing 1.0.0 to be published.
 
-## [1.0.0](https://github.com/ssenart/PyGazpar/compare/0.2.0...1.0.0) - 2021-11-24
+## [1.0.0](https://github.com/ssenart/pygazpar/compare/0.2.0...1.0.0) - 2021-11-24
 ### Added
 - New lastNDays parameter to query data only over the last N days period.
 
 ### Fixed
-- [#18](https://github.com/ssenart/PyGazpar/issues/18): PyGazpar broken since GRDF Monespace has been upgraded to a new version.
+- [#18](https://github.com/ssenart/pygazpar/issues/18): PyGazpar broken since GRDF Monespace has been upgraded to a new version.
 
-## [0.2.0](https://github.com/ssenart/PyGazpar/compare/0.1.27...0.2.0) - 2021-04-21
+## [0.2.0](https://github.com/ssenart/pygazpar/compare/0.1.27...0.2.0) - 2021-04-21
 ### Added
-- [#12](https://github.com/ssenart/PyGazpar/issues/10): Be able to retrieve consumption not only on a daily basis, but weekly and monthly:
+- [#12](https://github.com/ssenart/pygazpar/issues/10): Be able to retrieve consumption not only on a daily basis, but weekly and monthly:
     - API : Add a new parameter 'meterReadingFrequency' to Client that accepts enumeration: Frequency.DAILY, Frequency.WEEKLY or Frequency.MONTHLY.
     - Command line : Add a new argument '--frequency' that accepts values : DAILY, WEEKLY or MONTHLY.
 - Be able to test using offline data :
@@ -287,13 +287,13 @@ Compared with 1.3.1:
     - 'converter_factor' => 'converter_factor_kwh/m3'.
     - 'local_temperature' => 'temperature_degC'.
 
-## [0.1.27](https://github.com/ssenart/PyGazpar/compare/0.1.26...0.1.27) - 2021-04-20
+## [0.1.27](https://github.com/ssenart/pygazpar/compare/0.1.26...0.1.27) - 2021-04-20
 ### Fixed
-- [#10](https://github.com/ssenart/PyGazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory). The previous attempt in version 0.1.26 is a failure. The origin of the bug is that we send a relative tmp directory path to Webdriver. Additionally, this path has to be normalized to the runtime OS (using slash or backslash).
+- [#10](https://github.com/ssenart/pygazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory). The previous attempt in version 0.1.26 is a failure. The origin of the bug is that we send a relative tmp directory path to Webdriver. Additionally, this path has to be normalized to the runtime OS (using slash or backslash).
 
-## [0.1.26](https://github.com/ssenart/PyGazpar/compare/0.1.25...0.1.26) - 2021-04-18
+## [0.1.26](https://github.com/ssenart/pygazpar/compare/0.1.25...0.1.26) - 2021-04-18
 ### Fixed
-- [#10](https://github.com/ssenart/PyGazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory).
+- [#10](https://github.com/ssenart/pygazpar/issues/10) : Does not download data file in tmpdir as expected (instead it is downloaded in the default user Download directory).
 
 ### Added
 - A new parameter to drive whether we want Selenium in headless mode or not (mainly for troubleshooting purpose).
@@ -393,28 +393,28 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/PyGazpar/compare/1.4.0a6...HEAD
-[1.4.0a6]: https://github.com/ssenart/PyGazpar/compare/1.4.0a5...1.4.0a6
-[1.4.0a5]: https://github.com/ssenart/PyGazpar/compare/1.4.0a4...1.4.0a5
-[1.4.0a4]: https://github.com/ssenart/PyGazpar/compare/1.4.0a3...1.4.0a4
-[1.4.0a3]: https://github.com/ssenart/PyGazpar/compare/1.4.0a2...1.4.0a3
-[0.1.25]: https://github.com/ssenart/PyGazpar/compare/0.1.24...0.1.25
-[0.1.24]: https://github.com/ssenart/PyGazpar/compare/0.1.23...0.1.24
-[0.1.23]: https://github.com/ssenart/PyGazpar/compare/0.1.22...0.1.23
-[0.1.22]: https://github.com/ssenart/PyGazpar/compare/0.1.21...0.1.22
-[0.1.21]: https://github.com/ssenart/PyGazpar/compare/0.1.20...0.1.21
-[0.1.20]: https://github.com/ssenart/PyGazpar/compare/0.1.19...0.1.20
-[0.1.19]: https://github.com/ssenart/PyGazpar/compare/0.1.17...0.1.19
-[0.1.18]: https://github.com/ssenart/PyGazpar/compare/0.1.17...0.1.18
-[0.1.17]: https://github.com/ssenart/PyGazpar/compare/0.1.16...0.1.17
-[0.1.16]: https://github.com/ssenart/PyGazpar/compare/0.1.15...0.1.16
-[0.1.15]: https://github.com/ssenart/PyGazpar/compare/0.1.14...0.1.15
-[0.1.14]: https://github.com/ssenart/PyGazpar/compare/0.1.13...0.1.14
-[0.1.13]: https://github.com/ssenart/PyGazpar/compare/0.1.12...0.1.13
-[0.1.12]: https://github.com/ssenart/PyGazpar/compare/0.1.11...0.1.12
-[0.1.11]: https://github.com/ssenart/PyGazpar/compare/0.1.10...0.1.11
-[0.1.10]: https://github.com/ssenart/PyGazpar/compare/0.1.9...0.1.10
-[0.1.9]: https://github.com/ssenart/PyGazpar/compare/0.1.7...0.1.9
-[0.1.8]: https://github.com/ssenart/PyGazpar/compare/0.1.7...0.1.8
-[0.1.7]: https://github.com/ssenart/PyGazpar/compare/0.1.6...0.1.7
-[0.1.6]: https://github.com/ssenart/PyGazpar/compare/0.1.5...0.1.6
+[Unreleased]: https://github.com/ssenart/pygazpar/compare/1.4.0a6...HEAD
+[1.4.0a6]: https://github.com/ssenart/pygazpar/compare/1.4.0a5...1.4.0a6
+[1.4.0a5]: https://github.com/ssenart/pygazpar/compare/1.4.0a4...1.4.0a5
+[1.4.0a4]: https://github.com/ssenart/pygazpar/compare/1.4.0a3...1.4.0a4
+[1.4.0a3]: https://github.com/ssenart/pygazpar/compare/1.4.0a2...1.4.0a3
+[0.1.25]: https://github.com/ssenart/pygazpar/compare/0.1.24...0.1.25
+[0.1.24]: https://github.com/ssenart/pygazpar/compare/0.1.23...0.1.24
+[0.1.23]: https://github.com/ssenart/pygazpar/compare/0.1.22...0.1.23
+[0.1.22]: https://github.com/ssenart/pygazpar/compare/0.1.21...0.1.22
+[0.1.21]: https://github.com/ssenart/pygazpar/compare/0.1.20...0.1.21
+[0.1.20]: https://github.com/ssenart/pygazpar/compare/0.1.19...0.1.20
+[0.1.19]: https://github.com/ssenart/pygazpar/compare/0.1.17...0.1.19
+[0.1.18]: https://github.com/ssenart/pygazpar/compare/0.1.17...0.1.18
+[0.1.17]: https://github.com/ssenart/pygazpar/compare/0.1.16...0.1.17
+[0.1.16]: https://github.com/ssenart/pygazpar/compare/0.1.15...0.1.16
+[0.1.15]: https://github.com/ssenart/pygazpar/compare/0.1.14...0.1.15
+[0.1.14]: https://github.com/ssenart/pygazpar/compare/0.1.13...0.1.14
+[0.1.13]: https://github.com/ssenart/pygazpar/compare/0.1.12...0.1.13
+[0.1.12]: https://github.com/ssenart/pygazpar/compare/0.1.11...0.1.12
+[0.1.11]: https://github.com/ssenart/pygazpar/compare/0.1.10...0.1.11
+[0.1.10]: https://github.com/ssenart/pygazpar/compare/0.1.9...0.1.10
+[0.1.9]: https://github.com/ssenart/pygazpar/compare/0.1.7...0.1.9
+[0.1.8]: https://github.com/ssenart/pygazpar/compare/0.1.7...0.1.8
+[0.1.7]: https://github.com/ssenart/pygazpar/compare/0.1.6...0.1.7
+[0.1.6]: https://github.com/ssenart/pygazpar/compare/0.1.5...0.1.6

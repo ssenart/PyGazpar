@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0a7] - 2026-10-20
+
 ### Changed
 
 - **Breaking** (command line only, the library is unchanged): the `pygazpar` command is now a set of subcommands. The flat invocation `pygazpar -u ... -p ... -c ... -f daily -d 30` is replaced by `pygazpar readings -f daily -d 30`. `--lastNDays`/`-d` is now `--last-days`/`-d`, `-v` prints no version any more but counts log verbosity (`--version`/`-V` prints it), `--datasource raw-consumption` and `raw-temperature` became `pygazpar api consumption --raw` and `pygazpar api meteo --raw`, and `-t`/`--tmpdir` only serves the `excel` datasource. Output is a table in a terminal and JSON when piped, instead of always JSON; `--format json` gives a JSON object keyed by frequency, as before, but with snake_case keys (`converter_factor_kwh_m3` instead of `converter_factor_kwh/m3`, `type` unchanged). The version banner is no longer printed on stdout, and the DEBUG log is no longer written to `<tmpdir>/pygazpar.log` unless `--log-file` is given.
@@ -410,7 +412,8 @@ It occurs with the page containing 'Jour' button which is very long to load (I i
 ### Removed
 - Remove Client.data property to get the updated data. Replaced with Client.__data private property.
 
-[Unreleased]: https://github.com/ssenart/pygazpar/compare/1.4.0a6...HEAD
+[Unreleased]: https://github.com/ssenart/pygazpar/compare/1.4.0a7...HEAD
+[1.4.0a7]: https://github.com/ssenart/pygazpar/compare/1.4.0a6...1.4.0a7
 [1.4.0a6]: https://github.com/ssenart/pygazpar/compare/1.4.0a5...1.4.0a6
 [1.4.0a5]: https://github.com/ssenart/pygazpar/compare/1.4.0a4...1.4.0a5
 [1.4.0a4]: https://github.com/ssenart/pygazpar/compare/1.4.0a3...1.4.0a4

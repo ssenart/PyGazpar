@@ -747,7 +747,7 @@ wheels = [
 
 [[package]]
 name = "pygazpar"
-version = "1.4.0a6"
+version = "1.4.0a7"
 source = { editable = "." }
 dependencies = [
     { name = "openpyxl" },

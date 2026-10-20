@@ -1,4 +1,10 @@
-import json
+"""Reads the daily and monthly consumption of the last 60 days from the GrDF JSON API.
+
+Needs GRDF_USERNAME and GRDF_PASSWORD in the environment or in a .env file. PCE_IDENTIFIER is optional when the account
+has only one PCE.
+"""
+
+import logging
 import os
 import sys
 
@@ -7,24 +13,57 @@ import dotenv
 import pygazpar
 
 
-def main():
+def main() -> int:
+
+    # The library logs through the standard logging module: warnings and errors are shown on stderr.
+    logging.basicConfig(level=logging.WARNING)
 
     # Load environment variables GRDF_USERNAME, GRDF_PASSWORD, PCE_IDENTIFIER from .env file.
     dotenv.load_dotenv()
 
-    username = os.environ["GRDF_USERNAME"]
-    password = os.environ["GRDF_PASSWORD"]
-    pce_identifier = os.environ["PCE_IDENTIFIER"]
+    try:
+        username = os.environ["GRDF_USERNAME"]
+        password = os.environ["GRDF_PASSWORD"]
+    except KeyError as error:
+        print(f"Set {error.args[0]} in the environment or in a .env file.", file=sys.stderr)
+        return 2
 
-    client = pygazpar.Client(pygazpar.JsonWebDataSource(username=username, password=password))
+    try:
+        # The with block logs in when it starts and logs out when it ends, even after an error.
+        with pygazpar.Client(pygazpar.JsonWebDataSource(username=username, password=password)) as client:
+            pce_identifiers = client.get_pce_identifiers()
+            pce_identifier = os.environ.get("PCE_IDENTIFIER") or (
+                pce_identifiers[0] if len(pce_identifiers) == 1 else ""
+            )
+            if not pce_identifier:
+                print(f"Set PCE_IDENTIFIER to one of: {', '.join(pce_identifiers)}", file=sys.stderr)
+                return 2
 
-    data = client.load_since(
-        pce_identifier=pce_identifier,
-        last_n_days=60,
-        frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY],
-    )
+            # The readings are models: their fields are attributes. client.load_since() returns the same data as dicts.
+            readings = client.load_readings_since(
+                pce_identifier=pce_identifier,
+                last_n_days=60,
+                frequencies=[pygazpar.Frequency.DAILY, pygazpar.Frequency.MONTHLY],
+            )
+    except pygazpar.LoginError as error:
+        print(f"GrDF refused the login: {error}", file=sys.stderr)
+        return 1
+    except pygazpar.UnknownPceError as error:
+        print(error, file=sys.stderr)
+        return 1
+    except pygazpar.RateLimitError:
+        print("GrDF is limiting the calls: wait a few minutes and try again.", file=sys.stderr)
+        return 1
+    except pygazpar.PyGazparError as error:
+        print(f"GrDF error: {error}", file=sys.stderr)
+        return 1
 
-    print(json.dumps(data, indent=2))
+    for frequency, rows in readings.items():
+        print(f"{frequency.value}: {len(rows)} readings")
+        for reading in rows:
+            print(f"  {reading.time_period}: {reading.volume_m3} m3, {reading.energy_kwh} kWh")
+
+    return 0
 
 
 if __name__ == "__main__":

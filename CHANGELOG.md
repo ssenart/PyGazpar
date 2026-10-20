@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking** (command line only, the library is unchanged): the `pygazpar` command is now a set of subcommands. The flat invocation `pygazpar -u ... -p ... -c ... -f daily -d 30` is replaced by `pygazpar readings -f daily -d 30`. `--lastNDays`/`-d` is now `--last-days`/`-d`, `-v` prints no version any more but counts log verbosity (`--version`/`-V` prints it), `--datasource raw-consumption` and `raw-temperature` became `pygazpar api consumption --raw` and `pygazpar api meteo --raw`, and `-t`/`--tmpdir` only serves the `excel` datasource. Output is a table in a terminal and JSON when piped, instead of always JSON; `--format json` gives a JSON object keyed by frequency, as before, but with snake_case keys (`converter_factor_kwh_m3` instead of `converter_factor_kwh/m3`, `type` unchanged). The version banner is no longer printed on stdout, and the DEBUG log is no longer written to `<tmpdir>/pygazpar.log` unless `--log-file` is given.
+- The command line needs the new `cli` extra: `pip install "pygazpar[cli]"`. The library dependencies are unchanged.
+- The README is reorganized: quick start, install split between users and development, one section per topic, a Security section, and badges. The period computation reference (steps, examples, invariants) moved to `docs/published-readings.md`, unchanged.
+- The samples follow the recommended usage: a `with` block so the session is logged out, typed readings, and handling of the GrDF errors. They are covered by `tests/test_samples.py`.
+- Credentials are no longer required for the `test` datasource and the `file` commands. A password can be given with `--password-stdin` or at the prompt, and the PCE is chosen automatically when the account has only one.
+
+### Added
+
+- `pygazpar readings` accepts several `-f` frequencies (or `all`), `--start`/`--end` dates besides `--last-days`, and `--format table|json|ndjson|csv` with `-o` to write a file.
+- `pygazpar pce`, `pygazpar auth check` and `pygazpar version` commands.
+- `pygazpar api pce|consumption|meteo|excel`, to see the GrDF API as it answers: every field of the PCE list and of the consumption records, with GrDF's own names and the fields PyGazpar does not know yet, the temperatures, the raw responses, and the Excel download.
+- `pygazpar file excel|json`, to read the Excel and JSON files offline.
+- Samples for the published consumption (`publishedSample.py`), the raw responses (`rawSample.py`) and the offline files (`offlineFilesSample.py`).
+- Exit codes by cause (usage 2, login 3, unknown PCE 4, rate limit 5), a one line error instead of a traceback (`-vv` for the traceback), `NO_COLOR` and `--no-color`, and shell completion.
+
 ## [1.4.0a6] - 2026-10-11
 
 ### Added
